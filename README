@@ -1,0 +1,39 @@
+Parallel Solvers
+================
+
+This is a collection of parallel solvers for hard problems. These are primarily
+aimed at ``really hard'' instances, i.e. there are no sparseness restrictions,
+and there are probably better (or at least much less memory-intensive)
+solutions if your data is sparse.
+
+You will need a C++11 compiler, such as GCC 4.7, to compile this. You will need
+to specify CXX (or edit the Makefile) if your compiler is not named 'g++-4.7'.
+You will also need Boost.
+
+The solvers are as follows:
+
+solve_max_clique
+----------------
+
+This solves the maximum clique problem.
+
+To run, do './max_clique algorithm filename.clq' where filename.clq is in the
+DIMACS format, and algorithm is one of "naive mcsa1 tmcsa1mutex tmcsa1shared
+tmcsa1atomic bmcsa1 tbmcsa1". There are various options, use './max_clique
+--help' to list them.
+
+The output is as follows:
+
+    size_of_max_clique number_of_nodes
+    witness
+    runtimes
+
+Where the first runtime is the overall time (excluding reading in the graph) in
+steady-clock ms, and any additional values are per-thread runtimes.
+
+If work donation is enabled, a fourth line will show how many times this
+happened. If a timeout is specified, the first line will also say 'aborted n',
+where n is the number of queued nodes processed to completion.
+
+.. vim: set ft=plain spell spelllang=en ft=text :
+
