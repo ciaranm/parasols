@@ -31,6 +31,7 @@ CLIQUE_FILES = \
 BICLIQUE_FILES = \
 	max_biclique/max_biclique_params \
 	max_biclique/max_biclique_result \
+	max_biclique/print_incumbent \
 	max_biclique/naive_max_biclique
 
 COMMON_OBJECTS = $(foreach c,$(COMMON_FILES),$(c).o)
