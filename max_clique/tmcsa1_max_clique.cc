@@ -16,7 +16,7 @@
 #include <condition_variable>
 #include <atomic>
 
-using namespace clique;
+using namespace parasols;
 
 namespace
 {
@@ -302,17 +302,17 @@ namespace
     }
 }
 
-auto clique::tmcsa1_mutex_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::tmcsa1_mutex_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     return max_clique<MutexBestAnywhere>(graph, params);
 }
 
-auto clique::tmcsa1_shared_mutex_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::tmcsa1_shared_mutex_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     return max_clique<SharedMutexBestAnywhere>(graph, params);
 }
 
-auto clique::tmcsa1_atomic_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::tmcsa1_atomic_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     return max_clique<AtomicBestAnywhere>(graph, params);
 }

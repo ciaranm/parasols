@@ -4,15 +4,15 @@
 
 #include <iostream>
 
-using namespace clique;
+using namespace parasols;
 
-auto clique::print_candidate(const MaxCliqueParams & params, unsigned size) -> void
+auto parasols::print_candidate(const MaxCliqueParams & params, unsigned size) -> void
 {
     std::cout << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
         << " found " << size << std::endl;
 }
 
-auto clique::print_candidate(
+auto parasols::print_candidate(
         const MaxCliqueParams & params,
         const MaxCliqueResult & result,
         const std::vector<std::pair<int, int> > & choices_of_n) -> void

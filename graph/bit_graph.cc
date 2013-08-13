@@ -2,7 +2,7 @@
 
 #include <graph/bit_graph.hh>
 
-using namespace clique;
+using namespace parasols;
 
 GraphTooBig::GraphTooBig() throw () = default;
 

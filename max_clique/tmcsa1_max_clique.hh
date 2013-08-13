@@ -6,7 +6,7 @@
 #include <graph/graph.hh>
 #include <max_clique/max_clique_params.hh>
 
-namespace clique
+namespace parasols
 {
     /**
      * Threaded max clique algorithm.

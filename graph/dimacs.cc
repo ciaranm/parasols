@@ -5,7 +5,7 @@
 #include <boost/regex.hpp>
 #include <fstream>
 
-using namespace clique;
+using namespace parasols;
 
 InvalidDIMACSFile::InvalidDIMACSFile(const std::string & filename, const std::string & message) throw () :
     _what("Error reading DIMACS file '" + filename + "': " + message)
@@ -17,7 +17,7 @@ auto InvalidDIMACSFile::what() const throw () -> const char *
     return _what.c_str();
 }
 
-auto clique::read_dimacs(const std::string & filename) -> Graph
+auto parasols::read_dimacs(const std::string & filename) -> Graph
 {
     Graph result;
 

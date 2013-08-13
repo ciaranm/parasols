@@ -4,9 +4,9 @@
 #include <graph/graph.hh>
 #include <graph/bit_graph.hh>
 
-using namespace clique;
+using namespace parasols;
 
-auto clique::colourise(
+auto parasols::colourise(
         const Graph & graph,
         Buckets & buckets,
         std::vector<int> & p,
@@ -50,7 +50,7 @@ auto clique::colourise(
     return result;
 }
 
-auto clique::make_buckets(const int size) -> Buckets
+auto parasols::make_buckets(const int size) -> Buckets
 {
     Buckets buckets;
     buckets.resize(size);
@@ -60,7 +60,7 @@ auto clique::make_buckets(const int size) -> Buckets
 }
 
 template <unsigned size_>
-auto clique::colourise(
+auto parasols::colourise(
         const FixedBitGraph<size_> & graph,
         const FixedBitSet<size_> & p,
         std::array<unsigned, size_ * bits_per_word> & p_order,
@@ -96,22 +96,22 @@ auto clique::colourise(
 }
 
 static_assert(max_graph_words == 256, "Need to update here if max_graph_size is changed.");
-template auto clique::colourise(const FixedBitGraph<1> & graph, const FixedBitSet<1> & p, std::array<unsigned, 1 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<1> & graph, const FixedBitSet<1> & p, std::array<unsigned, 1 * bits_per_word> & p_order,
         std::array<unsigned, 1 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<2> & graph, const FixedBitSet<2> & p, std::array<unsigned, 2 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<2> & graph, const FixedBitSet<2> & p, std::array<unsigned, 2 * bits_per_word> & p_order,
         std::array<unsigned, 2 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<4> & graph, const FixedBitSet<4> & p, std::array<unsigned, 4 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<4> & graph, const FixedBitSet<4> & p, std::array<unsigned, 4 * bits_per_word> & p_order,
         std::array<unsigned, 4 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<8> & graph, const FixedBitSet<8> & p, std::array<unsigned, 8 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<8> & graph, const FixedBitSet<8> & p, std::array<unsigned, 8 * bits_per_word> & p_order,
         std::array<unsigned, 8 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<16> & graph, const FixedBitSet<16> & p, std::array<unsigned, 16 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<16> & graph, const FixedBitSet<16> & p, std::array<unsigned, 16 * bits_per_word> & p_order,
         std::array<unsigned, 16 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<32> & graph, const FixedBitSet<32> & p, std::array<unsigned, 32 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<32> & graph, const FixedBitSet<32> & p, std::array<unsigned, 32 * bits_per_word> & p_order,
         std::array<unsigned, 32 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<64> & graph, const FixedBitSet<64> & p, std::array<unsigned, 64 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<64> & graph, const FixedBitSet<64> & p, std::array<unsigned, 64 * bits_per_word> & p_order,
         std::array<unsigned, 64 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<128> & graph, const FixedBitSet<128> & p, std::array<unsigned, 128 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<128> & graph, const FixedBitSet<128> & p, std::array<unsigned, 128 * bits_per_word> & p_order,
         std::array<unsigned, 128 * bits_per_word> & result) -> void;
-template auto clique::colourise(const FixedBitGraph<256> & graph, const FixedBitSet<256> & p, std::array<unsigned, 256 * bits_per_word> & p_order,
+template auto parasols::colourise(const FixedBitGraph<256> & graph, const FixedBitSet<256> & p, std::array<unsigned, 256 * bits_per_word> & p_order,
         std::array<unsigned, 256 * bits_per_word> & result) -> void;
 

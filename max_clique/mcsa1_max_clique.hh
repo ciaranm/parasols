@@ -7,7 +7,7 @@
 #include <max_clique/max_clique_params.hh>
 #include <vector>
 
-namespace clique
+namespace parasols
 {
     /**
      * Max clique algorithm.

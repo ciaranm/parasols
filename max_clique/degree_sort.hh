@@ -7,7 +7,7 @@
 
 #include <vector>
 
-namespace clique
+namespace parasols
 {
     /**
      * Sort the vertices of p in non-decreasing degree order, tie-breaking on

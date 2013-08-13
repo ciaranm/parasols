@@ -4,7 +4,7 @@
 #include <boost/range/adaptors.hpp>
 #include <algorithm>
 
-using namespace clique;
+using namespace parasols;
 
 namespace
 {
@@ -53,7 +53,7 @@ namespace
     }
 }
 
-auto clique::naive_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::naive_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     MaxCliqueResult result;
     result.size = params.initial_bound;

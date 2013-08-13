@@ -9,7 +9,7 @@
 #include <utility>
 #include <algorithm>
 
-namespace clique
+namespace parasols
 {
     /// We'll use an array of unsigned long longs to represent our bits.
     using BitWord = unsigned long long;

@@ -6,7 +6,7 @@
 #include <graph/graph.hh>
 #include <string>
 
-namespace clique
+namespace parasols
 {
     /**
      * Thrown if we come across bad data in a DIMACS format file.

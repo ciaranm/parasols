@@ -5,9 +5,9 @@
 #include <algorithm>
 #include <iterator>
 
-using namespace clique;
+using namespace parasols;
 
-auto clique::degree_sort(const Graph & graph, std::vector<int> & p) -> void
+auto parasols::degree_sort(const Graph & graph, std::vector<int> & p) -> void
 {
     // pre-calculate degrees
     std::vector<int> degrees;

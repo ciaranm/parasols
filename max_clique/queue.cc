@@ -2,5 +2,5 @@
 
 #include <max_clique/queue.hh>
 
-using namespace clique;
+using namespace parasols;
 

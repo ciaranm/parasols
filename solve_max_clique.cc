@@ -21,7 +21,7 @@
 #include <atomic>
 #include <functional>
 
-using namespace clique;
+using namespace parasols;
 namespace po = boost::program_options;
 
 namespace

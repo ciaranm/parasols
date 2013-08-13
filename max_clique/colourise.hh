@@ -7,7 +7,7 @@
 #include <graph/bit_graph.hh>
 #include <vector>
 
-namespace clique
+namespace parasols
 {
     using Buckets = std::vector<std::vector<int> >;
 

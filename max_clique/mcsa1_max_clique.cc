@@ -5,7 +5,7 @@
 #include <max_clique/colourise.hh>
 #include <algorithm>
 
-using namespace clique;
+using namespace parasols;
 
 namespace
 {
@@ -61,7 +61,7 @@ namespace
     }
 }
 
-auto clique::mcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::mcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     MaxCliqueResult result;
     result.size = params.initial_bound;

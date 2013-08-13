@@ -9,7 +9,7 @@
 #include <list>
 #include <utility>
 
-namespace clique
+namespace parasols
 {
     /**
      * A queue that supports an initial producer, followed by work donation.

@@ -6,7 +6,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace clique
+namespace parasols
 {
     /**
      * A graph, with an adjaceny matrix representation. We only provide the

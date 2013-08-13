@@ -10,7 +10,7 @@
 #include <atomic>
 #include <vector>
 
-namespace clique
+namespace parasols
 {
     /**
      * Parameters for a max clique algorithm.

@@ -3,7 +3,7 @@
 #include <graph/graph.hh>
 #include <algorithm>
 
-using namespace clique;
+using namespace parasols;
 
 auto Graph::_position(int a, int b) const -> AdjacencyMatrix::size_type
 {

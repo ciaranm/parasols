@@ -16,7 +16,7 @@
 #include <condition_variable>
 #include <atomic>
 
-using namespace clique;
+using namespace parasols;
 
 namespace
 {
@@ -265,7 +265,7 @@ namespace
     }
 }
 
-auto clique::tbmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::tbmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */

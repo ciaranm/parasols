@@ -9,7 +9,7 @@
 #include <mutex>
 #include <iostream>
 
-using namespace clique;
+using namespace parasols;
 
 namespace
 {
@@ -124,7 +124,7 @@ namespace
     }
 }
 
-auto clique::bmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+auto parasols::bmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
