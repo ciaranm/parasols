@@ -13,6 +13,7 @@ FILES = graph/graph \
 	threads/atomic_incumbent \
 	max_clique/max_clique_params \
 	max_clique/max_clique_result \
+	max_clique/print_incumbent \
 	max_clique/colourise \
 	max_clique/degree_sort \
 	max_clique/queue \

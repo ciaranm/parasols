@@ -35,7 +35,7 @@ namespace parasols
         unsigned split_depth = 1;
 
         /// If true, print every time we find a better incumbent.
-        bool print_candidates = false;
+        bool print_incumbents = false;
 
         /// If true, enable work donation.
         bool work_donation = false;
@@ -46,19 +46,6 @@ namespace parasols
         /// The start time of the algorithm.
         std::chrono::time_point<std::chrono::steady_clock> start_time;
     };
-
-    /**
-     * Do some output, if params.print_candidate is true.
-     */
-    auto print_candidate(const MaxCliqueParams & params, unsigned size) -> void;
-
-    /**
-     * Do some output, if params.print_candidate is true.
-     */
-    auto print_candidate(
-            const MaxCliqueParams & params,
-            const MaxCliqueResult & result,
-            const std::vector<std::pair<int, int> > & choices_of_n) -> void;
 }
 
 #endif

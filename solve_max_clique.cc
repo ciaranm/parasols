@@ -95,7 +95,7 @@ auto main(int argc, char * argv[]) -> int
             ("threads",            po::value<int>(), "Number of threads to use (where relevant)")
             ("stop-after-finding", po::value<int>(), "Stop after finding a clique of this size")
             ("initial-bound",      po::value<int>(), "Specify an initial bound")
-            ("print-candidates",                     "Print new best so far candidates as they are found")
+            ("print-incumbents",                     "Print new incumbents as they are found")
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
@@ -165,8 +165,8 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("initial-bound"))
             params.initial_bound = options_vars["initial-bound"].as<int>();
 
-        if (options_vars.count("print-candidates"))
-            params.print_candidates = true;
+        if (options_vars.count("print-incumbents"))
+            params.print_incumbents = true;
 
         if (options_vars.count("split-depth"))
             params.split_depth = options_vars["split-depth"].as<int>();

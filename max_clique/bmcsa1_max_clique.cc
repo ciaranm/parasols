@@ -4,6 +4,7 @@
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/queue.hh>
+#include <max_clique/print_incumbent.hh>
 
 #include <algorithm>
 
@@ -19,8 +20,7 @@ namespace
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
-            std::vector<FixedBitSet<size_> > & p_alloc,      // pre-allocated space for p
-            std::vector<std::pair<int, int> > & choices_of_n // for "where is it"
+            std::vector<FixedBitSet<size_> > & p_alloc       // pre-allocated space for p
             ) -> void
     {
         ++result.nodes;
@@ -57,16 +57,11 @@ namespace
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (c.test(i))
                             result.members.insert(o[i]);
-                    if (params.print_candidates) {
-                        choices_of_n[c_popcount] = { p_popcount - n, p_popcount };
-                        print_candidate(params, result, choices_of_n);
-                    }
+                    print_incumbent(params, result.size);
                 }
             }
-            else {
-                choices_of_n[c_popcount] = { p_popcount - n, p_popcount };
-                expand<size_>(graph, o, c, new_p, result, params, p_alloc, choices_of_n);
-            }
+            else
+                expand<size_>(graph, o, c, new_p, result, params, p_alloc);
 
             // now consider not taking v
             c.unset(v);
@@ -107,11 +102,8 @@ namespace
                 if (graph.adjacent(o[i], o[j]))
                     bit_graph.add_edge(i, j);
 
-        std::vector<std::pair<int, int> > choices_of_n;
-        choices_of_n.resize(graph.size());
-
         // go!
-        expand<size_>(bit_graph, o, c, p, result, params, p_alloc, choices_of_n);
+        expand<size_>(bit_graph, o, c, p, result, params, p_alloc);
 
         return result;
     }

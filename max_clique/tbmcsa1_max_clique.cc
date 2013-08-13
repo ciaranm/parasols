@@ -4,6 +4,7 @@
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/queue.hh>
+#include <max_clique/print_incumbent.hh>
 #include <threads/atomic_incumbent.hh>
 
 #include <algorithm>
@@ -39,8 +40,7 @@ namespace
             for (int i = 0 ; i < graph.size() ; ++i)
                 if (c.test(i))
                     result.members.insert(o[i]);
-            if (params.print_candidates)
-                print_candidate(params, result.size);
+            print_incumbent(params, result.size);
         }
     }
 

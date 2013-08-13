@@ -4,6 +4,7 @@
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/queue.hh>
+#include <max_clique/print_incumbent.hh>
 #include <threads/atomic_incumbent.hh>
 
 #include <algorithm>
@@ -33,8 +34,7 @@ namespace
         if (best_anywhere.update(c.size())) {
             result.size = c.size();
             result.members = std::set<int>{ c.begin(), c.end() };
-            if (params.print_candidates)
-                print_candidate(params, result.size);
+            print_incumbent(params, result.size);
         }
     }
 

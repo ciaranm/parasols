@@ -3,6 +3,7 @@
 #include <max_clique/mcsa1_max_clique.hh>
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
+#include <max_clique/print_incumbent.hh>
 
 #include <algorithm>
 
@@ -47,8 +48,7 @@ namespace
                 if (c.size() > result.size) {
                     result.size = c.size();
                     result.members = std::set<int>{ c.begin(), c.end() };
-                    if (params.print_candidates)
-                        print_candidate(params, result.size);
+                    print_incumbent(params, result.size);
                 }
             }
             else

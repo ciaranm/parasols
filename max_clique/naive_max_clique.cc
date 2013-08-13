@@ -1,6 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <max_clique/naive_max_clique.hh>
+#include <max_clique/print_incumbent.hh>
 
 #include <boost/range/adaptors.hpp>
 
@@ -41,8 +42,7 @@ namespace
                 if (c.size() > result.size) {
                     result.size = c.size();
                     result.members = std::set<int>{ c.begin(), c.end() };
-                    if (params.print_candidates)
-                        print_candidate(params, result.size);
+                    print_incumbent(params, result.size);
                 }
             }
             else
