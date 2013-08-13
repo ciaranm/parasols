@@ -4,8 +4,7 @@
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/queue.hh>
-
-#include <boost/thread.hpp>
+#include <threads/atomic_incumbent.hh>
 
 #include <algorithm>
 #include <list>
@@ -29,44 +28,13 @@ namespace
     };
 
     /**
-     * Here we only implement using an atomic for the incumbent.
-     */
-    struct AtomicBestAnywhere
-    {
-        std::atomic<unsigned> value;
-
-        AtomicBestAnywhere()
-        {
-            value.store(0, std::memory_order_seq_cst);
-        }
-
-        bool update(unsigned v)
-        {
-            while (true) {
-                unsigned cur_v = value.load(std::memory_order_seq_cst);
-                if (v > cur_v) {
-                    if (value.compare_exchange_strong(cur_v, v, std::memory_order_seq_cst))
-                        return true;
-                }
-                else
-                    return false;
-            }
-        }
-
-        unsigned get()
-        {
-            return value.load(std::memory_order_relaxed);
-        }
-    };
-
-    /**
      * We've possibly found a new best. Update best_anywhere and our local
      * result, and do any necessary printing.
      */
     template <unsigned size_>
     auto found_possible_new_best(const FixedBitGraph<size_> & graph, const std::vector<int> & o,
             const FixedBitSet<size_> & c, int c_popcount,
-            const MaxCliqueParams & params, MaxCliqueResult & result, AtomicBestAnywhere & best_anywhere) -> void
+            const MaxCliqueParams & params, MaxCliqueResult & result, AtomicIncumbent & best_anywhere) -> void
     {
         if (best_anywhere.update(c_popcount)) {
             result.size = c_popcount;
@@ -82,7 +50,7 @@ namespace
     /**
      * Bound function.
      */
-    auto bound(unsigned c_popcount, unsigned cn, const MaxCliqueParams & params, AtomicBestAnywhere & best_anywhere) -> bool
+    auto bound(unsigned c_popcount, unsigned cn, const MaxCliqueParams & params, AtomicIncumbent & best_anywhere) -> bool
     {
         unsigned best_anywhere_value = best_anywhere.get();
         return (c_popcount + cn <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding);
@@ -99,7 +67,7 @@ namespace
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
             std::vector<FixedBitSet<size_> > & p_alloc,      // pre-allocated space for p
-            AtomicBestAnywhere & best_anywhere) -> void
+            AtomicIncumbent & best_anywhere) -> void
     {
         ++result.nodes;
 
@@ -165,7 +133,7 @@ namespace
         MaxCliqueResult result; // global result
         std::mutex result_mutex;
 
-        AtomicBestAnywhere best_anywhere; // global incumbent
+        AtomicIncumbent best_anywhere; // global incumbent
         best_anywhere.update(params.initial_bound);
 
         std::list<std::thread> threads; // populating thread, and workers

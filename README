@@ -18,9 +18,8 @@ solve_max_clique
 This solves the maximum clique problem.
 
 To run, do './solve_max_clique algorithm filename.clq' where filename.clq is in
-the DIMACS format, and algorithm is one of "naive mcsa1 tmcsa1mutex
-tmcsa1shared tmcsa1atomic bmcsa1 tbmcsa1". There are various options, use
-'./solve_max_clique --help' to list them.
+the DIMACS format, and algorithm is one of "naive mcsa1 tmcsa1 bmcsa1 tbmcsa1".
+There are various options, use './solve_max_clique --help' to list them.
 
 The output is as follows:
 

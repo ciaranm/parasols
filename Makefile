@@ -10,6 +10,7 @@ override LDFLAGS += `if test -f \`$(CXX) --print-file-name=libboost_thread-mt.so
 FILES = graph/graph \
 	graph/bit_graph \
 	graph/dimacs \
+	threads/atomic_incumbent \
 	max_clique/max_clique_params \
 	max_clique/colourise \
 	max_clique/degree_sort \

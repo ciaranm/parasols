@@ -81,13 +81,11 @@ namespace
 auto main(int argc, char * argv[]) -> int
 {
     auto algorithms = {
-        std::make_pair( std::string{ "naive" },        run_this(naive_max_clique) ),
-        std::make_pair( std::string{ "mcsa1" },        run_this(mcsa1_max_clique) ),
-        std::make_pair( std::string{ "tmcsa1mutex" },  run_this(tmcsa1_mutex_max_clique) ),
-        std::make_pair( std::string{ "tmcsa1shared" }, run_this(tmcsa1_shared_mutex_max_clique) ),
-        std::make_pair( std::string{ "tmcsa1atomic" }, run_this(tmcsa1_atomic_max_clique) ),
-        std::make_pair( std::string{ "bmcsa1" },       run_this(bmcsa1_max_clique) ),
-        std::make_pair( std::string{ "tbmcsa1" },      run_this(tbmcsa1_max_clique) )
+        std::make_pair( std::string{ "naive" },   run_this(naive_max_clique) ),
+        std::make_pair( std::string{ "mcsa1" },   run_this(mcsa1_max_clique) ),
+        std::make_pair( std::string{ "tmcsa1" },  run_this(tmcsa1_max_clique) ),
+        std::make_pair( std::string{ "bmcsa1" },  run_this(bmcsa1_max_clique) ),
+        std::make_pair( std::string{ "tbmcsa1" }, run_this(tbmcsa1_max_clique) )
     };
 
     try {
