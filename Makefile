@@ -11,6 +11,7 @@ FILES = graph/graph \
 	graph/bit_graph \
 	graph/dimacs \
 	threads/atomic_incumbent \
+	threads/output_lock \
 	max_clique/max_clique_params \
 	max_clique/max_clique_result \
 	max_clique/print_incumbent \
