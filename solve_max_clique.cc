@@ -3,11 +3,11 @@
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 
-#include <clique/naive_max_clique.hh>
-#include <clique/mcsa1_max_clique.hh>
-#include <clique/tmcsa1_max_clique.hh>
-#include <clique/bmcsa1_max_clique.hh>
-#include <clique/tbmcsa1_max_clique.hh>
+#include <max_clique/naive_max_clique.hh>
+#include <max_clique/mcsa1_max_clique.hh>
+#include <max_clique/tmcsa1_max_clique.hh>
+#include <max_clique/bmcsa1_max_clique.hh>
+#include <max_clique/tbmcsa1_max_clique.hh>
 
 #include <boost/program_options.hpp>
 

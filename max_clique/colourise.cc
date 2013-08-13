@@ -1,6 +1,6 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/colourise.hh>
+#include <max_clique/colourise.hh>
 #include <graph/graph.hh>
 #include <graph/bit_graph.hh>
 

@@ -10,15 +10,15 @@ override LDFLAGS += `if test -f \`$(CXX) --print-file-name=libboost_thread-mt.so
 FILES = graph/graph \
 	graph/bit_graph \
 	graph/dimacs \
-	clique/max_clique_params \
-	clique/colourise \
-	clique/degree_sort \
-	clique/queue \
-	clique/naive_max_clique \
-	clique/mcsa1_max_clique \
-	clique/tmcsa1_max_clique \
-	clique/bmcsa1_max_clique \
-	clique/tbmcsa1_max_clique
+	max_clique/max_clique_params \
+	max_clique/colourise \
+	max_clique/degree_sort \
+	max_clique/queue \
+	max_clique/naive_max_clique \
+	max_clique/mcsa1_max_clique \
+	max_clique/tmcsa1_max_clique \
+	max_clique/bmcsa1_max_clique \
+	max_clique/tbmcsa1_max_clique
 
 CLIQUEOBJECTS = $(foreach c,$(FILES),$(c).o)
 OBJECTS = $(CLIQUEOBJECTS) solve_max_clique.o

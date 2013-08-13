@@ -4,7 +4,7 @@
 #define CLIQUE_GUARD_CLIQUE_NAIVE_MAX_CLIQUE_HH 1
 
 #include <graph/graph.hh>
-#include <clique/max_clique_params.hh>
+#include <max_clique/max_clique_params.hh>
 #include <vector>
 
 namespace clique

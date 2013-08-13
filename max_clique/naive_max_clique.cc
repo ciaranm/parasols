@@ -1,6 +1,6 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/naive_max_clique.hh>
+#include <max_clique/naive_max_clique.hh>
 #include <boost/range/adaptors.hpp>
 #include <algorithm>
 

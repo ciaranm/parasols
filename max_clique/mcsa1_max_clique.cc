@@ -1,8 +1,8 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/mcsa1_max_clique.hh>
-#include <clique/degree_sort.hh>
-#include <clique/colourise.hh>
+#include <max_clique/mcsa1_max_clique.hh>
+#include <max_clique/degree_sort.hh>
+#include <max_clique/colourise.hh>
 #include <algorithm>
 
 using namespace clique;

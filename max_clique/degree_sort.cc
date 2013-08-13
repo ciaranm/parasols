@@ -1,6 +1,6 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/degree_sort.hh>
+#include <max_clique/degree_sort.hh>
 
 #include <algorithm>
 #include <iterator>
