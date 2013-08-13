@@ -1,4 +1,4 @@
-all : solve_max_clique
+all : solve_max_clique solve_max_biclique
 
 CXX = g++-4.7
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
@@ -7,11 +7,14 @@ override LDFLAGS += `if test -f \`$(CXX) --print-file-name=libboost_thread-mt.so
 	   else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi` \
 	   -lrt
 
-FILES = graph/graph \
+COMMON_FILES = \
+	graph/graph \
 	graph/bit_graph \
 	graph/dimacs \
 	threads/atomic_incumbent \
-	threads/output_lock \
+	threads/output_lock
+
+CLIQUE_FILES = \
 	max_clique/max_clique_params \
 	max_clique/max_clique_result \
 	max_clique/print_incumbent \
@@ -24,18 +27,30 @@ FILES = graph/graph \
 	max_clique/bmcsa1_max_clique \
 	max_clique/tbmcsa1_max_clique
 
-CLIQUEOBJECTS = $(foreach c,$(FILES),$(c).o)
-OBJECTS = $(CLIQUEOBJECTS) solve_max_clique.o
+BICLIQUE_FILES = \
+	max_biclique/max_biclique_params \
+	max_biclique/max_biclique_result \
+	max_biclique/naive_max_biclique
+
+COMMON_OBJECTS = $(foreach c,$(COMMON_FILES),$(c).o)
+CLIQUE_OBJECTS = $(foreach c,$(CLIQUE_FILES),$(c).o)
+BICLIQUE_OBJECTS = $(foreach c,$(BICLIQUE_FILES),$(c).o)
+
+FILES = $(COMMON_FILES) $(CLIQUE_FILES) $(BICLIQUE_FILES)
+OBJECTS = $(COMMON_OBJECTS) $(CLIQUE_OBJECTS) $(BICLIQUE_OBJECTS) solve_max_clique.o solve_max_biclique.o
+
 HEADERS = $(foreach c,$(FILES),$(c).hh)
 SOURCES = $(foreach c,$(FILES),$(c).hh)
 
 $(OBJECTS) : %.o : %.cc $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-solve_max_clique : $(CLIQUEOBJECTS) solve_max_clique.o
+solve_max_clique : $(COMMON_OBJECTS) $(CLIQUE_OBJECTS) solve_max_clique.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+solve_max_biclique : $(COMMON_OBJECTS) $(BICLIQUE_OBJECTS) solve_max_biclique.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean :
-	rm -f $(OBJECTS) solve_max_clique
-
+	rm -f $(OBJECTS) solve_max_clique solve_max_biclique
 

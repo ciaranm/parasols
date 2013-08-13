@@ -1,2 +1,3 @@
 *.o
 solve_max_clique
+solve_max_biclique

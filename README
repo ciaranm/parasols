@@ -34,5 +34,10 @@ If work donation is enabled, a fourth line will show how many times this
 happened. If a timeout is specified, the first line will also say 'aborted n',
 where n is the number of queued nodes processed to completion.
 
+solve_max_biclique
+------------------
+
+This solves the maximum biclique problem.
+
 .. vim: set ft=plain spell spelllang=en ft=text :
 
