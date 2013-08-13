@@ -3,8 +3,6 @@
 #ifndef PARASOLS_GUARD_MAX_CLIQUE_MAX_CLIQUE_PARAMS_HH
 #define PARASOLS_GUARD_MAX_CLIQUE_MAX_CLIQUE_PARAMS_HH 1
 
-#include <max_clique/max_clique_result.hh>
-
 #include <list>
 #include <limits>
 #include <chrono>
