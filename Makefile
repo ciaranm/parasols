@@ -11,6 +11,7 @@ COMMON_FILES = \
 	graph/graph \
 	graph/bit_graph \
 	graph/dimacs \
+	graph/degree_sort \
 	threads/atomic_incumbent \
 	threads/output_lock \
 	solver/solver
@@ -20,7 +21,6 @@ CLIQUE_FILES = \
 	max_clique/max_clique_result \
 	max_clique/print_incumbent \
 	max_clique/colourise \
-	max_clique/degree_sort \
 	max_clique/queue \
 	max_clique/naive_max_clique \
 	max_clique/mcsa1_max_clique \

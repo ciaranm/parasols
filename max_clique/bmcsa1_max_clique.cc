@@ -1,10 +1,10 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <max_clique/bmcsa1_max_clique.hh>
-#include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/queue.hh>
 #include <max_clique/print_incumbent.hh>
+#include <graph/degree_sort.hh>
 
 #include <algorithm>
 
