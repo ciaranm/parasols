@@ -1,4 +1,4 @@
-all : max_clique
+all : solve_max_clique
 
 CXX = g++-4.7
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
@@ -21,17 +21,17 @@ FILES = graph/graph \
 	clique/tbmcsa1_max_clique
 
 CLIQUEOBJECTS = $(foreach c,$(FILES),$(c).o)
-OBJECTS = $(CLIQUEOBJECTS) max_clique.o
+OBJECTS = $(CLIQUEOBJECTS) solve_max_clique.o
 HEADERS = $(foreach c,$(FILES),$(c).hh)
 SOURCES = $(foreach c,$(FILES),$(c).hh)
 
 $(OBJECTS) : %.o : %.cc $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-max_clique : $(CLIQUEOBJECTS) max_clique.o
+solve_max_clique : $(CLIQUEOBJECTS) solve_max_clique.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean :
-	rm -f $(OBJECTS) max_clique
+	rm -f $(OBJECTS) solve_max_clique
 
 
