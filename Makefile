@@ -12,6 +12,7 @@ FILES = graph/graph \
 	graph/dimacs \
 	threads/atomic_incumbent \
 	max_clique/max_clique_params \
+	max_clique/max_clique_result \
 	max_clique/colourise \
 	max_clique/degree_sort \
 	max_clique/queue \
