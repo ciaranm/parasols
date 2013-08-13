@@ -109,11 +109,6 @@ namespace
                 if (graph.adjacent(o[i], o[j]))
                     bit_graph.add_edge(i, j);
 
-        std::cerr << ">>";
-        for (int i = 0 ; i < bit_graph.size() ; ++i)
-            std::cerr << " " << bit_graph.degree(i);
-        std::cerr << std::endl;
-
         std::vector<std::pair<int, int> > choices_of_n;
         choices_of_n.resize(graph.size());
 
