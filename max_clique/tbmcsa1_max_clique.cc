@@ -214,7 +214,7 @@ namespace
     {
         std::vector<int> o(graph.size()); // vertex ordering
         std::iota(o.begin(), o.end(), 0);
-        degree_sort(graph, o);
+        degree_sort(graph, o, false);
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;

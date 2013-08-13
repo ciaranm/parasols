@@ -72,7 +72,7 @@ auto parasols::mcsa1_max_clique(const Graph & graph, const MaxCliqueParams & par
 
     std::vector<int> o(graph.size()); // potential additions, ordered
     std::iota(o.begin(), o.end(), 0);
-    degree_sort(graph, o);
+    degree_sort(graph, o, false);
 
     auto buckets = make_buckets(graph.size());
 

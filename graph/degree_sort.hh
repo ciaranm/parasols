@@ -10,10 +10,10 @@
 namespace parasols
 {
     /**
-     * Sort the vertices of p in non-decreasing degree order, tie-breaking on
-     * vertex number.
+     * Sort the vertices of p in non-decreasing degree order (or non-increasing
+     * if 'reverse' is true), tie-breaking on vertex number.
      */
-    auto degree_sort(const Graph & graph, std::vector<int> & p) -> void;
+    auto degree_sort(const Graph & graph, std::vector<int> & p, bool reverse) -> void;
 }
 
 #endif

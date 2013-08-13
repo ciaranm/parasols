@@ -91,7 +91,7 @@ namespace
 
         // populate our order with every vertex initially
         std::iota(o.begin(), o.end(), 0);
-        degree_sort(graph, o);
+        degree_sort(graph, o, false);
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;

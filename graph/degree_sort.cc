@@ -7,7 +7,7 @@
 
 using namespace parasols;
 
-auto parasols::degree_sort(const Graph & graph, std::vector<int> & p) -> void
+auto parasols::degree_sort(const Graph & graph, std::vector<int> & p, bool reverse) -> void
 {
     // pre-calculate degrees
     std::vector<int> degrees;
@@ -16,6 +16,6 @@ auto parasols::degree_sort(const Graph & graph, std::vector<int> & p) -> void
 
     // sort on degree
     std::sort(p.begin(), p.end(),
-            [&] (int a, int b) { return ! (degrees[a] < degrees[b] || (degrees[a] == degrees[b] && a > b)); });
+            [&] (int a, int b) { return (! reverse) ^ (degrees[a] < degrees[b] || (degrees[a] == degrees[b] && a > b)); });
 }
 
