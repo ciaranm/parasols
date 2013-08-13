@@ -3,7 +3,7 @@
 #ifndef CLIQUE_GUARD_CLIQUE_DEGREE_SORT_HH
 #define CLIQUE_GUARD_CLIQUE_DEGREE_SORT_HH 1
 
-#include <clique/graph.hh>
+#include <graph/graph.hh>
 
 #include <vector>
 

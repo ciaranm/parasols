@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/graph.hh>
-#include <clique/dimacs.hh>
+#include <graph/graph.hh>
+#include <graph/dimacs.hh>
 
 #include <clique/naive_max_clique.hh>
 #include <clique/mcsa1_max_clique.hh>

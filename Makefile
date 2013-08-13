@@ -7,9 +7,9 @@ override LDFLAGS += `if test -f \`$(CXX) --print-file-name=libboost_thread-mt.so
 	   else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi` \
 	   -lrt
 
-FILES = clique/graph \
-	clique/bit_graph \
-	clique/dimacs \
+FILES = graph/graph \
+	graph/bit_graph \
+	graph/dimacs \
 	clique/max_clique_params \
 	clique/colourise \
 	clique/degree_sort \

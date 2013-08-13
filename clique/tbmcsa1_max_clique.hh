@@ -3,7 +3,7 @@
 #ifndef CLIQUE_GUARD_CLIQUE_TBMCSA1_MAX_CLIQUE_HH
 #define CLIQUE_GUARD_CLIQUE_TBMCSA1_MAX_CLIQUE_HH 1
 
-#include <clique/graph.hh>
+#include <graph/graph.hh>
 #include <clique/max_clique_params.hh>
 
 namespace clique

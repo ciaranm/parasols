@@ -1,8 +1,8 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <clique/colourise.hh>
-#include <clique/graph.hh>
-#include <clique/bit_graph.hh>
+#include <graph/graph.hh>
+#include <graph/bit_graph.hh>
 
 using namespace clique;
 

@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/dimacs.hh>
-#include <clique/graph.hh>
+#include <graph/dimacs.hh>
+#include <graph/graph.hh>
 #include <boost/regex.hpp>
 #include <fstream>
 

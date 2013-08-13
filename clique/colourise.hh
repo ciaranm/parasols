@@ -3,8 +3,8 @@
 #ifndef CLIQUE_GUARD_CLIQUE_COLOURISE_HH
 #define CLIQUE_GUARD_CLIQUE_COLOURISE_HH 1
 
-#include <clique/graph.hh>
-#include <clique/bit_graph.hh>
+#include <graph/graph.hh>
+#include <graph/bit_graph.hh>
 #include <vector>
 
 namespace clique

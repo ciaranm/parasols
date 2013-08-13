@@ -1,6 +1,6 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <clique/graph.hh>
+#include <graph/graph.hh>
 #include <algorithm>
 
 using namespace clique;
