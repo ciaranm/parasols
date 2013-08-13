@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#ifndef CLIQUE_GUARD_CLIQUE_TMCSA1_MAX_CLIQUE_HH
-#define CLIQUE_GUARD_CLIQUE_TMCSA1_MAX_CLIQUE_HH 1
+#ifndef PARASOLS_GUARD_MAX_CLIQUE_TMCSA1_MAX_CLIQUE_HH
+#define PARASOLS_GUARD_MAX_CLIQUE_TMCSA1_MAX_CLIQUE_HH 1
 
 #include <graph/graph.hh>
 #include <max_clique/max_clique_params.hh>

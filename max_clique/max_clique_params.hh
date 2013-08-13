@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#ifndef CLIQUE_GUARD_CLIQUE_MAX_CLIQUE_PARAMS_HH
-#define CLIQUE_GUARD_CLIQUE_MAX_CLIQUE_PARAMS_HH 1
+#ifndef PARASOLS_GUARD_MAX_CLIQUE_MAX_CLIQUE_PARAMS_HH
+#define PARASOLS_GUARD_MAX_CLIQUE_MAX_CLIQUE_PARAMS_HH 1
 
 #include <set>
 #include <list>

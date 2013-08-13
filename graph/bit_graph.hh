@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#ifndef CLIQUE_GUARD_CLIQUE_BIT_GRAPH_HH
-#define CLIQUE_GUARD_CLIQUE_BIT_GRAPH_HH 1
+#ifndef PARASOLS_GUARD_GRAPH_BIT_GRAPH_HH
+#define PARASOLS_GUARD_GRAPH_BIT_GRAPH_HH 1
 
 #include <array>
 #include <vector>
