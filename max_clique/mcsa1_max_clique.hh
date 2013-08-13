@@ -5,7 +5,6 @@
 
 #include <graph/graph.hh>
 #include <max_clique/max_clique_params.hh>
-#include <vector>
 
 namespace parasols
 {

@@ -3,6 +3,7 @@
 #include <max_clique/mcsa1_max_clique.hh>
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
+
 #include <algorithm>
 
 using namespace parasols;

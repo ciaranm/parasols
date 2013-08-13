@@ -4,10 +4,8 @@
 #include <max_clique/degree_sort.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/queue.hh>
+
 #include <algorithm>
-#include <atomic>
-#include <mutex>
-#include <iostream>
 
 using namespace parasols;
 

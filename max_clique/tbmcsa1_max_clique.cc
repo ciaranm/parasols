@@ -11,9 +11,6 @@
 #include <functional>
 #include <vector>
 #include <thread>
-#include <future>
-#include <condition_variable>
-#include <atomic>
 
 using namespace parasols;
 
