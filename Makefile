@@ -12,7 +12,8 @@ COMMON_FILES = \
 	graph/bit_graph \
 	graph/dimacs \
 	threads/atomic_incumbent \
-	threads/output_lock
+	threads/output_lock \
+	solver/solver
 
 CLIQUE_FILES = \
 	max_clique/max_clique_params \

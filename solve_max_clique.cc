@@ -1,5 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
+#include <solver/solver.hh>
+
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 
@@ -16,67 +18,9 @@
 #include <cstdlib>
 #include <chrono>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <functional>
 
 using namespace parasols;
 namespace po = boost::program_options;
-
-namespace
-{
-    /* Helper: return a function that runs the specified algorithm, dealing
-     * with timing information and timeouts. */
-    template <typename Func_>
-    auto run_this(Func_ func) -> std::function<MaxCliqueResult (const std::string &, MaxCliqueParams &, bool &, int)>
-    {
-        return [func] (const std::string & filename, MaxCliqueParams & params, bool & aborted, int timeout) -> MaxCliqueResult {
-            Graph graph = read_dimacs(filename);
-
-            /* For a timeout, we use a thread and a timed CV. We also wake the
-             * CV up if we're done, so the timeout thread can terminate. */
-            std::thread timeout_thread;
-            std::mutex timeout_mutex;
-            std::condition_variable timeout_cv;
-            params.abort.store(false);
-            if (0 != timeout) {
-                timeout_thread = std::thread([&] {
-                        auto abort_time = std::chrono::steady_clock::now() + std::chrono::seconds(timeout);
-                        {
-                            /* Sleep until either we've reached the time limit,
-                             * or we've finished all the work. */
-                            std::unique_lock<std::mutex> guard(timeout_mutex);
-                            while (! params.abort.load()) {
-                                if (std::cv_status::timeout == timeout_cv.wait_until(guard, abort_time)) {
-                                    /* We've woken up, and it's due to a timeout. */
-                                    aborted = true;
-                                    break;
-                                }
-                            }
-                        }
-                        params.abort.store(true);
-                        });
-            }
-
-            /* Start the clock */
-            params.start_time = std::chrono::steady_clock::now();
-            auto result = (*func)(graph, params);
-
-            /* Clean up the timeout thread */
-            if (timeout_thread.joinable()) {
-                {
-                    std::unique_lock<std::mutex> guard(timeout_mutex);
-                    params.abort.store(true);
-                    timeout_cv.notify_all();
-                }
-                timeout_thread.join();
-            }
-
-            return result;
-        };
-    };
-}
 
 auto main(int argc, char * argv[]) -> int
 {
@@ -174,10 +118,13 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("work-donation"))
             params.work_donation = true;
 
+        /* Read in the graph */
+        auto graph = read_dimacs(options_vars["input-file"].as<std::string>());
+
         /* Do the actual run. */
         bool aborted = false;
         auto result = algorithm->second(
-                options_vars["input-file"].as<std::string>(),
+                graph,
                 params,
                 aborted,
                 options_vars.count("timeout") ? options_vars["timeout"].as<int>() : 0);
@@ -207,7 +154,7 @@ auto main(int argc, char * argv[]) -> int
 
         return EXIT_SUCCESS;
     }
-    catch (const boost::program_options::error & e) {
+    catch (const po::error & e) {
         std::cerr << "Error: " << e.what() << std::endl;
         std::cerr << "Try " << argv[0] << " --help" << std::endl;
         return EXIT_FAILURE;
