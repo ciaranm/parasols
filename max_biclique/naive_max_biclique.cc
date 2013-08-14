@@ -26,19 +26,37 @@ namespace
     {
         ++result.nodes;
 
+        unsigned ca_popcount = ca.popcount();
+        unsigned cb_popcount = cb.popcount();
+
         // for each v in pa...
         while (! pa.empty()) {
-            int v = pa.first_set_bit();
-
-            // bound, timeout or early exit?
-            FixedBitSet<size_> pcommon = pa;
-            pcommon.intersect_with(pb);
-            unsigned bound = ca.popcount() + pa.popcount() + cb.popcount() + pb.popcount() - pcommon.popcount();
-            if (bound <= 2 * result.size || result.size >= params.stop_after_finding || params.abort.load())
+            // timeout or early exit?
+            if (result.size >= params.stop_after_finding || params.abort.load())
                 return;
 
+            // bound
+            {
+                FixedBitSet<size_> pa_only = pa, pb_only = pb, pcommon = pa;
+                pa_only.intersect_with_complement(pb);
+                pb_only.intersect_with_complement(pa);
+                pcommon.intersect_with(pb);
+
+                unsigned pa_only_popcount = pa_only.popcount();
+                unsigned pb_only_popcount = pb_only.popcount();
+                unsigned pcommon_popcount = pcommon.popcount();
+
+                if ((pa_only_popcount + ca_popcount + pcommon_popcount <= result.size) ||
+                        (pb_only_popcount + cb_popcount + pcommon_popcount <= result.size) ||
+                        (ca_popcount + pa_only_popcount + cb_popcount + pb_only_popcount + pcommon_popcount <= 2 * result.size))
+                    return;
+            }
+
             // consider taking v
+            int v = pa.first_set_bit();
+
             ca.set(v);
+            ++ca_popcount;
             pa.unset(v);
 
             // filter p to contain vertices adjacent to v
@@ -47,16 +65,20 @@ namespace
 
             if (new_pb.empty()) {
                 // potential new best
-                if (ca.popcount() == cb.popcount() && ca.popcount() > result.size) {
-                    result.size = ca.popcount();
+                if (ca_popcount == cb_popcount && ca_popcount > result.size) {
+                    result.size = ca_popcount;
+
+                    // depermute to get result
                     result.members_a.clear();
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (ca.test(i))
                             result.members_a.insert(o[i]);
+
                     result.members_b.clear();
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (cb.test(i))
                             result.members_b.insert(o[i]);
+
                     print_incumbent(params, result.size);
                 }
             }
@@ -67,6 +89,7 @@ namespace
 
             // now consider not taking v
             ca.unset(v);
+            --ca_popcount;
         }
     }
 
