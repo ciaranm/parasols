@@ -33,6 +33,7 @@ auto main(int argc, char * argv[]) -> int
             ("initial-bound",      po::value<int>(), "Specify an initial bound")
             ("print-incumbents",                     "Print new incumbents as they are found")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
+            ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ;
 
         po::options_description all_options{ "All options" };
@@ -134,6 +135,15 @@ auto main(int argc, char * argv[]) -> int
                 std::cout << " " << t.count();
         }
         std::cout << std::endl;
+
+        if (options_vars.count("verify")) {
+            for (auto & a : result.members_a)
+                for (auto & b : result.members_b)
+                    if (! graph.adjacent(a, b)) {
+                        std::cerr << "Oops! Not adjacent: " << a << " " << b << std::endl;
+                        return EXIT_FAILURE;
+                    }
+        }
 
         return EXIT_SUCCESS;
     }

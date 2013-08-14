@@ -43,6 +43,7 @@ auto main(int argc, char * argv[]) -> int
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
+            ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ;
 
         po::options_description all_options{ "All options" };
@@ -151,6 +152,15 @@ auto main(int argc, char * argv[]) -> int
 
         if (params.work_donation)
             std::cout << result.donations << std::endl;
+
+        if (options_vars.count("verify")) {
+            for (auto & a : result.members)
+                for (auto & b : result.members)
+                    if (a != b && ! graph.adjacent(a, b)) {
+                        std::cerr << "Oops! Not adjacent: " << a << " " << b << std::endl;
+                        return EXIT_FAILURE;
+                    }
+        }
 
         return EXIT_SUCCESS;
     }
