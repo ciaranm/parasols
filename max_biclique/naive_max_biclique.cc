@@ -60,10 +60,11 @@ namespace
             pa.unset(v);
 
             // filter p to contain vertices adjacent to v
-            FixedBitSet<size_> new_pb = pb;
+            FixedBitSet<size_> new_pa = pa, new_pb = pb;
+            graph.intersect_with_row_complement(v, new_pa);
             graph.intersect_with_row(v, new_pb);
 
-            if (new_pb.empty()) {
+            if (new_pa.empty() || new_pb.empty()) {
                 // potential new best
                 if (ca_popcount == cb_popcount && ca_popcount > result.size) {
                     result.size = ca_popcount;
@@ -84,7 +85,7 @@ namespace
             }
             else {
                 /* swap a and b */
-                expand(graph, params, result, o, cb, ca, new_pb, pa);
+                expand(graph, params, result, o, cb, ca, new_pb, new_pa);
             }
 
             // now consider not taking v
