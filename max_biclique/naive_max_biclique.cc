@@ -36,24 +36,13 @@ namespace
                 return;
 
             // bound
-            {
-                FixedBitSet<size_> pa_only = pa, pb_only = pb, pcommon = pa;
-                pa_only.intersect_with_complement(pb);
-                pb_only.intersect_with_complement(pa);
-                pcommon.intersect_with(pb);
-
-                unsigned pa_only_popcount = pa_only.popcount();
-                unsigned pb_only_popcount = pb_only.popcount();
-                unsigned pcommon_popcount = pcommon.popcount();
-
-                if ((pa_only_popcount + ca_popcount + pcommon_popcount <= result.size) ||
-                        (pb_only_popcount + cb_popcount + pcommon_popcount <= result.size) ||
-                        (ca_popcount + pa_only_popcount + cb_popcount + pb_only_popcount + pcommon_popcount <= 2 * result.size))
-                    return;
-            }
+            if (pa.popcount() + ca_popcount <= result.size)
+                return;
+            if (pb.popcount() + cb_popcount <= result.size)
+                return;
 
             // consider taking v
-            int v = pa.first_set_bit();
+            int v = pa.last_set_bit();
 
             ca.set(v);
             ++ca_popcount;
@@ -64,7 +53,7 @@ namespace
             graph.intersect_with_row_complement(v, new_pa);
             graph.intersect_with_row(v, new_pb);
 
-            if (new_pa.empty() || new_pb.empty()) {
+            if (new_pb.empty()) {
                 // potential new best
                 if (ca_popcount == cb_popcount && ca_popcount > result.size) {
                     result.size = ca_popcount;
@@ -112,7 +101,7 @@ namespace
 
         std::vector<int> o(graph.size()); // vertex ordering
         std::iota(o.begin(), o.end(), 0);
-        degree_sort(graph, o, true);
+        degree_sort(graph, o, false);
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;
