@@ -134,6 +134,22 @@ namespace parasols
                 }
                 return -1;
             }
+
+            /**
+             * Return the index of the last set ('on') bit, or -1 if we are
+             * empty.
+             */
+            auto last_set_bit() const -> int
+            {
+                for (int i = _bits.size() - 1 ; i >= 0 ; --i) {
+                    if (0 == _bits[i])
+                        continue;
+
+                    int b = __builtin_clzll(_bits[i]);
+                    return (i + 1) * bits_per_word - b - 1;
+                }
+                return -1;
+            }
     };
 
     /**
