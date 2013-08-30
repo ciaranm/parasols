@@ -7,7 +7,11 @@
 
 namespace parasols
 {
-    using RoommatesProblem = std::vector<std::vector<int> >;
+    struct RoommatesProblem
+    {
+        std::vector<std::vector<int> > preferences;
+        std::vector<std::vector<int> > ranks;
+    };
 }
 
 #endif

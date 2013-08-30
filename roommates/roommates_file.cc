@@ -2,6 +2,7 @@
 
 #include <roommates/roommates_file.hh>
 #include <fstream>
+#include <functional>
 
 using namespace parasols;
 
@@ -22,6 +23,26 @@ auto parasols::read_roommates(const std::string & filename) -> RoommatesProblem
         throw InvalidRoommatesFile{ filename, "unable to open file" };
 
     RoommatesProblem result;
+
+    unsigned size, j;
+    infile >> size;
+
+    for (auto c : { std::ref(result.preferences), std::ref(result.ranks) }) {
+        c.get().resize(size);
+        for (auto & cc : c.get())
+            cc.resize(size);
+    }
+
+    for (unsigned i = 0 ; i < size ; ++i) {
+        for (unsigned k = 0 ; k < size - 1 ; ++k) {
+            infile >> j;
+            --j;
+            result.preferences.at(i).at(j) = k;
+            result.ranks.at(i).at(k) = j;
+        }
+        result.ranks.at(i).at(size - 1) = i;
+        result.preferences.at(i).at(i) = size - 1;
+    }
 
     return result;
 }
