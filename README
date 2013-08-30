@@ -39,5 +39,10 @@ solve_max_biclique
 
 This solves the maximum biclique problem.
 
+solve_roommates
+---------------
+
+This solves the stable roommates problem (which is not actually hard).
+
 .. vim: set ft=plain spell spelllang=en ft=text :
 
