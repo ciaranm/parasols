@@ -9,8 +9,9 @@ namespace parasols
 {
     struct RoommatesProblem
     {
-        std::vector<std::vector<int> > preferences;
-        std::vector<std::vector<int> > ranks;
+        unsigned size;
+        std::vector<std::vector<unsigned> > preferences;
+        std::vector<std::vector<unsigned> > rankings;
     };
 }
 

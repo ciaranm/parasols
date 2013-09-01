@@ -50,7 +50,8 @@ BICLIQUE_OBJECTS = $(foreach c,$(BICLIQUE_FILES),$(c).o)
 ROOMMATES_OBJECTS = $(foreach c,$(ROOMMATES_FILES),$(c).o)
 
 FILES = $(COMMON_FILES) $(GRAPH_FILES) $(CLIQUE_FILES) $(BICLIQUE_FILES) $(ROOMMATES_FILES)
-OBJECTS = $(COMMON_OBJECTS) $(GRAPH_OBJECTS) $(CLIQUE_OBJECTS) $(BICLIQUE_OBJECTS) solve_max_clique.o solve_max_biclique.o solve_roommates.o
+OBJECTS = $(COMMON_OBJECTS) $(GRAPH_OBJECTS) $(CLIQUE_OBJECTS) $(BICLIQUE_OBJECTS) $(ROOMMATES_OBJECTS) \
+	  solve_max_clique.o solve_max_biclique.o solve_roommates.o
 
 HEADERS = $(foreach c,$(FILES),$(c).hh)
 SOURCES = $(foreach c,$(FILES),$(c).hh)

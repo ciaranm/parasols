@@ -24,25 +24,28 @@ auto parasols::read_roommates(const std::string & filename) -> RoommatesProblem
 
     RoommatesProblem result;
 
-    unsigned size, j;
-    infile >> size;
+    infile >> result.size;
 
-    for (auto c : { std::ref(result.preferences), std::ref(result.ranks) }) {
-        c.get().resize(size);
+    for (auto c : { std::ref(result.preferences), std::ref(result.rankings) }) {
+        c.get().resize(result.size);
         for (auto & cc : c.get())
-            cc.resize(size);
+            cc.resize(result.size);
     }
 
-    for (unsigned i = 0 ; i < size ; ++i) {
-        for (unsigned k = 0 ; k < size - 1 ; ++k) {
-            infile >> j;
-            --j;
+    unsigned k;
+    for (unsigned i = 0 ; i < result.size ; ++i) {
+        for (unsigned j = 0 ; j < result.size - 1 ; ++j) {
+            infile >> k;
+            --k;
             result.preferences.at(i).at(j) = k;
-            result.ranks.at(i).at(k) = j;
+            result.rankings.at(i).at(k) = j;
         }
-        result.ranks.at(i).at(size - 1) = i;
-        result.preferences.at(i).at(i) = size - 1;
+        result.preferences.at(i).at(result.size - 1) = i;
+        result.rankings.at(i).at(i) = result.size - 1;
     }
+
+    if (! infile)
+        throw InvalidRoommatesFile{ filename, "error reading file" };
 
     return result;
 }

@@ -73,15 +73,18 @@ auto main(int argc, char * argv[]) -> int
                 0);
 
         /* Stop the clock. */
-        auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+        auto overall_time = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - params.start_time);
 
         /* Display the results. */
         if (result.success) {
+            for (auto & m : result.members)
+                std::cout << "(" << m.first + 1 << ", " << m.second + 1 << ") ";
+            std::cout << std::endl;
         }
         else
             std::cout << "no solution" << std::endl;
 
-        std::cout << overall_time.count();
+        std::cout << (overall_time.count() / 1000.0);
         if (! result.times.empty()) {
             for (auto t : result.times)
                 std::cout << " " << t.count();
