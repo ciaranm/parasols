@@ -37,11 +37,11 @@ auto parasols::read_roommates(const std::string & filename) -> RoommatesProblem
         for (unsigned j = 0 ; j < result.size - 1 ; ++j) {
             infile >> k;
             --k;
-            result.preferences.at(i).at(j) = k;
-            result.rankings.at(i).at(k) = j;
+            result.preferences[i][j] = k;
+            result.rankings[i][k] = j;
         }
-        result.preferences.at(i).at(result.size - 1) = i;
-        result.rankings.at(i).at(i) = result.size - 1;
+        result.preferences[i][result.size - 1] = i;
+        result.rankings[i][i] = result.size - 1;
     }
 
     if (! infile)

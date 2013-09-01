@@ -27,22 +27,22 @@ auto main(int, char * []) -> int
             problem.size = size;
             problem.preferences.resize(size);
             for (int i = 0 ; i < size ; ++i) {
-                problem.preferences.at(i).resize(size);
+                problem.preferences[i].resize(size);
                 unsigned v = 0;
                 for (int j = 0 ; j < size ; ++j) {
                     if (i == j)
                         continue;
-                    problem.preferences.at(i).at(v++) = j;
+                    problem.preferences[i][v++] = j;
                 }
-                problem.preferences.at(i).at(size - 1) = i;
-                std::shuffle(problem.preferences.at(i).begin(), problem.preferences.at(i).end() - 1, rnd);
+                problem.preferences[i][size - 1] = i;
+                std::shuffle(problem.preferences[i].begin(), problem.preferences[i].end() - 1, rnd);
             }
 
             problem.rankings.resize(size);
             for (int i = 0 ; i < size ; ++i) {
-                problem.rankings.at(i).resize(size);
+                problem.rankings[i].resize(size);
                 for (int j = 0 ; j < size ; ++j) {
-                    problem.rankings.at(i).at(problem.preferences.at(i).at(j)) = j;
+                    problem.rankings[i][problem.preferences[i][j]] = j;
                 }
             }
 
