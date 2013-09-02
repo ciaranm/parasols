@@ -6,6 +6,10 @@ aimed at ``really hard'' instances, i.e. there are no sparseness restrictions,
 and there are probably better (or at least much less memory-intensive)
 solutions if your data is sparse.
 
+This is for ``work in progress'' code and experimentation. If you'd like to use
+this code in a real project, you'll need to rip it out. In other words, this
+isn't a nice friendly library.
+
 You will need a C++11 compiler, such as GCC 4.7, to compile this. You will need
 to specify CXX (or edit the Makefile) if your compiler is not named 'g++-4.7'.
 You will also need Boost.
@@ -19,11 +23,13 @@ This solves the maximum clique problem.
 
 To run, do './solve_max_clique algorithm filename.clq' where filename.clq is in
 the DIMACS format, and algorithm is one of "naive mcsa1 tmcsa1 bmcsa1 tbmcsa1".
+The 't' is for threaded, the 'b' is for bitset encoding, and for 'mcsa1' refer
+to Prosser's 2012 "Exact Algorithms for Maximum Clique: A Computational Study".
 There are various options, use './solve_max_clique --help' to list them.
 
 The output is as follows:
 
-    size_of_max_clique number_of_nodes
+    size_of_max_clique number_of_search_nodes
     witness
     runtimes
 
@@ -38,6 +44,20 @@ solve_max_biclique
 ------------------
 
 This solves the maximum biclique problem.
+
+Right now the code only handles balanced, induced bicliques in an arbitrary
+graph.
+
+To run, do './solve_max_biclique naive filename.clq' where filename.clq is in
+the DIMACS format. There are various options, use './solve_max_biclique
+--help' to list them.
+
+The output is:
+
+    size_of_max_biclique number_of_search_nodes
+    witness_a
+    witness_b
+    runtimes
 
 solve_roommates
 ---------------
