@@ -80,6 +80,12 @@ namespace
             // now consider not taking v
             ca.unset(v);
             --ca_popcount;
+
+            // if cb is empty, do not take cb = { v }
+            if (params.break_ab_symmetry) {
+                if (cb.empty())
+                    pb.unset(v);
+            }
         }
     }
 

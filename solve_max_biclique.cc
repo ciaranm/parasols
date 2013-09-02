@@ -27,13 +27,14 @@ auto main(int argc, char * argv[]) -> int
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()
-            ("help",                                 "Display help information")
-            ("threads",            po::value<int>(), "Number of threads to use (where relevant)")
-            ("stop-after-finding", po::value<int>(), "Stop after finding a biclique of this size")
-            ("initial-bound",      po::value<int>(), "Specify an initial bound")
-            ("print-incumbents",                     "Print new incumbents as they are found")
-            ("timeout",            po::value<int>(), "Abort after this many seconds")
-            ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
+            ("help",                                  "Display help information")
+            ("threads",            po::value<int>(),  "Number of threads to use (where relevant)")
+            ("stop-after-finding", po::value<int>(),  "Stop after finding a biclique of this size")
+            ("initial-bound",      po::value<int>(),  "Specify an initial bound")
+            ("print-incumbents",                      "Print new incumbents as they are found")
+            ("timeout",            po::value<int>(),  "Abort after this many seconds")
+            ("break-ab-symmetry",  po::value<bool>(), "Break a/b symmetry (on by default)")
+            ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
             ;
 
         po::options_description all_options{ "All options" };
@@ -102,6 +103,9 @@ auto main(int argc, char * argv[]) -> int
 
         if (options_vars.count("print-incumbents"))
             params.print_incumbents = true;
+
+        if (options_vars.count("break-ab-symmetry"))
+            params.break_ab_symmetry = options_vars["break-ab-symmetry"].as<bool>();
 
         /* Read in the graph */
         auto graph = read_dimacs(options_vars["input-file"].as<std::string>());
