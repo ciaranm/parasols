@@ -34,7 +34,8 @@ BICLIQUE_FILES = \
 	max_biclique/max_biclique_params \
 	max_biclique/max_biclique_result \
 	max_biclique/print_incumbent \
-	max_biclique/naive_max_biclique
+	max_biclique/naive_max_biclique \
+	max_biclique/cc_max_biclique
 
 ROOMMATES_FILES = \
 	roommates/roommates_params \

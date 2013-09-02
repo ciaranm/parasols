@@ -48,9 +48,9 @@ This solves the maximum biclique problem.
 Right now the code only handles balanced, induced bicliques in an arbitrary
 graph.
 
-To run, do './solve_max_biclique naive filename.clq' where filename.clq is in
-the DIMACS format. There are various options, use './solve_max_biclique
---help' to list them.
+To run, do './solve_max_biclique algorithm filename.clq' where filename.clq is
+in the DIMACS format, and algorithm is one of "naive cc". There are various
+options, use './solve_max_biclique --help' to list them.
 
 The output is:
 

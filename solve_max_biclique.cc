@@ -6,6 +6,7 @@
 #include <graph/dimacs.hh>
 
 #include <max_biclique/naive_max_biclique.hh>
+#include <max_biclique/cc_max_biclique.hh>
 
 #include <boost/program_options.hpp>
 
@@ -21,7 +22,8 @@ namespace po = boost::program_options;
 auto main(int argc, char * argv[]) -> int
 {
     auto algorithms = {
-        std::make_pair( std::string{ "naive" },   run_this(naive_max_biclique) )
+        std::make_pair( std::string{ "naive" },   run_this(naive_max_biclique) ),
+        std::make_pair( std::string{ "cc" },      run_this(cc_max_biclique) )
     };
 
     try {
