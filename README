@@ -64,5 +64,14 @@ solve_roommates
 
 This solves the stable roommates problem (which is not actually hard).
 
+solve_balanced_pairs
+--------------------
+
+Generates all pairs of sets (a, b) where a and b are disjoint, have the same
+cardinality, and whose elements are drawn from 1..n. The point is to illustrate
+the symmetry breaking used in max_biclique: if --break-ab-symmetry is
+specified, all unordered pairs are generated (i.e. if (a, b) is generated, (b,
+a) is not).
+
 .. vim: set ft=plain spell spelllang=en ft=text :
 

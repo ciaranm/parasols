@@ -3,3 +3,4 @@ solve_max_clique
 solve_max_biclique
 solve_roommates
 roommates_frequencies
+solve_balanced_pairs

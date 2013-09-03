@@ -1,4 +1,4 @@
-all : solve_max_clique solve_max_biclique solve_roommates roommates_frequencies
+all : solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs
 
 CXX = g++-4.7
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
@@ -52,7 +52,7 @@ ROOMMATES_OBJECTS = $(foreach c,$(ROOMMATES_FILES),$(c).o)
 
 FILES = $(COMMON_FILES) $(GRAPH_FILES) $(CLIQUE_FILES) $(BICLIQUE_FILES) $(ROOMMATES_FILES)
 OBJECTS = $(COMMON_OBJECTS) $(GRAPH_OBJECTS) $(CLIQUE_OBJECTS) $(BICLIQUE_OBJECTS) $(ROOMMATES_OBJECTS) \
-	  solve_max_clique.o solve_max_biclique.o solve_roommates.o roommates_frequencies.o
+	  solve_max_clique.o solve_max_biclique.o solve_roommates.o roommates_frequencies.o solve_balanced_pairs.o
 
 HEADERS = $(foreach c,$(FILES),$(c).hh)
 SOURCES = $(foreach c,$(FILES),$(c).hh)
@@ -72,6 +72,9 @@ solve_roommates : $(COMMON_OBJECTS) $(GRAPH_OBJECTS) $(ROOMMATES_OBJECTS) solve_
 roommates_frequencies : $(COMMON_OBJECTS) $(GRAPH_OBJECTS) $(ROOMMATES_OBJECTS) roommates_frequencies.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
+solve_balanced_pairs : $(COMMON_OBJECTS) solve_balanced_pairs.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
 clean :
-	rm -f $(OBJECTS) solve_max_clique solve_max_biclique solve_roommates roommates_frequencies
+	rm -f $(OBJECTS) solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs
 
