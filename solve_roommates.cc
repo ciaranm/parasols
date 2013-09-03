@@ -47,7 +47,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* --help? Show a message, and exit. */
         if (options_vars.count("help")) {
-            std::cout << "Usage: " << argv[0] << " [options] algorithm file" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] file" << std::endl;
             std::cout << std::endl;
             std::cout << display_options << std::endl;
             return EXIT_SUCCESS;
@@ -55,7 +55,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* No input file specified? Show a message and exit. */
         if (! options_vars.count("input-file")) {
-            std::cout << "Usage: " << argv[0] << " [options] algorithm file" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] file" << std::endl;
             return EXIT_FAILURE;
         }
 
