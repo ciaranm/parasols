@@ -94,7 +94,8 @@ namespace
             ++ca_popcount;
             pa.unset(v);
 
-            // filter p to contain vertices adjacent to v
+            // filter pb to contain vertices adjacent to v, and pa to contain
+            // vertices not adjacent to v
             FixedBitSet<size_> new_pa = pa, new_pb = pb;
             graph.intersect_with_row_complement(v, new_pa);
             graph.intersect_with_row(v, new_pb);
