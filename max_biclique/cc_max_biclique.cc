@@ -100,26 +100,25 @@ namespace
             graph.intersect_with_row_complement(v, new_pa);
             graph.intersect_with_row(v, new_pb);
 
-            if (new_pb.empty()) {
-                // potential new best
-                if (ca_popcount == cb_popcount && ca_popcount > result.size) {
-                    result.size = ca_popcount;
+            // potential new best
+            if (ca_popcount == cb_popcount && ca_popcount > result.size) {
+                result.size = ca_popcount;
 
-                    // depermute to get result
-                    result.members_a.clear();
-                    for (int i = 0 ; i < graph.size() ; ++i)
-                        if (ca.test(i))
-                            result.members_a.insert(o[i]);
+                // depermute to get result
+                result.members_a.clear();
+                for (int i = 0 ; i < graph.size() ; ++i)
+                    if (ca.test(i))
+                        result.members_a.insert(o[i]);
 
-                    result.members_b.clear();
-                    for (int i = 0 ; i < graph.size() ; ++i)
-                        if (cb.test(i))
-                            result.members_b.insert(o[i]);
+                result.members_b.clear();
+                for (int i = 0 ; i < graph.size() ; ++i)
+                    if (cb.test(i))
+                        result.members_b.insert(o[i]);
 
-                    print_incumbent(params, result.size);
-                }
+                print_incumbent(params, result.size);
             }
-            else {
+
+            if (! new_pb.empty()) {
                 /* swap a and b */
                 expand(graph, params, result, o, cb, ca, new_pb, new_pa);
             }
