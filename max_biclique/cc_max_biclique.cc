@@ -73,6 +73,7 @@ namespace
         unsigned ca_popcount = ca.popcount();
         unsigned cb_popcount = cb.popcount();
         unsigned pa_popcount = pa.popcount();
+        unsigned pb_popcount = pb.popcount();
 
         // for each v in pa...
         for (int n = pa_popcount - 1 ; n >= 0 ; --n) {
@@ -84,7 +85,7 @@ namespace
             // bound
             if (cliques[n] + ca_popcount <= result.size)
                 return;
-            if (pb.popcount() + cb_popcount <= result.size)
+            if (pb_popcount + cb_popcount <= result.size)
                 return;
 
             // consider taking v
@@ -129,8 +130,10 @@ namespace
 
             // if cb is empty, do not take cb = { v }
             if (params.break_ab_symmetry) {
-                if (cb.empty())
+                if (cb.empty()) {
                     pb.unset(v);
+                    pb_popcount = pb.popcount();
+                }
             }
         }
     }
