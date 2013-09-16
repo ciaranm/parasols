@@ -1,4 +1,5 @@
-all : solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs
+all : solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs \
+	create_random_graph
 
 CXX = g++-4.7
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
@@ -73,6 +74,9 @@ roommates_frequencies : $(COMMON_OBJECTS) $(GRAPH_OBJECTS) $(ROOMMATES_OBJECTS) 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 solve_balanced_pairs : $(COMMON_OBJECTS) solve_balanced_pairs.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+create_random_graph : $(COMMON_OBJECTS) create_random_graph.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean :
