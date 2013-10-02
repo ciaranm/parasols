@@ -10,9 +10,8 @@ This is for ``work in progress'' code and experimentation. If you'd like to use
 this code in a real project, you'll need to rip it out. In other words, this
 isn't a nice friendly library.
 
-You will need a C++11 compiler, such as GCC 4.7, to compile this. You will need
-to specify CXX (or edit the Makefile) if your compiler is not named 'g++-4.7'.
-You will also need Boost.
+You will need a C++11 compiler, such as GCC 4.7, to compile this. You will also
+need Boost.
 
 The solvers are as follows:
 

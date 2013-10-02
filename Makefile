@@ -1,7 +1,7 @@
 all : solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs \
 	create_random_graph
 
-CXX = g++-4.7
+CXX = g++
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
 override LDFLAGS += `if test -f \`$(CXX) --print-file-name=libboost_thread-mt.so\` ; \
 	   then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
