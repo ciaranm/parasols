@@ -5,3 +5,4 @@ solve_roommates
 roommates_frequencies
 solve_balanced_pairs
 create_random_graph
+create_random_bipartite_graph

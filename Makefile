@@ -1,5 +1,5 @@
 all : solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs \
-	create_random_graph
+	create_random_graph create_random_bipartite_graph
 
 CXX = g++
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
@@ -79,6 +79,10 @@ solve_balanced_pairs : $(COMMON_OBJECTS) solve_balanced_pairs.o
 create_random_graph : $(COMMON_OBJECTS) create_random_graph.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
+create_random_bipartite_graph : $(COMMON_OBJECTS) create_random_bipartite_graph.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
 clean :
-	rm -f $(OBJECTS) solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs
+	rm -f $(OBJECTS) solve_max_clique solve_max_biclique solve_roommates roommates_frequencies solve_balanced_pairs \
+	    create_random_graph create_random_bipartite_graph
 
