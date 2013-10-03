@@ -28,6 +28,8 @@ namespace
 
         unsigned ca_popcount = ca.popcount();
         unsigned cb_popcount = cb.popcount();
+        unsigned pa_popcount = pa.popcount();
+        unsigned pb_popcount = pb.popcount();
 
         // for each v in pa...
         while (! pa.empty()) {
@@ -36,9 +38,9 @@ namespace
                 return;
 
             // bound
-            if (pa.popcount() + ca_popcount <= result.size)
+            if (pa_popcount + ca_popcount <= result.size)
                 return;
-            if (pb.popcount() + cb_popcount <= result.size)
+            if (pb_popcount + cb_popcount <= result.size)
                 return;
 
             // consider taking v
@@ -47,6 +49,7 @@ namespace
             ca.set(v);
             ++ca_popcount;
             pa.unset(v);
+            --pa_popcount;
 
             // filter p to contain vertices adjacent to v
             FixedBitSet<size_> new_pa = pa, new_pb = pb;
@@ -82,8 +85,10 @@ namespace
 
             // if cb is empty, do not take cb = { v }
             if (params.break_ab_symmetry) {
-                if (cb.empty())
+                if (cb.empty()) {
                     pb.unset(v);
+                    pb_popcount = pb.popcount();
+                }
             }
         }
     }
