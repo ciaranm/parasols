@@ -35,6 +35,7 @@ BICLIQUE_FILES = \
 	max_biclique/max_biclique_params \
 	max_biclique/max_biclique_result \
 	max_biclique/print_incumbent \
+	max_biclique/clique_cover \
 	max_biclique/naive_max_biclique \
 	max_biclique/cc_max_biclique \
 	max_biclique/degree_max_biclique
