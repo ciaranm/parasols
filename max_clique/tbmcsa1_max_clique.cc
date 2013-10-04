@@ -2,9 +2,9 @@
 
 #include <max_clique/tbmcsa1_max_clique.hh>
 #include <max_clique/colourise.hh>
-#include <max_clique/queue.hh>
 #include <max_clique/print_incumbent.hh>
 #include <threads/atomic_incumbent.hh>
+#include <threads/queue.hh>
 #include <graph/degree_sort.hh>
 
 #include <algorithm>

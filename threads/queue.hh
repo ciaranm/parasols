@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#ifndef PARASOLS_GUARD_MAX_CLIQUE_QUEUE_HH
-#define PARASOLS_GUARD_MAX_CLIQUE_QUEUE_HH 1
+#ifndef PARASOLS_GUARD_THREADS_QUEUE_HH
+#define PARASOLS_GUARD_THREADS_QUEUE_HH 1
 
 #include <mutex>
 #include <atomic>

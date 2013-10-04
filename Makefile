@@ -17,6 +17,7 @@ GRAPH_FILES = \
 COMMON_FILES = \
 	threads/atomic_incumbent \
 	threads/output_lock \
+	threads/queue \
 	solver/solver
 
 CLIQUE_FILES = \
@@ -24,7 +25,6 @@ CLIQUE_FILES = \
 	max_clique/max_clique_result \
 	max_clique/print_incumbent \
 	max_clique/colourise \
-	max_clique/queue \
 	max_clique/naive_max_clique \
 	max_clique/mcsa1_max_clique \
 	max_clique/tmcsa1_max_clique \
