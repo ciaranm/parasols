@@ -20,7 +20,8 @@ namespace
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
-            std::vector<FixedBitSet<size_> > & p_alloc       // pre-allocated space for p
+            std::vector<FixedBitSet<size_> > & p_alloc,      // pre-allocated space for p
+            std::vector<int> & position
             ) -> void
     {
         ++result.nodes;
@@ -42,6 +43,7 @@ namespace
 
         // for each v in p... (v comes later)
         for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
+            ++position.back();
 
             // bound, timeout or early exit?
             if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort.load())
@@ -65,11 +67,14 @@ namespace
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (c.test(i))
                             result.members.insert(o[i]);
-                    print_incumbent(params, result.size);
+                    print_incumbent(params, result.size, position);
                 }
             }
-            else
-                expand<order_, size_>(graph, o, c, new_p, result, params, p_alloc);
+            else {
+                position.push_back(0);
+                expand<order_, size_>(graph, o, c, new_p, result, params, p_alloc, position);
+                position.pop_back();
+            }
 
             // now consider not taking v
             c.unset(v);
@@ -118,8 +123,12 @@ namespace
                 if (graph.adjacent(o[i], o[j]))
                     bit_graph.add_edge(i, j);
 
+        std::vector<int> positions;
+        positions.reserve(graph.size());
+        positions.push_back(0);
+
         // go!
-        expand<order_, size_>(bit_graph, o, c, p, result, params, p_alloc);
+        expand<order_, size_>(bit_graph, o, c, p, result, params, p_alloc, positions);
 
         return result;
     }
