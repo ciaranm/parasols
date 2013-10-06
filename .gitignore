@@ -1,8 +1,2 @@
-*.o
-solve_max_clique
-solve_max_biclique
-solve_roommates
-roommates_frequencies
-solve_balanced_pairs
-create_random_graph
-create_random_bipartite_graph
+build/
+intermediate/

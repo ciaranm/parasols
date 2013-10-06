@@ -13,6 +13,15 @@ isn't a nice friendly library.
 You will need a C++11 compiler, such as GCC 4.7, to compile this. You will also
 need Boost.
 
+We use boilermake for compilation:
+
+    https://github.com/dmoulding/boilermake
+
+By default, compiled programs go in "build/$HOSTNAME/". You can override this,
+for example, by doing:
+
+    make TARGET_DIR=./
+
 The solvers are as follows:
 
 solve_max_clique
@@ -20,11 +29,11 @@ solve_max_clique
 
 This solves the maximum clique problem.
 
-To run, do './solve_max_clique algorithm filename.clq' where filename.clq is in
+To run, do 'solve_max_clique algorithm filename.clq' where filename.clq is in
 the DIMACS format, and algorithm is one of "naive mcsa1 tmcsa1 bmcsa1 tbmcsa1".
 The 't' is for threaded, the 'b' is for bitset encoding, and for 'mcsa1' refer
 to Prosser's 2012 "Exact Algorithms for Maximum Clique: A Computational Study".
-There are various options, use './solve_max_clique --help' to list them.
+There are various options, use 'solve_max_clique --help' to list them.
 
 The output is as follows:
 
@@ -47,9 +56,9 @@ This solves the maximum biclique problem.
 Right now the code only handles balanced, induced bicliques in an arbitrary
 graph.
 
-To run, do './solve_max_biclique algorithm filename.clq' where filename.clq is
+To run, do 'solve_max_biclique algorithm filename.clq' where filename.clq is
 in the DIMACS format, and algorithm is one of "naive cc". There are various
-options, use './solve_max_biclique --help' to list them.
+options, use 'solve_max_biclique --help' to list them.
 
 The output is:
 
@@ -75,19 +84,19 @@ a) is not).
 create_random_graph
 -------------------
 
-Creates an Erdos-Reyni random graph. Usage is './create_random_graph n p s'
+Creates an Erdos-Reyni random graph. Usage is 'create_random_graph n p s'
 where n is the number of vertices, p is the edge probability (between 0.0 and
 1.0), and s is the seed (an integer). Specifying the same seed will produce the
 same output each time, avoiding the need for storing large graph files.
 
 To avoid writing to a temp file, bash lets you do this:
 
-    ./solve_max_clique bmcsa1 <(./create_random_graph 100 0.5 1)
+    solve_max_clique bmcsa1 <(create_random_graph 100 0.5 1)
 
 create_random_bipartite_graph
 -----------------------------
 
-Creates a random bipartite graph. Usage is './create_random_bipartite_graph n1
+Creates a random bipartite graph. Usage is 'create_random_bipartite_graph n1
 n2 p s' where n1 is the number of vertices in the first set, n2 is the number
 of vertices in the second set, p is the edge probability (between 0.0 and 1.0),
 and s is the seed (an integer). Specifying the same seed will produce the same
@@ -95,7 +104,7 @@ output each time, avoiding the need for storing large graph files.
 
 To avoid writing to a temp file, bash lets you do this:
 
-    ./solve_max_biclique naive <(./create_random_bipartite_graph 20 20 0.5 1)
+    solve_max_biclique naive <(create_random_bipartite_graph 20 20 0.5 1)
 
 .. vim: set ft=plain spell spelllang=en ft=text :
 
