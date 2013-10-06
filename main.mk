@@ -20,6 +20,6 @@ boost_ldflags := $(shell if test -f `$(CXX) $$CXXFLAGS $$LDFLAGS --print-file-na
     then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
     else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi )
 
-CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
-LDFLAGS += $(boost_ldflags) -lrt
+override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
+override LDFLAGS += $(boost_ldflags) -lrt
 
