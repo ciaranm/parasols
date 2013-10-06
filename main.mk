@@ -2,16 +2,16 @@ SUBMAKEFILES := \
 	graph/graph.mk \
 	max_biclique/max_biclique.mk \
 	max_clique/max_clique.mk \
+	programs/create_random_bipartite_graph.mk \
+	programs/create_random_graph.mk \
+	programs/roommates_frequencies.mk \
+	programs/solve_balanced_pairs.mk \
+	programs/solve_max_biclique.mk \
+	programs/solve_max_clique.mk \
+	programs/solve_roommates.mk \
 	roommates/roommates.mk \
 	solver/solver.mk \
-	threads/threads.mk \
-	create_random_bipartite_graph.mk \
-	create_random_graph.mk \
-	roommates_frequencies.mk \
-	solve_balanced_pairs.mk \
-	solve_max_biclique.mk \
-	solve_max_clique.mk \
-	solve_roommates.mk
+	threads/threads.mk
 
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
