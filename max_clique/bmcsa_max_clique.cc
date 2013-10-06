@@ -1,9 +1,10 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <max_clique/bmcsa1_max_clique.hh>
+#include <max_clique/bmcsa_max_clique.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/print_incumbent.hh>
 #include <graph/degree_sort.hh>
+#include <graph/dkrtj_sort.hh>
 
 #include <algorithm>
 
@@ -11,7 +12,7 @@ using namespace parasols;
 
 namespace
 {
-    template <unsigned size_>
+    template <MaxCliqueOrder order_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
@@ -24,15 +25,23 @@ namespace
     {
         ++result.nodes;
 
+        auto c_popcount = c.popcount();
+
         // get our coloured vertices
         std::array<unsigned, size_ * bits_per_word> p_order, colours;
-        colourise<size_>(graph, p, p_order, colours);
 
-        auto c_popcount = c.popcount();
-        auto p_popcount = p.popcount();
+        // DKRTJ puts more effort into the initial ordering. Don't undo it.
+        if (order_ == MaxCliqueOrder::DKRTJ && 0 == c_popcount) {
+            for (int i = 0 ; i < graph.size() ; ++i) {
+                p_order[i] = i;
+                colours[i] = i + 1;
+            }
+        }
+        else
+            colourise<size_>(graph, p, p_order, colours);
 
         // for each v in p... (v comes later)
-        for (int n = p_popcount - 1 ; n >= 0 ; --n) {
+        for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
 
             // bound, timeout or early exit?
             if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort.load())
@@ -60,7 +69,7 @@ namespace
                 }
             }
             else
-                expand<size_>(graph, o, c, new_p, result, params, p_alloc);
+                expand<order_, size_>(graph, o, c, new_p, result, params, p_alloc);
 
             // now consider not taking v
             c.unset(v);
@@ -68,8 +77,8 @@ namespace
         }
     }
 
-    template <unsigned size_>
-    auto bmcsa1(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+    template <MaxCliqueOrder order_, unsigned size_>
+    auto bmcsa(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         MaxCliqueResult result;
         result.size = params.initial_bound;
@@ -90,7 +99,15 @@ namespace
 
         // populate our order with every vertex initially
         std::iota(o.begin(), o.end(), 0);
-        degree_sort(graph, o, false);
+
+        switch (order_) {
+            case MaxCliqueOrder::Degree:
+                degree_sort(graph, o, false);
+                break;
+            case MaxCliqueOrder::DKRTJ:
+                dkrtj_sort(graph, o);
+                break;
+        }
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;
@@ -102,36 +119,40 @@ namespace
                     bit_graph.add_edge(i, j);
 
         // go!
-        expand<size_>(bit_graph, o, c, p, result, params, p_alloc);
+        expand<order_, size_>(bit_graph, o, c, p, result, params, p_alloc);
 
         return result;
     }
 }
 
-auto parasols::bmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+template <MaxCliqueOrder order_>
+auto parasols::bmcsa_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 256, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return bmcsa1<1>(graph, params);
+        return bmcsa<order_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return bmcsa1<2>(graph, params);
+        return bmcsa<order_, 2>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return bmcsa1<4>(graph, params);
+        return bmcsa<order_, 4>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return bmcsa1<8>(graph, params);
+        return bmcsa<order_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return bmcsa1<16>(graph, params);
+        return bmcsa<order_, 16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return bmcsa1<32>(graph, params);
+        return bmcsa<order_, 32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return bmcsa1<64>(graph, params);
+        return bmcsa<order_, 64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return bmcsa1<128>(graph, params);
+        return bmcsa<order_, 128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return bmcsa1<256>(graph, params);
+        return bmcsa<order_, 256>(graph, params);
     else
         throw GraphTooBig();
 }
+
+template auto parasols::bmcsa_max_clique<MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::bmcsa_max_clique<MaxCliqueOrder::DKRTJ>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

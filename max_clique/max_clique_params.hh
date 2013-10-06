@@ -44,6 +44,15 @@ namespace parasols
         /// The start time of the algorithm.
         std::chrono::time_point<std::chrono::steady_clock> start_time;
     };
+
+    /**
+     * Initial vertex ordering to use.
+     */
+    enum class MaxCliqueOrder
+    {
+        Degree, /// Prosser's 1
+        DKRTJ   /// Depolli et al
+    };
 }
 
 #endif

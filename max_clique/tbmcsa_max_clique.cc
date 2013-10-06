@@ -1,11 +1,12 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <max_clique/tbmcsa1_max_clique.hh>
+#include <max_clique/tbmcsa_max_clique.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/print_incumbent.hh>
 #include <threads/atomic_incumbent.hh>
 #include <threads/queue.hh>
 #include <graph/degree_sort.hh>
+#include <graph/dkrtj_sort.hh>
 
 #include <algorithm>
 #include <list>
@@ -53,7 +54,7 @@ namespace
         return (c_popcount + cn <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding);
     }
 
-    template <unsigned size_>
+    template <MaxCliqueOrder order_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
@@ -68,11 +69,20 @@ namespace
     {
         ++result.nodes;
 
+        auto c_popcount = c.popcount();
+
         // get our coloured vertices
         std::array<unsigned, size_ * bits_per_word> p_order, colours;
-        colourise<size_>(graph, p, p_order, colours);
 
-        auto c_popcount = c.popcount();
+        // DKRTJ puts more effort into the initial ordering. Don't undo it.
+        if (order_ == MaxCliqueOrder::DKRTJ && 0 == c_popcount) {
+            for (int i = 0 ; i < graph.size() ; ++i) {
+                p_order[i] = i;
+                colours[i] = i + 1;
+            }
+        }
+        else
+            colourise<size_>(graph, p, p_order, colours);
 
         bool chose_to_donate = false;
 
@@ -113,7 +123,7 @@ namespace
                 }
 
                 if (should_expand)
-                    expand<size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, p_alloc, best_anywhere);
+                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, p_alloc, best_anywhere);
             }
 
             // now consider not taking v
@@ -122,7 +132,7 @@ namespace
         }
     }
 
-    template <unsigned size_>
+    template <MaxCliqueOrder order_, unsigned size_>
     auto max_clique(const FixedBitGraph<size_> & graph, const std::vector<int> & o, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         Queue<QueueItem<size_> > queue{ params.n_threads, params.work_donation }; // work queue
@@ -152,7 +162,7 @@ namespace
                         a.resize(graph.size());
 
                     // populate!
-                    expand<size_>(graph, o, &queue, nullptr, tc, tp, result, params, p_alloc, best_anywhere);
+                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, result, params, p_alloc, best_anywhere);
 
                     // merge results
                     queue.initial_producer_done();
@@ -183,7 +193,7 @@ namespace
                                 continue;
 
                             // do some work
-                            expand<size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr,
+                            expand<order_, size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr,
                                     args.c, args.p, tr, params, p_alloc, best_anywhere);
 
                             // keep track of top nodes done
@@ -209,12 +219,20 @@ namespace
         return result;
     }
 
-    template <unsigned size_>
-    auto tbmcsa1(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+    template <MaxCliqueOrder order_, unsigned size_>
+    auto tbmcsa(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         std::vector<int> o(graph.size()); // vertex ordering
         std::iota(o.begin(), o.end(), 0);
-        degree_sort(graph, o, false);
+
+        switch (order_) {
+            case MaxCliqueOrder::Degree:
+                degree_sort(graph, o, false);
+                break;
+            case MaxCliqueOrder::DKRTJ:
+                dkrtj_sort(graph, o);
+                break;
+        }
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;
@@ -226,34 +244,38 @@ namespace
                     bit_graph.add_edge(i, j);
 
         // go!
-        return max_clique(bit_graph, o, params);
+        return max_clique<order_>(bit_graph, o, params);
     }
 }
 
-auto parasols::tbmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+template <MaxCliqueOrder order_>
+auto parasols::tbmcsa_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 256, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return tbmcsa1<1>(graph, params);
+        return tbmcsa<order_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return tbmcsa1<2>(graph, params);
+        return tbmcsa<order_, 2>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return tbmcsa1<4>(graph, params);
+        return tbmcsa<order_, 4>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return tbmcsa1<8>(graph, params);
+        return tbmcsa<order_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return tbmcsa1<16>(graph, params);
+        return tbmcsa<order_, 16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return tbmcsa1<32>(graph, params);
+        return tbmcsa<order_, 32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return tbmcsa1<64>(graph, params);
+        return tbmcsa<order_, 64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return tbmcsa1<128>(graph, params);
+        return tbmcsa<order_, 128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return tbmcsa1<256>(graph, params);
+        return tbmcsa<order_, 256>(graph, params);
     else
         throw GraphTooBig();
 }
+
+template auto parasols::tbmcsa_max_clique<MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tbmcsa_max_clique<MaxCliqueOrder::DKRTJ>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

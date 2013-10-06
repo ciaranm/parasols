@@ -13,6 +13,7 @@ GRAPH_FILES = \
 	graph/bit_graph \
 	graph/dimacs \
 	graph/degree_sort \
+	graph/dkrtj_sort
 
 COMMON_FILES = \
 	threads/atomic_incumbent \
@@ -28,8 +29,8 @@ CLIQUE_FILES = \
 	max_clique/naive_max_clique \
 	max_clique/mcsa1_max_clique \
 	max_clique/tmcsa1_max_clique \
-	max_clique/bmcsa1_max_clique \
-	max_clique/tbmcsa1_max_clique
+	max_clique/bmcsa_max_clique \
+	max_clique/tbmcsa_max_clique
 
 BICLIQUE_FILES = \
 	max_biclique/max_biclique_params \

@@ -8,8 +8,8 @@
 #include <max_clique/naive_max_clique.hh>
 #include <max_clique/mcsa1_max_clique.hh>
 #include <max_clique/tmcsa1_max_clique.hh>
-#include <max_clique/bmcsa1_max_clique.hh>
-#include <max_clique/tbmcsa1_max_clique.hh>
+#include <max_clique/bmcsa_max_clique.hh>
+#include <max_clique/tbmcsa_max_clique.hh>
 
 #include <boost/program_options.hpp>
 
@@ -28,8 +28,10 @@ auto main(int argc, char * argv[]) -> int
         std::make_pair( std::string{ "naive" },   run_this(naive_max_clique) ),
         std::make_pair( std::string{ "mcsa1" },   run_this(mcsa1_max_clique) ),
         std::make_pair( std::string{ "tmcsa1" },  run_this(tmcsa1_max_clique) ),
-        std::make_pair( std::string{ "bmcsa1" },  run_this(bmcsa1_max_clique) ),
-        std::make_pair( std::string{ "tbmcsa1" }, run_this(tbmcsa1_max_clique) )
+        std::make_pair( std::string{ "bmcsa1" },  run_this(bmcsa_max_clique<MaxCliqueOrder::Degree>) ),
+        std::make_pair( std::string{ "bmcsad" },  run_this(bmcsa_max_clique<MaxCliqueOrder::DKRTJ>) ),
+        std::make_pair( std::string{ "tbmcsa1" }, run_this(tbmcsa_max_clique<MaxCliqueOrder::Degree>) ),
+        std::make_pair( std::string{ "tbmcsad" }, run_this(tbmcsa_max_clique<MaxCliqueOrder::DKRTJ>) )
     };
 
     try {
