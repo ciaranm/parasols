@@ -16,10 +16,9 @@ SUBMAKEFILES := \
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
 
-boost_ldflags := $(shell if test -f `$(CXX) $$CXXFLAGS $$LDFLAGS --print-file-name=libboost_thread-mt.so` ; \
+boost_ldlibs := $(shell if test -f `$(CXX) $$CXXFLAGS $$LDFLAGS --print-file-name=libboost_thread-mt.so` ; \
     then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
     else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi )
 
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
-override LDFLAGS += $(boost_ldflags) -lrt
 
