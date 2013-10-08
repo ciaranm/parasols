@@ -24,6 +24,7 @@ namespace
         FixedBitSet<size_> c;
         FixedBitSet<size_> p;
         unsigned cn;
+        std::vector<int> position;
     };
 
     /**
@@ -33,7 +34,8 @@ namespace
     template <unsigned size_>
     auto found_possible_new_best(const FixedBitGraph<size_> & graph, const std::vector<int> & o,
             const FixedBitSet<size_> & c, int c_popcount,
-            const MaxCliqueParams & params, MaxCliqueResult & result, AtomicIncumbent & best_anywhere) -> void
+            const MaxCliqueParams & params, MaxCliqueResult & result, AtomicIncumbent & best_anywhere,
+            const std::vector<int> & position) -> void
     {
         if (best_anywhere.update(c_popcount)) {
             result.size = c_popcount;
@@ -41,7 +43,7 @@ namespace
             for (int i = 0 ; i < graph.size() ; ++i)
                 if (c.test(i))
                     result.members.insert(o[i]);
-            print_incumbent(params, result.size);
+            print_incumbent(params, result.size, position);
         }
     }
 
@@ -65,7 +67,8 @@ namespace
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
             std::vector<FixedBitSet<size_> > & p_alloc,      // pre-allocated space for p
-            AtomicIncumbent & best_anywhere) -> void
+            AtomicIncumbent & best_anywhere,
+            std::vector<int> & position) -> void
     {
         ++result.nodes;
 
@@ -88,6 +91,7 @@ namespace
 
         // for each v in p... (v comes later)
         for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
+            ++position.back();
 
             // bound, timeout or early exit?
             if (bound(c_popcount, colours[n], params, best_anywhere) || params.abort.load())
@@ -104,7 +108,7 @@ namespace
             graph.intersect_with_row(v, new_p);
 
             if (new_p.empty()) {
-                found_possible_new_best(graph, o, c, c_popcount + 1, params, result, best_anywhere);
+                found_possible_new_best(graph, o, c, c_popcount + 1, params, result, best_anywhere, position);
             }
             else
             {
@@ -112,18 +116,25 @@ namespace
                 bool should_expand = true;
 
                 if (maybe_queue && c_popcount + 1 == params.split_depth) {
-                    maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n] }, params.n_threads);
+                    auto new_position = position;
+                    new_position.push_back(0);
+                    maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
                     should_expand = false;
                 }
                 else if (donation_queue && (chose_to_donate || donation_queue->want_donations())) {
-                    donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n] });
+                    auto new_position = position;
+                    new_position.push_back(0);
+                    donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) });
                     should_expand = false;
                     chose_to_donate = true;
                     ++result.donations;
                 }
 
-                if (should_expand)
-                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, p_alloc, best_anywhere);
+                if (should_expand) {
+                    position.push_back(0);
+                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, p_alloc, best_anywhere, position);
+                    position.pop_back();
+                }
             }
 
             // now consider not taking v
@@ -161,8 +172,12 @@ namespace
                     for (auto & a : p_alloc)
                         a.resize(graph.size());
 
+                    std::vector<int> position;
+                    position.reserve(graph.size());
+                    position.push_back(0);
+
                     // populate!
-                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, result, params, p_alloc, best_anywhere);
+                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, result, params, p_alloc, best_anywhere, position);
 
                     // merge results
                     queue.initial_producer_done();
@@ -194,7 +209,7 @@ namespace
 
                             // do some work
                             expand<order_, size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr,
-                                    args.c, args.p, tr, params, p_alloc, best_anywhere);
+                                    args.c, args.p, tr, params, p_alloc, best_anywhere, args.position);
 
                             // keep track of top nodes done
                             if (! params.abort.load())
