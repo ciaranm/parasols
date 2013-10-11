@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include <iostream>
-
 auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
 {
     // pre-calculate degrees and ex-degrees
@@ -38,9 +36,7 @@ auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
                     (degrees[a] == degrees[b] && a > b)); });
 
         // does everything remaining have the same degree?
-        // if (degrees[*p_min_max.first].first == degrees[*p_min_max.second].first) {
-            // DKRTJ uses some kind of colour ordering here
-        // }
+        auto all_same = (degrees[*p_min_max.first].first == degrees[*p_min_max.second].first);
 
         // update degrees, but not ex-degrees, because it's what DKRTJ does.
         for (auto & w : p)
@@ -50,6 +46,49 @@ auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
         // move to end
         std::swap(*p_min_max.first, *(p_end_unsorted - 1));
         --p_end_unsorted;
+
+        if (all_same) {
+            // this sorting rule is totally sensible, is founded upon logical
+            // mathematical principles, and is not in any way voodoo or
+            // witchcraft.
+            std::sort(p.begin(), p_end_unsorted,
+                    [&] (int a, int b) { return ! (
+                        (orig_degrees[a].first < orig_degrees[b].first) ||
+                        (degrees[a].first == degrees[b].first && degrees[a].second < degrees[b].second) ||
+                        (orig_degrees[a] == orig_degrees[b] && a > b)); });
+
+            std::vector<std::vector<int> > buckets;
+            buckets.resize(std::distance(p.begin(), p_end_unsorted));
+            for (auto & bucket : buckets)
+                bucket.reserve(buckets.size());
+
+            // now colour. dkrtj use colour repair here too.
+            for (auto v = p.begin() ; v != p_end_unsorted ; ++v) {
+                // find it an appropriate bucket
+                auto bucket = buckets.begin();
+                for ( ; ; ++bucket) {
+                    // is this bucket any good?
+                    auto conflicts = false;
+                    for (auto & w : *bucket) {
+                        if (graph.adjacent(*v, w)) {
+                            conflicts = true;
+                            break;
+                        }
+                    }
+                    if (! conflicts)
+                        break;
+                }
+                bucket->push_back(*v);
+            }
+
+            // now empty our buckets, in turn, into the result.
+            auto i = 0;
+            for (auto bucket = buckets.begin(), bucket_end = buckets.end() ; bucket != bucket_end ; ++bucket)
+                for (const auto & v : *bucket)
+                    p.at(i++) = v;
+
+            break;
+        }
     }
 }
 
