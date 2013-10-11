@@ -48,21 +48,17 @@ auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
         --p_end_unsorted;
 
         if (all_same) {
-            // this sorting rule is totally sensible, is founded upon logical
-            // mathematical principles, and is not in any way voodoo or
+            // this tie-breaking rule is totally sensible, is founded upon
+            // logical mathematical principles, and is not in any way voodoo or
             // witchcraft.
-            std::sort(p.begin(), p_end_unsorted,
-                    [&] (int a, int b) { return ! (
-                        (orig_degrees[a].first < orig_degrees[b].first) ||
-                        (degrees[a].first == degrees[b].first && degrees[a].second < degrees[b].second) ||
-                        (orig_degrees[a] == orig_degrees[b] && a > b)); });
+            std::sort(p.begin(), p_end_unsorted);
 
             std::vector<std::vector<int> > buckets;
             buckets.resize(std::distance(p.begin(), p_end_unsorted));
             for (auto & bucket : buckets)
                 bucket.reserve(buckets.size());
 
-            // now colour. dkrtj use colour repair here too.
+            // now colour
             for (auto v = p.begin() ; v != p_end_unsorted ; ++v) {
                 // find it an appropriate bucket
                 auto bucket = buckets.begin();
