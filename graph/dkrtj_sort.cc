@@ -23,8 +23,6 @@ auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
                 degrees[v].second += degrees[w].first;
     }
 
-    auto orig_degrees = degrees;
-
     for (auto p_end_unsorted = p.end() ; p_end_unsorted != p.begin() ; ) {
         // find vertex of minumum degree, with ex-degree tiebreaking. also find
         // the vertex of max degree, so we can see if all our degrees are the
