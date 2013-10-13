@@ -10,18 +10,13 @@ auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
 {
     // pre-calculate degrees and ex-degrees
     std::vector<std::pair<unsigned, unsigned> > degrees;
-    unsigned max_degree = 0;
     std::transform(p.begin(), p.end(), std::back_inserter(degrees),
             [&] (int v) { return std::make_pair(graph.degree(v), 0); });
 
-    for (auto & v : p) {
-        if (degrees[v].first > max_degree)
-            max_degree = degrees[v].first;
-
+    for (auto & v : p)
         for (auto & w : p)
             if (graph.adjacent(v, w))
                 degrees[v].second += degrees[w].first;
-    }
 
     for (auto p_end_unsorted = p.end() ; p_end_unsorted != p.begin() ; ) {
         // find vertex of minumum degree, with ex-degree tiebreaking. also find
