@@ -28,7 +28,9 @@ auto parasols::dkrtj_sort(const Graph & graph, std::vector<int> & p) -> void
                     (degrees[a].first == degrees[b].first && degrees[a].second < degrees[b].second) ||
                     (degrees[a] == degrees[b] && a > b)); });
 
-        // does everything remaining have the same degree?
+        // does everything remaining have the same degree? we do this now, even
+        // if this will no longer be true after the update, because that's what
+        // DKRTJ does.
         auto all_same = (degrees[*p_min_max.first].first == degrees[*p_min_max.second].first);
 
         // update degrees, but not ex-degrees, because it's what DKRTJ does.
