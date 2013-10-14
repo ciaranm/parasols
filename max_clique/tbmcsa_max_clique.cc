@@ -6,7 +6,6 @@
 #include <threads/atomic_incumbent.hh>
 #include <threads/queue.hh>
 #include <graph/degree_sort.hh>
-#include <graph/dkrtj_sort.hh>
 
 #include <algorithm>
 #include <list>
@@ -77,11 +76,11 @@ namespace
         // get our coloured vertices
         std::array<unsigned, size_ * bits_per_word> p_order, colours;
 
-        // DKRTJ puts more effort into the initial ordering. Don't undo it.
-        if (order_ == MaxCliqueOrder::DKRTJ && 0 == c_popcount) {
+        // use override on initial order and bounds, if appropriate
+        if (order_ == MaxCliqueOrder::Manual && 0 == c_popcount) {
             for (int i = 0 ; i < graph.size() ; ++i) {
                 p_order[i] = i;
-                colours[i] = i + 1;
+                colours[i] = params.initial_order_and_bounds.at(i).second;
             }
         }
         else
@@ -244,8 +243,9 @@ namespace
             case MaxCliqueOrder::Degree:
                 degree_sort(graph, o, false);
                 break;
-            case MaxCliqueOrder::DKRTJ:
-                dkrtj_sort(graph, o);
+            case MaxCliqueOrder::Manual:
+                for (int i = 0 ; i < graph.size() ; ++i)
+                    o.at(i) = params.initial_order_and_bounds.at(i).first;
                 break;
         }
 
@@ -292,5 +292,5 @@ auto parasols::tbmcsa_max_clique(const Graph & graph, const MaxCliqueParams & pa
 }
 
 template auto parasols::tbmcsa_max_clique<MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tbmcsa_max_clique<MaxCliqueOrder::DKRTJ>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tbmcsa_max_clique<MaxCliqueOrder::Manual>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

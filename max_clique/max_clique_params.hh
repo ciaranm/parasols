@@ -32,6 +32,9 @@ namespace parasols
         /// Splitting distance, where appropriate.
         unsigned split_depth = 1;
 
+        /// Override initial order and bounds, if not empty.
+        std::vector<std::pair<unsigned, unsigned> > initial_order_and_bounds;
+
         /// If true, print every time we find a better incumbent.
         bool print_incumbents = false;
 
@@ -51,7 +54,7 @@ namespace parasols
     enum class MaxCliqueOrder
     {
         Degree, /// Prosser's 1
-        DKRTJ   /// Depolli et al
+        Manual  /// Manual
     };
 }
 
