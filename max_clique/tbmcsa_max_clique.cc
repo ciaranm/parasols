@@ -100,6 +100,7 @@ namespace
 
             // consider taking v
             c.set(v);
+            ++c_popcount;
 
             // filter p to contain vertices adjacent to v
             auto & new_p = p_alloc[c_popcount];
@@ -107,14 +108,14 @@ namespace
             graph.intersect_with_row(v, new_p);
 
             if (new_p.empty()) {
-                found_possible_new_best(graph, o, c, c_popcount + 1, params, result, best_anywhere, position);
+                found_possible_new_best(graph, o, c, c_popcount, params, result, best_anywhere, position);
             }
             else
             {
                 // do we enqueue or recurse?
                 bool should_expand = true;
 
-                if (maybe_queue && c_popcount + 1 == params.split_depth) {
+                if (maybe_queue && c_popcount == params.split_depth) {
                     auto new_position = position;
                     new_position.push_back(0);
                     maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
@@ -139,6 +140,7 @@ namespace
             // now consider not taking v
             c.unset(v);
             p.unset(v);
+            --c_popcount;
         }
     }
 

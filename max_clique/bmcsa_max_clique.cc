@@ -52,6 +52,7 @@ namespace
 
             // consider taking v
             c.set(v);
+            ++c_popcount;
 
             // filter p to contain vertices adjacent to v
             auto & new_p = p_alloc[c_popcount];
@@ -60,8 +61,8 @@ namespace
 
             if (new_p.empty()) {
                 // potential new best
-                if (c_popcount + 1 > result.size) {
-                    result.size = c_popcount + 1;
+                if (c_popcount > result.size) {
+                    result.size = c_popcount;
                     result.members.clear();
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (c.test(i))
@@ -78,6 +79,7 @@ namespace
             // now consider not taking v
             c.unset(v);
             p.unset(v);
+            --c_popcount;
         }
     }
 
