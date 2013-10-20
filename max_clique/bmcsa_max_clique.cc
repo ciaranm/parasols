@@ -19,7 +19,6 @@ namespace
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
-            std::vector<FixedBitSet<size_> > & p_alloc,      // pre-allocated space for p
             std::vector<int> & position
             ) -> void
     {
@@ -55,8 +54,7 @@ namespace
             ++c_popcount;
 
             // filter p to contain vertices adjacent to v
-            auto & new_p = p_alloc[c_popcount];
-            new_p = p;
+            FixedBitSet<size_> new_p = p;
             graph.intersect_with_row(v, new_p);
 
             if (new_p.empty()) {
@@ -72,7 +70,7 @@ namespace
             }
             else {
                 position.push_back(0);
-                expand<order_, size_>(graph, o, c, new_p, result, params, p_alloc, position);
+                expand<order_, size_>(graph, o, c, new_p, result, params, position);
                 position.pop_back();
             }
 
@@ -97,11 +95,6 @@ namespace
         FixedBitSet<size_> p; // potential additions
         p.resize(graph.size());
         p.set_all();
-
-        std::vector<FixedBitSet<size_> > p_alloc; // space for recursive p values
-        p_alloc.resize(graph.size());
-        for (auto & a : p_alloc)
-            a.resize(graph.size());
 
         // populate our order with every vertex initially
         std::iota(o.begin(), o.end(), 0);
@@ -130,7 +123,7 @@ namespace
         positions.push_back(0);
 
         // go!
-        expand<order_, size_>(bit_graph, o, c, p, result, params, p_alloc, positions);
+        expand<order_, size_>(bit_graph, o, c, p, result, params, positions);
 
         return result;
     }

@@ -65,7 +65,6 @@ namespace
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
-            std::vector<FixedBitSet<size_> > & p_alloc,      // pre-allocated space for p
             AtomicIncumbent & best_anywhere,
             std::vector<int> & position) -> void
     {
@@ -103,7 +102,7 @@ namespace
             ++c_popcount;
 
             // filter p to contain vertices adjacent to v
-            auto & new_p = p_alloc[c_popcount];
+            FixedBitSet<size_> new_p = p;
             new_p = p;
             graph.intersect_with_row(v, new_p);
 
@@ -132,7 +131,7 @@ namespace
 
                 if (should_expand) {
                     position.push_back(0);
-                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, p_alloc, best_anywhere, position);
+                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, best_anywhere, position);
                     position.pop_back();
                 }
             }
@@ -168,17 +167,12 @@ namespace
                     tp.resize(graph.size());
                     tp.set_all();
 
-                    std::vector<FixedBitSet<size_> > p_alloc;
-                    p_alloc.resize(graph.size());
-                    for (auto & a : p_alloc)
-                        a.resize(graph.size());
-
                     std::vector<int> position;
                     position.reserve(graph.size());
                     position.push_back(0);
 
                     // populate!
-                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, result, params, p_alloc, best_anywhere, position);
+                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, result, params, best_anywhere, position);
 
                     // merge results
                     queue.initial_producer_done();
@@ -193,11 +187,6 @@ namespace
 
                         MaxCliqueResult tr; // local result
 
-                        std::vector<FixedBitSet<size_> > p_alloc;
-                        p_alloc.resize(graph.size());
-                        for (auto & a : p_alloc)
-                            a.resize(graph.size());
-
                         while (true) {
                             // get some work to do
                             QueueItem<size_> args;
@@ -210,7 +199,7 @@ namespace
 
                             // do some work
                             expand<order_, size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr,
-                                    args.c, args.p, tr, params, p_alloc, best_anywhere, args.position);
+                                    args.c, args.p, tr, params, best_anywhere, args.position);
 
                             // keep track of top nodes done
                             if (! params.abort.load())
