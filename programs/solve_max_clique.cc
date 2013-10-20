@@ -10,6 +10,8 @@
 #include <max_clique/tmcsa1_max_clique.hh>
 #include <max_clique/bmcsa_max_clique.hh>
 #include <max_clique/tbmcsa_max_clique.hh>
+#include <max_clique/bmcsabin_max_clique.hh>
+#include <max_clique/tbmcsabin_max_clique.hh>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -26,13 +28,15 @@ namespace po = boost::program_options;
 auto main(int argc, char * argv[]) -> int
 {
     auto algorithms = {
-        std::make_tuple( std::string{ "naive" },   run_this(naive_max_clique), false ),
-        std::make_tuple( std::string{ "mcsa1" },   run_this(mcsa1_max_clique), false ),
-        std::make_tuple( std::string{ "tmcsa1" },  run_this(tmcsa1_max_clique), false ),
-        std::make_tuple( std::string{ "bmcsa1" },  run_this(bmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
-        std::make_tuple( std::string{ "bmcsam" },  run_this(bmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
-        std::make_tuple( std::string{ "tbmcsa1" }, run_this(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
-        std::make_tuple( std::string{ "tbmcsam" }, run_this(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true )
+        std::make_tuple( std::string{ "naive" },      run_this(naive_max_clique), false ),
+        std::make_tuple( std::string{ "mcsa1" },      run_this(mcsa1_max_clique), false ),
+        std::make_tuple( std::string{ "tmcsa1" },     run_this(tmcsa1_max_clique), false ),
+        std::make_tuple( std::string{ "bmcsa1" },     run_this(bmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
+        std::make_tuple( std::string{ "bmcsam" },     run_this(bmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
+        std::make_tuple( std::string{ "bmcsa1bin" },  run_this(bmcsabin_max_clique), false ),
+        std::make_tuple( std::string{ "tbmcsa1" },    run_this(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
+        std::make_tuple( std::string{ "tbmcsam" },    run_this(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
+        std::make_tuple( std::string{ "tbmcsa1bin" }, run_this(tbmcsabin_max_clique), false )
     };
 
     try {
