@@ -83,7 +83,7 @@ namespace
 
         // queue empty? enqueue "not taking v"
         bool enqueued_not_v = false;
-        if (n > 5 && queue.want_donations()) {
+        if (n > 5 && queue.want_donations() && ! bound(c_popcount, colours[n - 1], params, best_anywhere)) {
             enqueued_not_v = true;
             auto alt_p = p;
             alt_p.unset(v);
