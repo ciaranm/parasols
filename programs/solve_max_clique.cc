@@ -4,6 +4,7 @@
 
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
+#include <graph/power.hh>
 
 #include <max_clique/naive_max_clique.hh>
 #include <max_clique/mcsa1_max_clique.hh>
@@ -25,18 +26,33 @@
 using namespace parasols;
 namespace po = boost::program_options;
 
+namespace
+{
+    auto run_with_power(MaxCliqueResult func(const Graph &, const MaxCliqueParams &)) ->
+        std::function<MaxCliqueResult (const Graph &, MaxCliqueParams &, bool &, int)>
+    {
+        return run_this_wrapped<MaxCliqueResult, MaxCliqueParams, Graph>(
+                [func] (const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult {
+                    if (params.power > 0)
+                        return func(power(graph, params.power), params);
+                    else
+                        return func(graph, params);
+                });
+    }
+}
+
 auto main(int argc, char * argv[]) -> int
 {
     auto algorithms = {
-        std::make_tuple( std::string{ "naive" },      run_this(naive_max_clique), false ),
-        std::make_tuple( std::string{ "mcsa1" },      run_this(mcsa1_max_clique), false ),
-        std::make_tuple( std::string{ "tmcsa1" },     run_this(tmcsa1_max_clique), false ),
-        std::make_tuple( std::string{ "bmcsa1" },     run_this(bmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
-        std::make_tuple( std::string{ "bmcsam" },     run_this(bmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
-        std::make_tuple( std::string{ "bmcsa1bin" },  run_this(bmcsabin_max_clique), false ),
-        std::make_tuple( std::string{ "tbmcsa1" },    run_this(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
-        std::make_tuple( std::string{ "tbmcsam" },    run_this(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
-        std::make_tuple( std::string{ "tbmcsa1bin" }, run_this(tbmcsabin_max_clique), false )
+        std::make_tuple( std::string{ "naive" },      run_with_power(naive_max_clique), false ),
+        std::make_tuple( std::string{ "mcsa1" },      run_with_power(mcsa1_max_clique), false ),
+        std::make_tuple( std::string{ "tmcsa1" },     run_with_power(tmcsa1_max_clique), false ),
+        std::make_tuple( std::string{ "bmcsa1" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
+        std::make_tuple( std::string{ "bmcsam" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
+        std::make_tuple( std::string{ "bmcsa1bin" },  run_with_power(bmcsabin_max_clique), false ),
+        std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
+        std::make_tuple( std::string{ "tbmcsam" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
+        std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique), false )
     };
 
     try {
@@ -53,6 +69,7 @@ auto main(int argc, char * argv[]) -> int
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
+            ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ;
 
@@ -128,6 +145,9 @@ auto main(int argc, char * argv[]) -> int
 
         if (options_vars.count("work-donation"))
             params.work_donation = true;
+
+        if (options_vars.count("power"))
+            params.power = options_vars["power"].as<int>();
 
         /* Read in the graph */
         auto graph = read_dimacs(options_vars["input-file"].as<std::string>());

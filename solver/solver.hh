@@ -7,13 +7,15 @@
 #include <thread>
 #include <condition_variable>
 #include <chrono>
+#include <functional>
 
 namespace parasols
 {
     /* Helper: return a function that runs the specified algorithm, dealing
      * with timing information and timeouts. */
     template <typename Result_, typename Params_, typename Data_>
-    auto run_this(Result_ func(const Data_ &, const Params_ &)) -> std::function<Result_ (const Data_ &, Params_ &, bool &, int)>
+    auto run_this_wrapped(const std::function<Result_ (const Data_ &, const Params_ &)> & func)
+        -> std::function<Result_ (const Data_ &, Params_ &, bool &, int)>
     {
         return [func] (const Data_ & data, Params_ & params, bool & aborted, int timeout) -> Result_ {
             /* For a timeout, we use a thread and a timed CV. We also wake the
@@ -43,7 +45,7 @@ namespace parasols
 
             /* Start the clock */
             params.start_time = std::chrono::steady_clock::now();
-            auto result = (*func)(data, params);
+            auto result = func(data, params);
 
             /* Clean up the timeout thread */
             if (timeout_thread.joinable()) {
@@ -57,7 +59,15 @@ namespace parasols
 
             return result;
         };
-    };
+    }
+
+    /* Helper: return a function that runs the specified algorithm, dealing
+     * with timing information and timeouts. */
+    template <typename Result_, typename Params_, typename Data_>
+    auto run_this(Result_ func(const Data_ &, const Params_ &)) -> std::function<Result_ (const Data_ &, Params_ &, bool &, int)>
+    {
+        return run_this_wrapped(std::function<Result_ (const Data_ &, const Params_ &)>(func));
+    }
 }
 
 #endif

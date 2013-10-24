@@ -26,6 +26,10 @@ namespace parasols
         /// Exit immediately after finding a clique of this size.
         unsigned stop_after_finding = std::numeric_limits<unsigned>::max();
 
+        /// Indicates that the graph has already been raised to this power, for
+        /// s-clique (handled by the runner).
+        unsigned power = 1;
+
         /// Number of threads to use, where appropriate.
         unsigned n_threads = 1;
 

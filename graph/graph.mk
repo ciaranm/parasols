@@ -4,5 +4,6 @@ SOURCES := \
 	bit_graph.cc \
 	degree_sort.cc \
 	dimacs.cc \
-	graph.cc
+	graph.cc \
+	power.cc
 
