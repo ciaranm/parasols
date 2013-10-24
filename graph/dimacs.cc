@@ -34,7 +34,7 @@ auto parasols::read_dimacs(const std::string & filename) -> Graph
          * vertices), or an edge. */
         static const boost::regex
             comment{ R"(c(\s.*)?)" },
-            problem{ R"(p\s+(edge|col)\s+(\d+)\s+\d+\s*)" },
+            problem{ R"(p\s+(edge|col)\s+(\d+)\s+(\d+)?\s*)" },
             edge{ R"(e\s+(\d+)\s+(\d+)\s*)" };
 
         boost::smatch match;
