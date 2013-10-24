@@ -1,4 +1,4 @@
-TARGETS := roommates_frequencies
+TARGET := roommates_frequencies
 
 SOURCES := roommates_frequencies.cc
 
