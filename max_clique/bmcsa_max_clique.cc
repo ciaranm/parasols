@@ -60,12 +60,16 @@ namespace
             if (new_p.empty()) {
                 // potential new best
                 if (c_popcount > result.size) {
-                    result.size = c_popcount;
+                    if (params.enumerate)
+                        result.size = c_popcount - 1;
+                    else
+                        result.size = c_popcount;
+
                     result.members.clear();
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (c.test(i))
                             result.members.insert(o[i]);
-                    print_incumbent(params, result.size, position);
+                    print_incumbent(params, c_popcount, position);
                 }
             }
             else {

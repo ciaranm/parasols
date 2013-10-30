@@ -62,6 +62,7 @@ auto main(int argc, char * argv[]) -> int
             ("threads",            po::value<int>(), "Number of threads to use (where relevant)")
             ("stop-after-finding", po::value<int>(), "Stop after finding a clique of this size")
             ("initial-bound",      po::value<int>(), "Specify an initial bound")
+            ("enumerate",                            "Enumerate solutions (use with bmcsa1 --initial-bound=omega-1 --print-incumbents)")
             ("manual-order",       po::value<std::string>(),
                 "Specify a manual vertex ordering, for bmcsam etc. Must be a list of order:bound pairs "
                 "separated by commas.")
@@ -138,6 +139,9 @@ auto main(int argc, char * argv[]) -> int
 
         if (options_vars.count("initial-bound"))
             params.initial_bound = options_vars["initial-bound"].as<int>();
+
+        if (options_vars.count("enumerate"))
+            params.enumerate = true;
 
         if (options_vars.count("print-incumbents"))
             params.print_incumbents = true;
