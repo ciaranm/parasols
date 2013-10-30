@@ -129,6 +129,10 @@ namespace
         // go!
         expand<order_, size_>(bit_graph, o, c, p, result, params, positions);
 
+        // hack for enumerate
+        if (params.enumerate)
+            result.size = result.members.size();
+
         return result;
     }
 }
