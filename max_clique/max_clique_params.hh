@@ -36,6 +36,9 @@ namespace parasols
         /// Splitting distance, where appropriate.
         unsigned split_depth = 1;
 
+        /// Min size to donate, where appropriate.
+        unsigned min_donate_size = 1;
+
         /// Override initial order and bounds, if not empty.
         std::vector<std::pair<unsigned, unsigned> > initial_order_and_bounds;
 

@@ -120,6 +120,9 @@ namespace
                     maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
                     should_expand = false;
                 }
+                else if (new_p.popcount() < params.min_donate_size) {
+                    chose_to_donate = false;
+                }
                 else if (donation_queue && (chose_to_donate || donation_queue->want_donations())) {
                     auto new_position = position;
                     new_position.push_back(0);

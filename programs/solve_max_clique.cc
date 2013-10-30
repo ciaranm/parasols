@@ -68,6 +68,7 @@ auto main(int argc, char * argv[]) -> int
             ("print-incumbents",                     "Print new incumbents as they are found")
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
+            ("min-donation-size",  po::value<int>(), "Do not donate below this size (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
