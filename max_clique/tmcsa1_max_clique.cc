@@ -121,7 +121,7 @@ auto parasols::tmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & pa
     std::iota(o.begin(), o.end(), 0);
     degree_sort(graph, o, false);
 
-    Queue<QueueItem> queue{ params.n_threads, params.work_donation }; // work queue
+    Queue<QueueItem> queue{ params.n_threads, params.work_donation, params.donate_when_empty }; // work queue
 
     MaxCliqueResult result; // global result
     std::mutex result_mutex;

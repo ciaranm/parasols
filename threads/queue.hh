@@ -41,6 +41,7 @@ namespace parasols
     {
         private:
             const bool _donations_possible;
+            const bool _donate_when_empty;
 
             /* These protect and watch all subsequent private members. */
             std::mutex _mutex;
@@ -53,15 +54,19 @@ namespace parasols
             /* We keep track of how many consumers are busy, to decide whether
              * donations might be produced or whether consumers can exit. */
             unsigned _number_busy;
+            std::atomic<unsigned> _number_idle;
 
         public:
             /**
              * We need to know how many consumers we will have. We also allow
-             * donations to be disabled. */
-            Queue(unsigned number_of_dequeuers, bool donations_possible) :
+             * donations to be disabled. If donate_when_empty is true, donation
+             * starts even if no thread is idle. */
+            Queue(unsigned number_of_dequeuers, bool donations_possible, bool donate_when_empty) :
                 _donations_possible(donations_possible),
+                _donate_when_empty(donate_when_empty),
                 _initial_producer_done(false),
-                _number_busy(number_of_dequeuers)
+                _number_busy(number_of_dequeuers),
+                _number_idle(0)
             {
                 /* Initially we don't want donations */
                 _want_donations.store(false, std::memory_order_seq_cst);
@@ -151,6 +156,7 @@ namespace parasols
                     /* We're either about to block or give up, so we are no
                      * longer busy. */
                     --_number_busy;
+                    ++_number_idle;
 
                     if (_initial_producer_done && ((! want_donations()) || (0 == _number_busy))) {
                         /* The list is empty, and nothing new can possibly be
@@ -168,6 +174,7 @@ namespace parasols
                      * wakeup, none of the conditions will be met back around
                      * the loop, and we'll decrement it again. */
                     ++_number_busy;
+                    --_number_idle;
                 }
 
                 return false;
@@ -199,7 +206,9 @@ namespace parasols
             {
                 /* No locking. It's ok if we see an 'older' value of
                  * _want_donations. */
-                return _donations_possible && _want_donations.load(std::memory_order_relaxed);
+                return _donations_possible &&
+                    (_donate_when_empty || _number_idle.load(std::memory_order_relaxed) > 0) &&
+                    _want_donations.load(std::memory_order_relaxed);
             }
     };
 }
