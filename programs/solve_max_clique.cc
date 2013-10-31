@@ -70,7 +70,7 @@ auto main(int argc, char * argv[]) -> int
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
             ("donate-when-idle",                     "Donate work only when idle (where relevant)")
-            ("donation-delay",     po::value<int>(), "Delay between choosing to donate twice (where relevant)")
+            ("donation-delay",     po::value<int>(), "Delay between choosing to donate twice (in microseconds) (where relevant)")
             ("min-donation-size",  po::value<int>(), "Do not donate below this size (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")

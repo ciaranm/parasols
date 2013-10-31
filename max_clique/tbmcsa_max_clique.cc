@@ -63,7 +63,7 @@ namespace
             return true;
 
         auto now = std::chrono::steady_clock::now();
-        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_donation_time);
+        auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - last_donation_time);
         if (delta.count() > params.donation_wait) {
             last_donation_time = now;
             return true;
