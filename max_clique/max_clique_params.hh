@@ -54,6 +54,9 @@ namespace parasols
         /// If true, donate when the queue is empty, even if nothing is idle.
         bool donate_when_empty = true;
 
+        /// Delay between choosing to donate.
+        unsigned donation_wait = 0;
+
         /// If this is set to true, we should abort due to a time limit.
         std::atomic<bool> abort;
 

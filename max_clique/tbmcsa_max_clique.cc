@@ -55,12 +55,27 @@ namespace
         return (c_popcount + cn <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding);
     }
 
+    auto waited_long_enough(
+            const MaxCliqueParams & params,
+            std::chrono::time_point<std::chrono::steady_clock> & last_donation_time) -> bool
+    {
+        auto now = std::chrono::steady_clock::now();
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_donation_time);
+        if (delta.count() > params.donation_wait) {
+            last_donation_time = now;
+            return true;
+        }
+        else
+            return false;
+    }
+
     template <MaxCliqueOrder order_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
             Queue<QueueItem<size_> > * const maybe_queue,    // not null if we're populating: enqueue here
             Queue<QueueItem<size_> > * const donation_queue, // not null if we're donating: donate here
+            std::chrono::time_point<std::chrono::steady_clock> & last_donation_time,
             FixedBitSet<size_> & c,                          // current candidate clique
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
@@ -123,7 +138,8 @@ namespace
                 else if (new_p.popcount() < params.min_donate_size) {
                     chose_to_donate = false;
                 }
-                else if (donation_queue && (chose_to_donate || donation_queue->want_donations())) {
+                else if (donation_queue && (chose_to_donate || donation_queue->want_donations())
+                        && (0 == params.donation_wait || waited_long_enough(params, last_donation_time))) {
                     auto new_position = position;
                     new_position.push_back(0);
                     donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) });
@@ -134,7 +150,7 @@ namespace
 
                 if (should_expand) {
                     position.push_back(0);
-                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, c, new_p, result, params, best_anywhere, position);
+                    expand<order_, size_>(graph, o, maybe_queue, donation_queue, last_donation_time, c, new_p, result, params, best_anywhere, position);
                     position.pop_back();
                 }
             }
@@ -174,8 +190,10 @@ namespace
                     position.reserve(graph.size());
                     position.push_back(0);
 
+                    auto last_donation_time = std::chrono::steady_clock::now();
+
                     // populate!
-                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, result, params, best_anywhere, position);
+                    expand<order_, size_>(graph, o, &queue, nullptr, last_donation_time, tc, tp, result, params, best_anywhere, position);
 
                     // merge results
                     queue.initial_producer_done();
@@ -187,6 +205,7 @@ namespace
         for (unsigned i = 0 ; i < params.n_threads ; ++i) {
             threads.push_back(std::thread([&, i] {
                         auto start_time = std::chrono::steady_clock::now(); // local start time
+                        auto last_donation_time = std::chrono::steady_clock::now();
 
                         MaxCliqueResult tr; // local result
 
@@ -201,7 +220,7 @@ namespace
                                 continue;
 
                             // do some work
-                            expand<order_, size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr,
+                            expand<order_, size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr, last_donation_time,
                                     args.c, args.p, tr, params, best_anywhere, args.position);
 
                             // keep track of top nodes done

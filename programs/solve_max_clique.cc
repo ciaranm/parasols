@@ -70,6 +70,7 @@ auto main(int argc, char * argv[]) -> int
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
             ("donate-when-idle",                     "Donate work only when idle (where relevant)")
+            ("donation-delay",     po::value<int>(), "Delay between choosing to donate twice (where relevant)")
             ("min-donation-size",  po::value<int>(), "Do not donate below this size (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
@@ -154,6 +155,12 @@ auto main(int argc, char * argv[]) -> int
 
         if (options_vars.count("donate-when-idle"))
             params.donate_when_empty = false;
+
+        if (options_vars.count("donation-delay"))
+            params.donation_wait = options_vars["donation-delay"].as<int>();
+
+        if (options_vars.count("min-donation-size"))
+            params.min_donate_size = options_vars["min-donation-size"].as<int>();
 
         if (options_vars.count("power"))
             params.power = options_vars["power"].as<int>();
