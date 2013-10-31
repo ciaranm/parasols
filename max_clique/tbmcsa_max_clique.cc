@@ -59,6 +59,9 @@ namespace
             const MaxCliqueParams & params,
             std::chrono::time_point<std::chrono::steady_clock> & last_donation_time) -> bool
     {
+        if (0 == params.donation_wait)
+            return true;
+
         auto now = std::chrono::steady_clock::now();
         auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_donation_time);
         if (delta.count() > params.donation_wait) {
@@ -138,8 +141,8 @@ namespace
                 else if (new_p.popcount() < params.min_donate_size) {
                     chose_to_donate = false;
                 }
-                else if (donation_queue && (chose_to_donate || donation_queue->want_donations())
-                        && (0 == params.donation_wait || waited_long_enough(params, last_donation_time))) {
+                else if (donation_queue && (chose_to_donate ||
+                            (donation_queue->want_donations() && waited_long_enough(params, last_donation_time)))) {
                     auto new_position = position;
                     new_position.push_back(0);
                     donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) });
