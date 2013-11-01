@@ -6,5 +6,6 @@ SOURCES := \
 	dimacs.cc \
 	graph.cc \
 	power.cc \
-	is_clique.cc
+	is_clique.cc \
+	is_club.cc
 

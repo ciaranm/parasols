@@ -2,6 +2,7 @@
 
 #include <max_clique/print_incumbent.hh>
 #include <threads/output_lock.hh>
+#include <graph/is_club.hh>
 
 #include <iostream>
 #include <sstream>
@@ -17,7 +18,10 @@ auto parasols::print_incumbent(const MaxCliqueParams & params, unsigned size) ->
             << " found " << size << std::endl;
 }
 
-auto parasols::print_incumbent(const MaxCliqueParams & params, unsigned size,
+auto parasols::print_incumbent(
+        const MaxCliqueParams & params,
+        unsigned size,
+        const std::set<int> & members,
         const std::vector<int> & positions) -> void
 {
     if (params.print_incumbents) {
@@ -25,10 +29,18 @@ auto parasols::print_incumbent(const MaxCliqueParams & params, unsigned size,
         for (auto & p : positions)
             w << " " << p;
 
+        std::stringstream c;
+        if (params.check_clubs) {
+            if (is_club(*params.original_graph, params.power, members))
+                c << " (club)";
+            else
+                c << " (not club)";
+        }
+
         std::cout
             << lock_output()
             << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
-            << " found " << size << " at" << w.str() << std::endl;
+            << " found " << size << " at" << w.str() << c.str() << std::endl;
     }
 }
 

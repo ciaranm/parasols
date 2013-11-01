@@ -8,6 +8,7 @@
 #include <chrono>
 #include <atomic>
 #include <vector>
+#include <graph/graph.hh>
 
 namespace parasols
 {
@@ -48,6 +49,10 @@ namespace parasols
         /// If true, print every time we find a better incumbent.
         bool print_incumbents = false;
 
+        /// If true, and print_incumbents is also true, show whether or not the
+        /// new incumbent is a club (slow).
+        bool check_clubs = false;
+
         /// If true, enable work donation.
         bool work_donation = false;
 
@@ -62,6 +67,9 @@ namespace parasols
 
         /// The start time of the algorithm.
         std::chrono::time_point<std::chrono::steady_clock> start_time;
+
+        /// The unmangled graph, for club verification.
+        const Graph * original_graph = nullptr;
     };
 
     /**

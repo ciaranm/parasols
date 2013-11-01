@@ -69,7 +69,8 @@ namespace
                     for (int i = 0 ; i < graph.size() ; ++i)
                         if (c.test(i))
                             result.members.insert(o[i]);
-                    print_incumbent(params, c_popcount, position);
+
+                    print_incumbent(params, c_popcount, result.members, position);
                 }
             }
             else {

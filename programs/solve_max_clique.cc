@@ -6,6 +6,7 @@
 #include <graph/dimacs.hh>
 #include <graph/power.hh>
 #include <graph/is_clique.hh>
+#include <graph/is_club.hh>
 
 #include <max_clique/naive_max_clique.hh>
 #include <max_clique/mcsa1_max_clique.hh>
@@ -76,6 +77,7 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(), "Abort after this many seconds")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
+            ("check-club",                           "Check whether our s-clique is also an s-club")
             ;
 
         po::options_description all_options{ "All options" };
@@ -148,6 +150,9 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("print-incumbents"))
             params.print_incumbents = true;
 
+        if (options_vars.count("check-club"))
+            params.check_clubs = true;
+
         if (options_vars.count("split-depth"))
             params.split_depth = options_vars["split-depth"].as<int>();
 
@@ -168,6 +173,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* Read in the graph */
         auto graph = read_dimacs(options_vars["input-file"].as<std::string>());
+        params.original_graph = &graph;
 
         /* Work out manual-order, now that we know the graph size */
         if (std::get<2>(*algorithm)) {
@@ -216,10 +222,20 @@ auto main(int argc, char * argv[]) -> int
             std::cout << " aborted " << result.top_nodes_done;
         std::cout << std::endl;
 
+        /* Members, and whether it's a club. */
         for (auto v : result.members)
             std::cout << v + 1 << " ";
+
+        if (options_vars.count("check-club")) {
+            if (is_club(graph, params.power, result.members))
+                std::cout << "(club)" << std::endl;
+            else
+                std::cout << "(not club)" << std::endl;
+        }
+
         std::cout << std::endl;
 
+        /* Times */
         std::cout << overall_time.count();
         if (! result.times.empty()) {
             for (auto t : result.times)
@@ -227,11 +243,12 @@ auto main(int argc, char * argv[]) -> int
         }
         std::cout << std::endl;
 
+        /* Donation */
         if (params.work_donation)
             std::cout << result.donations << std::endl;
 
         if (options_vars.count("verify")) {
-            if (params.power > 0) {
+            if (params.power > 1) {
                 if (! is_clique(power(graph, params.power), result.members)) {
                     std::cerr << "Oops! not a clique" << std::endl;
                     return EXIT_FAILURE;
