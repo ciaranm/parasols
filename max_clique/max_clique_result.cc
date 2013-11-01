@@ -9,6 +9,8 @@ auto MaxCliqueResult::merge(const MaxCliqueResult & other) -> void
     nodes += other.nodes;
     donations += other.donations;
     top_nodes_done += other.top_nodes_done;
+    result_count += other.result_count;
+    result_club_count += other.result_club_count;
     if (other.size > size) {
         size = other.size;
         members = std::move(other.members);

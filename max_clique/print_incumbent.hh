@@ -18,11 +18,19 @@ namespace parasols
     /**
      * Do some output, if params.print_incumbents is true.
      *
-     * This version supports positions and clubs.
+     * This version supports positions.
      */
     auto print_incumbent(const MaxCliqueParams & params, unsigned size,
-            const std::set<int> & members,
             const std::vector<int> & positions) -> void;
+
+    /**
+     * Do some output, if params.print_incumbents is true.
+     *
+     * This version supports positions and club checking.
+     */
+    auto print_incumbent(const MaxCliqueParams & params, unsigned size,
+            const std::vector<int> & positions,
+            bool is_club) -> void;
 }
 
 #endif

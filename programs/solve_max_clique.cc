@@ -218,8 +218,16 @@ auto main(int argc, char * argv[]) -> int
 
         /* Display the results. */
         std::cout << result.size << " " << result.nodes;
+
+        if (options_vars.count("enumerate")) {
+            std::cout << " " << result.result_count;
+            if (options_vars.count("check-club"))
+                std::cout << " " << result.result_club_count;
+        }
+
         if (aborted)
             std::cout << " aborted " << result.top_nodes_done;
+
         std::cout << std::endl;
 
         /* Members, and whether it's a club. */

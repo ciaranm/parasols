@@ -4,6 +4,7 @@
 #include <max_clique/colourise.hh>
 #include <max_clique/print_incumbent.hh>
 #include <graph/degree_sort.hh>
+#include <graph/is_club.hh>
 
 #include <algorithm>
 
@@ -60,8 +61,10 @@ namespace
             if (new_p.empty()) {
                 // potential new best
                 if (c_popcount > result.size) {
-                    if (params.enumerate)
+                    if (params.enumerate) {
+                        ++result.result_count;
                         result.size = c_popcount - 1;
+                    }
                     else
                         result.size = c_popcount;
 
@@ -70,7 +73,14 @@ namespace
                         if (c.test(i))
                             result.members.insert(o[i]);
 
-                    print_incumbent(params, c_popcount, result.members, position);
+                    if (params.check_clubs) {
+                        bool club = is_club(*params.original_graph, params.power, result.members);
+                        if (params.enumerate && club)
+                            ++result.result_club_count;
+                        print_incumbent(params, c_popcount, position, club);
+                    }
+                    else
+                        print_incumbent(params, c_popcount, position);
                 }
             }
             else {

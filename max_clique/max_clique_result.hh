@@ -45,6 +45,12 @@ namespace parasols
          * Merge two results together (add nodes, etc). Used by threads.
          */
         auto merge(const MaxCliqueResult &) -> void;
+
+        /// A count, if enumerating.
+        unsigned result_count = 0;
+
+        /// A count of clubs, if enumerating and checking clubs.
+        unsigned result_club_count = 0;
     };
 }
 
