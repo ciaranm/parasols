@@ -5,6 +5,7 @@
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 #include <graph/power.hh>
+#include <graph/is_clique.hh>
 
 #include <max_clique/naive_max_clique.hh>
 #include <max_clique/mcsa1_max_clique.hh>
@@ -230,12 +231,18 @@ auto main(int argc, char * argv[]) -> int
             std::cout << result.donations << std::endl;
 
         if (options_vars.count("verify")) {
-            for (auto & a : result.members)
-                for (auto & b : result.members)
-                    if (a != b && ! graph.adjacent(a, b)) {
-                        std::cerr << "Oops! Not adjacent: " << a << " " << b << std::endl;
-                        return EXIT_FAILURE;
-                    }
+            if (params.power > 0) {
+                if (! is_clique(power(graph, params.power), result.members)) {
+                    std::cerr << "Oops! not a clique" << std::endl;
+                    return EXIT_FAILURE;
+                }
+            }
+            else {
+                if (! is_clique(graph, result.members)) {
+                    std::cerr << "Oops! not a clique" << std::endl;
+                    return EXIT_FAILURE;
+                }
+            }
         }
 
         return EXIT_SUCCESS;
