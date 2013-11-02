@@ -24,13 +24,19 @@ void table(int start, int end, int inc, int samples)
     for (int size = start ; size <= end ; size += inc) {
         std::cout << std::setw(8) << size << "  ";
 
+        RoommatesProblem problem;
+        problem.size = size;
+        problem.preferences.resize(size);
+        problem.rankings.resize(size);
+        for (int i = 0 ; i < size ; ++i) {
+            problem.preferences[i].resize(size);
+            problem.rankings[i].resize(size);
+        }
+
         unsigned yes_count = 0;
         for (int pass = 0 ; pass < samples ; ++pass) {
-            RoommatesProblem problem;
             problem.size = size;
-            problem.preferences.resize(size);
             for (int i = 0 ; i < size ; ++i) {
-                problem.preferences[i].resize(size);
                 unsigned v = 0;
                 for (int j = 0 ; j < size ; ++j) {
                     if (i == j)
@@ -41,9 +47,7 @@ void table(int start, int end, int inc, int samples)
                 std::shuffle(problem.preferences[i].begin(), problem.preferences[i].end() - 1, rnd);
             }
 
-            problem.rankings.resize(size);
             for (int i = 0 ; i < size ; ++i) {
-                problem.rankings[i].resize(size);
                 for (int j = 0 ; j < size ; ++j) {
                     problem.rankings[i][problem.preferences[i][j]] = j;
                 }
