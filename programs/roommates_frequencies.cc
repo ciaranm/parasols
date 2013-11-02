@@ -58,7 +58,7 @@ void table(int start, int end, int inc, int samples)
         }
 
         std::cout << std::setw(8) << yes_count << "  " << std::setw(8)
-            << (double(yes_count) / 1000.0) << std::endl;
+            << (double(yes_count) / double(samples)) << std::endl;
     }
 }
 
