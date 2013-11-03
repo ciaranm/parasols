@@ -113,6 +113,15 @@ namespace parasols
             }
 
             /**
+             * Union (bitwise-or) with another set.
+             */
+            auto union_with(const FixedBitSet<words_> & other) -> void
+            {
+                for (typename Bits::size_type i = 0 ; i < words_ ; ++i)
+                    _bits[i] = _bits[i] | other._bits[i];
+            }
+
+            /**
              * Intersect with the complement of another set.
              */
             auto intersect_with_complement(const FixedBitSet<words_> & other) -> void

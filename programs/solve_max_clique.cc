@@ -15,6 +15,7 @@
 #include <max_clique/tbmcsa_max_clique.hh>
 #include <max_clique/bmcsabin_max_clique.hh>
 #include <max_clique/tbmcsabin_max_clique.hh>
+#include <max_clique/cco_max_clique.hh>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -54,7 +55,8 @@ auto main(int argc, char * argv[]) -> int
         std::make_tuple( std::string{ "bmcsa1bin" },  run_with_power(bmcsabin_max_clique), false ),
         std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
         std::make_tuple( std::string{ "tbmcsam" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
-        std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique), false )
+        std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique), false ),
+        std::make_tuple( std::string{ "cco" },        run_with_power(cco_max_clique), false )
     };
 
     try {
