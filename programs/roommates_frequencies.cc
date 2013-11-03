@@ -72,6 +72,7 @@ auto main(int argc, char * argv[]) -> int
         po::options_description display_options{ "Program options" };
         display_options.add_options()
             ("help",                                  "Display help information")
+            ("seed",      po::value<int>(),           "Specify a seed")
             ;
 
         po::options_description all_options{ "All options" };
@@ -118,6 +119,10 @@ auto main(int argc, char * argv[]) -> int
         int end = options_vars["end"].as<int>();
         int step = options_vars["inc"].as<int>();
         int samples = options_vars["samples"].as<int>();
+
+        if (options_vars.count("seed")) {
+            rnd.seed(options_vars["seed"].as<int>());
+        }
 
         table(start, end, step, samples);
 
