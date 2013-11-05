@@ -77,7 +77,10 @@ namespace parasols
      */
     enum class MaxCliqueOrder
     {
-        Degree /// Prosser's 1
+        Degree,     /// Prosser's style 1
+        MinWidth,   /// Prosser's style 2
+        ExDegree,   /// Prosser's style 3
+        DynExDegree /// Tomita's MCR ordering (?)
     };
 }
 

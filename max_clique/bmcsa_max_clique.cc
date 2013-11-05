@@ -4,6 +4,7 @@
 #include <max_clique/colourise.hh>
 #include <max_clique/print_incumbent.hh>
 #include <graph/degree_sort.hh>
+#include <graph/min_width_sort.hh>
 #include <graph/is_club.hh>
 
 #include <algorithm>
@@ -109,6 +110,15 @@ namespace
             case MaxCliqueOrder::Degree:
                 degree_sort(graph, o, false);
                 break;
+            case MaxCliqueOrder::MinWidth:
+                min_width_sort(graph, o, false);
+                break;
+            case MaxCliqueOrder::ExDegree:
+                exdegree_sort(graph, o, false);
+                break;
+            case MaxCliqueOrder::DynExDegree:
+                dynexdegree_sort(graph, o, false);
+                break;
         }
 
         // re-encode graph as a bit graph
@@ -164,4 +174,7 @@ auto parasols::bmcsa_max_clique(const Graph & graph, const MaxCliqueParams & par
 }
 
 template auto parasols::bmcsa_max_clique<MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::bmcsa_max_clique<MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::bmcsa_max_clique<MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::bmcsa_max_clique<MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

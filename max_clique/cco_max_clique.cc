@@ -4,6 +4,7 @@
 #include <max_clique/print_incumbent.hh>
 #include <graph/bit_graph.hh>
 #include <graph/degree_sort.hh>
+#include <graph/min_width_sort.hh>
 
 #include <algorithm>
 
@@ -331,6 +332,15 @@ namespace
             case MaxCliqueOrder::Degree:
                 degree_sort(graph, o, false);
                 break;
+            case MaxCliqueOrder::MinWidth:
+                min_width_sort(graph, o, false);
+                break;
+            case MaxCliqueOrder::ExDegree:
+                exdegree_sort(graph, o, false);
+                break;
+            case MaxCliqueOrder::DynExDegree:
+                dynexdegree_sort(graph, o, false);
+                break;
         }
 
         // re-encode graph as a bit graph
@@ -389,4 +399,19 @@ template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::De
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
