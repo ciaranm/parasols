@@ -56,7 +56,10 @@ auto main(int argc, char * argv[]) -> int
         std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
         std::make_tuple( std::string{ "tbmcsam" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
         std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique), false ),
-        std::make_tuple( std::string{ "cco" },        run_with_power(cco_max_clique), false )
+        std::make_tuple( std::string{ "ccon" },       run_with_power(cco_max_clique<CCOPermutations::None>), false ),
+        std::make_tuple( std::string{ "ccod1" },      run_with_power(cco_max_clique<CCOPermutations::Defer1>), false ),
+        std::make_tuple( std::string{ "ccod2" },      run_with_power(cco_max_clique<CCOPermutations::Defer2>), false ),
+        std::make_tuple( std::string{ "ccos" },       run_with_power(cco_max_clique<CCOPermutations::Sort>), false )
     };
 
     try {

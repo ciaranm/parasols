@@ -9,9 +9,18 @@
 
 namespace parasols
 {
+    enum class CCOPermutations
+    {
+        None,
+        Defer1,
+        Defer2,
+        Sort
+    };
+
     /**
      * Max clique algorithm.
      */
+    template <CCOPermutations>
     auto cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
 }
 

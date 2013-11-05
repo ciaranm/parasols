@@ -28,7 +28,10 @@ namespace
         std::make_tuple( std::string{ "naive" },      naive_max_clique),
         std::make_tuple( std::string{ "mcsa1" },      mcsa1_max_clique),
         std::make_tuple( std::string{ "bmcsa1" },     bmcsa_max_clique<MaxCliqueOrder::Degree>),
-        std::make_tuple( std::string{ "cco" },        cco_max_clique)
+        std::make_tuple( std::string{ "ccon" },       cco_max_clique<CCOPermutations::None>),
+        std::make_tuple( std::string{ "ccod1" },      cco_max_clique<CCOPermutations::Defer1>),
+        std::make_tuple( std::string{ "ccod2" },      cco_max_clique<CCOPermutations::Defer2>),
+        std::make_tuple( std::string{ "ccos" },       cco_max_clique<CCOPermutations::Sort>)
     };
 }
 
