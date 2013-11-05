@@ -54,10 +54,10 @@ auto main(int argc, char * argv[]) -> int
         std::make_tuple( std::string{ "bmcsa1bin" },  run_with_power(bmcsabin_max_clique) ),
         std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>) ),
         std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique) ),
-        std::make_tuple( std::string{ "ccon" },       run_with_power(cco_max_clique<CCOPermutations::None>) ),
-        std::make_tuple( std::string{ "ccod1" },      run_with_power(cco_max_clique<CCOPermutations::Defer1>) ),
-        std::make_tuple( std::string{ "ccod2" },      run_with_power(cco_max_clique<CCOPermutations::Defer2>) ),
-        std::make_tuple( std::string{ "ccos" },       run_with_power(cco_max_clique<CCOPermutations::Sort>) )
+        std::make_tuple( std::string{ "ccon1" },      run_with_power(cco_max_clique<CCOPermutations::None, MaxCliqueOrder::Degree>) ),
+        std::make_tuple( std::string{ "ccod11" },     run_with_power(cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::Degree>) ),
+        std::make_tuple( std::string{ "ccod21" },     run_with_power(cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::Degree>) ),
+        std::make_tuple( std::string{ "ccos1" },      run_with_power(cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::Degree>) )
     };
 
     try {
