@@ -2,7 +2,6 @@ TARGET := libmax_clique.a
 
 SOURCES := \
 	bmcsa_max_clique.cc \
-	bmcsabin_max_clique.cc \
 	cco_max_clique.cc \
 	colourise.cc \
 	max_clique_params.cc \
@@ -11,6 +10,5 @@ SOURCES := \
 	naive_max_clique.cc \
 	print_incumbent.cc \
 	tbmcsa_max_clique.cc \
-	tmcsa1_max_clique.cc \
-	tbmcsabin_max_clique.cc
+	tmcsa1_max_clique.cc
 
