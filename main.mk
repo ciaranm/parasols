@@ -9,6 +9,7 @@ SUBMAKEFILES := \
 	programs/solve_max_biclique.mk \
 	programs/solve_max_clique.mk \
 	programs/solve_roommates.mk \
+	programs/max_clique_graph.mk \
 	roommates/roommates.mk \
 	solver/solver.mk \
 	threads/threads.mk
