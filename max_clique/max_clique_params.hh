@@ -77,8 +77,7 @@ namespace parasols
      */
     enum class MaxCliqueOrder
     {
-        Degree, /// Prosser's 1
-        Manual  /// Manual
+        Degree /// Prosser's 1
     };
 }
 

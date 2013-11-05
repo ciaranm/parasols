@@ -47,19 +47,17 @@ namespace
 auto main(int argc, char * argv[]) -> int
 {
     auto algorithms = {
-        std::make_tuple( std::string{ "naive" },      run_with_power(naive_max_clique), false ),
-        std::make_tuple( std::string{ "mcsa1" },      run_with_power(mcsa1_max_clique), false ),
-        std::make_tuple( std::string{ "tmcsa1" },     run_with_power(tmcsa1_max_clique), false ),
-        std::make_tuple( std::string{ "bmcsa1" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
-        std::make_tuple( std::string{ "bmcsam" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
-        std::make_tuple( std::string{ "bmcsa1bin" },  run_with_power(bmcsabin_max_clique), false ),
-        std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>), false ),
-        std::make_tuple( std::string{ "tbmcsam" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Manual>), true ),
-        std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique), false ),
-        std::make_tuple( std::string{ "ccon" },       run_with_power(cco_max_clique<CCOPermutations::None>), false ),
-        std::make_tuple( std::string{ "ccod1" },      run_with_power(cco_max_clique<CCOPermutations::Defer1>), false ),
-        std::make_tuple( std::string{ "ccod2" },      run_with_power(cco_max_clique<CCOPermutations::Defer2>), false ),
-        std::make_tuple( std::string{ "ccos" },       run_with_power(cco_max_clique<CCOPermutations::Sort>), false )
+        std::make_tuple( std::string{ "naive" },      run_with_power(naive_max_clique) ),
+        std::make_tuple( std::string{ "mcsa1" },      run_with_power(mcsa1_max_clique) ),
+        std::make_tuple( std::string{ "tmcsa1" },     run_with_power(tmcsa1_max_clique) ),
+        std::make_tuple( std::string{ "bmcsa1" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::Degree>) ),
+        std::make_tuple( std::string{ "bmcsa1bin" },  run_with_power(bmcsabin_max_clique) ),
+        std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>) ),
+        std::make_tuple( std::string{ "tbmcsa1bin" }, run_with_power(tbmcsabin_max_clique) ),
+        std::make_tuple( std::string{ "ccon" },       run_with_power(cco_max_clique<CCOPermutations::None>) ),
+        std::make_tuple( std::string{ "ccod1" },      run_with_power(cco_max_clique<CCOPermutations::Defer1>) ),
+        std::make_tuple( std::string{ "ccod2" },      run_with_power(cco_max_clique<CCOPermutations::Defer2>) ),
+        std::make_tuple( std::string{ "ccos" },       run_with_power(cco_max_clique<CCOPermutations::Sort>) )
     };
 
     try {
@@ -70,9 +68,6 @@ auto main(int argc, char * argv[]) -> int
             ("stop-after-finding", po::value<int>(), "Stop after finding a clique of this size")
             ("initial-bound",      po::value<int>(), "Specify an initial bound")
             ("enumerate",                            "Enumerate solutions (use with bmcsa1 --initial-bound=omega-1 --print-incumbents)")
-            ("manual-order",       po::value<std::string>(),
-                "Specify a manual vertex ordering, for bmcsam etc. Must be a list of order:bound pairs "
-                "separated by commas.")
             ("print-incumbents",                     "Print new incumbents as they are found")
             ("split-depth",        po::value<int>(), "Specify the depth at which to perform splitting (where relevant)")
             ("work-donation",                        "Enable work donation (where relevant)")
@@ -179,36 +174,6 @@ auto main(int argc, char * argv[]) -> int
         /* Read in the graph */
         auto graph = read_dimacs(options_vars["input-file"].as<std::string>());
         params.original_graph = &graph;
-
-        /* Work out manual-order, now that we know the graph size */
-        if (std::get<2>(*algorithm)) {
-            if (! options_vars.count("manual-order")) {
-                std::cerr << "manual-order must be specified for this algorithm" << std::endl;
-                return EXIT_FAILURE;
-            }
-
-            std::vector<std::string> tokens;
-            boost::split(tokens, options_vars["manual-order"].as<std::string>(), boost::is_any_of(","));
-            if (unsigned(tokens.size()) != unsigned(graph.size())) {
-                std::cerr << "number of tokens specified for manual-order must be equal to the graph size" << std::endl;
-                return EXIT_FAILURE;
-            }
-
-            for (auto & token : tokens) {
-                auto p = token.find(':');
-                if (std::string::npos == p) {
-                    std::cerr << "manual-order tokens must be of the form vertex:bound" << std::endl;
-                    return EXIT_FAILURE;
-                }
-
-                params.initial_order_and_bounds.emplace_back(std::stoi(token.substr(0, p)) - 1, std::stoi(token.substr(p + 1)));
-            }
-        }
-        else if (options_vars.count("manual-order")) {
-            std::cerr << "manual-order cannot be used for this algorithm" << std::endl;
-            return EXIT_FAILURE;
-        }
-
 
         /* Do the actual run. */
         bool aborted = false;

@@ -29,16 +29,7 @@ namespace
 
         // get our coloured vertices
         std::array<unsigned, size_ * bits_per_word> p_order, colours;
-
-        // use override on initial order and bounds, if appropriate
-        if (order_ == MaxCliqueOrder::Manual && 0 == c_popcount) {
-            for (int i = 0 ; i < graph.size() ; ++i) {
-                p_order[i] = i;
-                colours[i] = params.initial_order_and_bounds.at(i).second;
-            }
-        }
-        else
-            colourise<size_>(graph, p, p_order, colours);
+        colourise<size_>(graph, p, p_order, colours);
 
         // for each v in p... (v comes later)
         for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
@@ -118,10 +109,6 @@ namespace
             case MaxCliqueOrder::Degree:
                 degree_sort(graph, o, false);
                 break;
-            case MaxCliqueOrder::Manual:
-                for (int i = 0 ; i < graph.size() ; ++i)
-                    o.at(i) = params.initial_order_and_bounds.at(i).first;
-                break;
         }
 
         // re-encode graph as a bit graph
@@ -177,5 +164,4 @@ auto parasols::bmcsa_max_clique(const Graph & graph, const MaxCliqueParams & par
 }
 
 template auto parasols::bmcsa_max_clique<MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::bmcsa_max_clique<MaxCliqueOrder::Manual>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
