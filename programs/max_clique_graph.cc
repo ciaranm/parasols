@@ -52,13 +52,15 @@ namespace
 
 void table(int size, int samples, const std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> & algorithm)
 {
+    std::cout << "# probability omega_average nodes_average time_average "
+        << "find_omega_average find_nodes_average find_time_average" << std::endl;
+
     for (int p = 1 ; p < 100 ; ++p) {
-        double omega_average = 0;
-        double nodes_average = 0;
-        double time_average = 0;
+        double omega_average = 0, find_omega_average = 0;
+        double nodes_average = 0, find_nodes_average = 0;
+        double time_average = 0, find_time_average = 0;
 
         for (int n = 0 ; n < samples ; ++n) {
-            MaxCliqueParams params;
             Graph graph;
             graph.resize(size);
 
@@ -68,21 +70,47 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
                     if (dist(rnd) <= (double(p) / 100.0))
                         graph.add_edge(e, f);
 
-            params.original_graph = &graph;
-            params.abort.store(false);
+            unsigned omega;
+            {
+                MaxCliqueParams params;
+                params.original_graph = &graph;
+                params.abort.store(false);
 
-            params.start_time = std::chrono::steady_clock::now();
+                params.start_time = std::chrono::steady_clock::now();
 
-            MaxCliqueResult result = algorithm(graph, params);
+                MaxCliqueResult result = algorithm(graph, params);
 
-            auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
 
-            omega_average += double(result.size) / double(samples);
-            nodes_average += double(result.nodes) / double(samples);
-            time_average += double(overall_time.count()) / double(samples);
+                omega_average += double(result.size) / double(samples);
+                nodes_average += double(result.nodes) / double(samples);
+                time_average += double(overall_time.count()) / double(samples);
+                omega = result.size;
+            }
+
+            {
+                MaxCliqueParams params;
+                params.original_graph = &graph;
+                params.abort.store(false);
+                params.stop_after_finding = omega;
+
+                params.start_time = std::chrono::steady_clock::now();
+
+                MaxCliqueResult result = algorithm(graph, params);
+
+                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+
+                find_omega_average += double(result.size) / double(samples);
+                find_nodes_average += double(result.nodes) / double(samples);
+                find_time_average += double(overall_time.count()) / double(samples);
+            }
         }
 
-        std::cout << (double(p) / 100.0) << " " << omega_average << " " << nodes_average << " " << time_average << std::endl;
+        std::cout
+            << (double(p) / 100.0)
+            << " " << omega_average << " " << nodes_average << " " << time_average
+            << " " << find_omega_average << " " << find_nodes_average << " " << find_time_average
+            << std::endl;
     }
 }
 
