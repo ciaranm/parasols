@@ -133,7 +133,7 @@ auto main(int argc, char * argv[]) -> int
 
         for (auto & s : { result.members_a, result.members_b }) {
             for (auto v : s)
-                std::cout << v + 1 << " ";
+                std::cout << graph.vertex_name(v) << " ";
             std::cout << std::endl;
         }
 

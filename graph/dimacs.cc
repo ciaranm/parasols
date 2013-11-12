@@ -19,7 +19,7 @@ auto InvalidDIMACSFile::what() const throw () -> const char *
 
 auto parasols::read_dimacs(const std::string & filename) -> Graph
 {
-    Graph result;
+    Graph result(0, true);
 
     std::ifstream infile{ filename };
     if (! infile)

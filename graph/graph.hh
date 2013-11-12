@@ -4,6 +4,7 @@
 #define PARASOLS_GUARD_GRAPH_GRAPH_HH 1
 
 #include <vector>
+#include <string>
 #include <cstdint>
 
 namespace parasols
@@ -21,6 +22,7 @@ namespace parasols
 
             int _size = 0;
             AdjacencyMatrix _adjacency;
+            bool _add_one_for_output;
 
             /**
              * Return the appropriate offset into _adjacency for the edge (a,
@@ -29,6 +31,17 @@ namespace parasols
             auto _position(int a, int b) const -> AdjacencyMatrix::size_type;
 
         public:
+            /**
+             * \param initial_size can be 0, if resize() is called afterwards.
+             *
+             * \param add_one_for_output is true if the graph should be
+             * displayed 1-indexed (this affects vertex_name, but vertex
+             * numbers are still 0-indexed).
+             */
+            Graph(int initial_size, bool add_one_for_output);
+
+            Graph(const Graph &) = default;
+
             /**
              * Number of vertices.
              */
@@ -54,6 +67,15 @@ namespace parasols
              * What is the degree of a given vertex?
              */
             auto degree(int a) const -> int;
+
+            /**
+             * Format a vertex for outputting.
+             *
+             * Some graphs are 0-indexed, some are 1-indexed. Some might even
+             * have named vertices. This turns a vertex number (0, size - 1)
+             * into a string for human consumption.
+             */
+            auto vertex_name(int a) const -> std::string;
     };
 }
 

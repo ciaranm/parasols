@@ -33,8 +33,7 @@ Graph parasols::power(const Graph & graph, int n)
                         distances[i][j] = d;
                 }
 
-    Graph result;
-    result.resize(graph.size());
+    Graph result((graph));
 
     for (int i = 0 ; i < graph.size() ; ++i)
         for (int j = 0 ; j < graph.size() ; ++j)

@@ -61,8 +61,7 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
         double time_average = 0, find_time_average = 0;
 
         for (int n = 0 ; n < samples ; ++n) {
-            Graph graph;
-            graph.resize(size);
+            Graph graph(size, false);
 
             std::uniform_real_distribution<double> dist(0.0, 1.0);
             for (int e = 0 ; e < size ; ++e)

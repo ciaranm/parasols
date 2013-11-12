@@ -4,6 +4,7 @@
 
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
+#include <graph/pairs.hh>
 #include <graph/power.hh>
 #include <graph/is_clique.hh>
 #include <graph/is_club.hh>
@@ -93,12 +94,13 @@ auto main(int argc, char * argv[]) -> int
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ("check-club",                           "Check whether our s-clique is also an s-club")
+            ("pairs",                                "Input is in pairs format, not DIMACS")
             ;
 
         po::options_description all_options{ "All options" };
         all_options.add_options()
             ("algorithm", "Specify which algorithm to use")
-            ("input-file", "Specify the input file (DIMACS format)")
+            ("input-file", "Specify the input file (DIMACS format, unless --pairs is specified)")
             ;
 
         all_options.add(display_options);
@@ -187,7 +189,9 @@ auto main(int argc, char * argv[]) -> int
             params.power = options_vars["power"].as<int>();
 
         /* Read in the graph */
-        auto graph = read_dimacs(options_vars["input-file"].as<std::string>());
+        auto graph = options_vars.count("pairs") ?
+            read_pairs(options_vars["input-file"].as<std::string>()) :
+            read_dimacs(options_vars["input-file"].as<std::string>());
         params.original_graph = &graph;
 
         /* Do the actual run. */
@@ -217,7 +221,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* Members, and whether it's a club. */
         for (auto v : result.members)
-            std::cout << v + 1 << " ";
+            std::cout << graph.vertex_name(v) << " ";
 
         if (options_vars.count("check-club")) {
             if (is_club(graph, params.power, result.members))

@@ -5,6 +5,7 @@ SOURCES := \
 	degree_sort.cc \
 	min_width_sort.cc \
 	dimacs.cc \
+	pairs.cc \
 	graph.cc \
 	power.cc \
 	is_clique.cc \
