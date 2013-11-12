@@ -34,7 +34,7 @@ namespace
     {
         return run_this_wrapped<MaxCliqueResult, MaxCliqueParams, Graph>(
                 [func] (const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult {
-                    if (params.power > 0)
+                    if (params.power > 1)
                         return func(power(graph, params.power), params);
                     else
                         return func(graph, params);
