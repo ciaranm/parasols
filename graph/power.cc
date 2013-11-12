@@ -20,7 +20,7 @@ Graph parasols::power(const Graph & graph, int n)
     for (int i = 0 ; i < graph.size() ; ++i)
         distances[i][i] = 0;
 
-    /* d(m, n) = 1 if m, n in members and adjacent */
+    /* d(m, n) = 1 if m, n adjacent */
     for (int i = 0 ; i < graph.size() ; ++i)
         for (int j = 0 ; j < graph.size() ; ++j)
             if (i != j && graph.adjacent(i, j))
