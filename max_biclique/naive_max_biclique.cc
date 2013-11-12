@@ -133,7 +133,7 @@ auto parasols::naive_max_biclique(const Graph & graph, const MaxBicliqueParams &
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
-    static_assert(max_graph_words == 256, "Need to update here if max_graph_size is changed.");
+    static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
         return naive<1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
@@ -152,6 +152,10 @@ auto parasols::naive_max_biclique(const Graph & graph, const MaxBicliqueParams &
         return naive<128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
         return naive<256>(graph, params);
+    else if (graph.size() < 512 * bits_per_word)
+        return naive<512>(graph, params);
+    else if (graph.size() < 1024 * bits_per_word)
+        return naive<1024>(graph, params);
     else
         throw GraphTooBig();
 }

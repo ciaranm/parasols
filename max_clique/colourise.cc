@@ -95,7 +95,7 @@ auto parasols::colourise(
     }
 }
 
-static_assert(max_graph_words == 256, "Need to update here if max_graph_size is changed.");
+static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
 template auto parasols::colourise(const FixedBitGraph<1> & graph, const FixedBitSet<1> & p, std::array<unsigned, 1 * bits_per_word> & p_order,
         std::array<unsigned, 1 * bits_per_word> & result) -> void;
 template auto parasols::colourise(const FixedBitGraph<2> & graph, const FixedBitSet<2> & p, std::array<unsigned, 2 * bits_per_word> & p_order,
@@ -114,4 +114,8 @@ template auto parasols::colourise(const FixedBitGraph<128> & graph, const FixedB
         std::array<unsigned, 128 * bits_per_word> & result) -> void;
 template auto parasols::colourise(const FixedBitGraph<256> & graph, const FixedBitSet<256> & p, std::array<unsigned, 256 * bits_per_word> & p_order,
         std::array<unsigned, 256 * bits_per_word> & result) -> void;
+template auto parasols::colourise(const FixedBitGraph<512> & graph, const FixedBitSet<512> & p, std::array<unsigned, 512 * bits_per_word> & p_order,
+        std::array<unsigned, 512 * bits_per_word> & result) -> void;
+template auto parasols::colourise(const FixedBitGraph<1024> & graph, const FixedBitSet<1024> & p, std::array<unsigned, 1024 * bits_per_word> & p_order,
+        std::array<unsigned, 1024 * bits_per_word> & result) -> void;
 

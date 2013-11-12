@@ -244,7 +244,7 @@ namespace parasols
      * We have to decide at compile time what the largest graph we'll support
      * is.
      */
-    constexpr auto max_graph_words __attribute__((unused)) = 256;
+    constexpr auto max_graph_words __attribute__((unused)) = 1024;
 
     /**
      * Thrown if we exceed max_graph_words.
