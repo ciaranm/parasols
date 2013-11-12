@@ -1,41 +1,41 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <graph/is_club.hh>
-#include <map>
+#include <limits>
 
 using namespace parasols;
 
 auto
 parasols::is_club(const Graph & graph, int k, const std::set<int> & members) -> bool
 {
-    /* this could be a lot faster. */
-    std::map<std::pair<int, int>, int> distances;
+    std::vector<std::vector<int> > distances((graph.size()));
+    for (auto & d : distances)
+        d.resize((graph.size()));
 
-    /* d(m, m) = 0 */
-    for (auto & m : members)
-        distances[std::make_pair(m, m)] = 0;
-
-    /* d(m, n) = 1 if m, n in members and adjacent */
-    for (auto & m : members)
-        for (auto & n : members)
-            if (m != n && graph.adjacent(m, n))
-                distances[std::make_pair(m, n)] = 1;
+    for (int i = 0 ; i < graph.size() ; ++i)
+        for (int j = 0 ; j < graph.size() ; ++j) {
+            if (i == j)
+                distances[i][j] = 0;
+            else if (members.count(i) && members.count(j) && graph.adjacent(i, j))
+                distances[i][j] = 1;
+            else
+                distances[i][j] = std::numeric_limits<int>::max();
+        }
 
     /* shorten */
-    for (auto & i : members)
-        for (auto & j : members)
-            for (auto & k : members)
-                if (distances.count(std::make_pair(i, k)) && distances.count(std::make_pair(k, j))) {
-                    int d = distances[std::make_pair(i, k)] + distances[std::make_pair(k, j)];
-                    if (! distances.count(std::make_pair(i, j)))
-                        distances[std::make_pair(i, j)] = d;
-                    else if (distances[std::make_pair(i, j)] > d)
-                        distances[std::make_pair(i, j)] = d;
+    for (int k = 0 ; k < graph.size() ; ++k)
+        for (int i = 0 ; i < graph.size() ; ++i)
+            for (int j = 0 ; j < graph.size() ; ++j)
+                if (distances[i][k] != std::numeric_limits<int>::max() &&
+                        distances[k][j] != std::numeric_limits<int>::max()) {
+                    int d = distances[i][k] + distances[k][j];
+                    if (distances[i][j] > d)
+                        distances[i][j] = d;
                 }
 
     for (auto & i : members)
         for (auto & j : members)
-            if ((! distances.count(std::make_pair(i, j))) || distances[std::make_pair(i, j)] > k)
+            if (distances[i][j] > k)
                 return false;
 
     return true;
