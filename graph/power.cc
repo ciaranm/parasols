@@ -11,44 +11,35 @@ Graph parasols::power(const Graph & graph, int n)
     for (auto & d : distances)
         d.resize((graph.size()));
 
-    /* d(m, n) = infinity */
+    /* initial distances */
     for (int i = 0 ; i < graph.size() ; ++i)
-        for (int j = 0 ; j < graph.size() ; ++j)
-            distances[i][j] = std::numeric_limits<int>::max();
-
-    /* d(m, m) = 0 */
-    for (int i = 0 ; i < graph.size() ; ++i)
-        distances[i][i] = 0;
-
-    /* d(m, n) = 1 if m, n adjacent */
-    for (int i = 0 ; i < graph.size() ; ++i)
-        for (int j = 0 ; j < graph.size() ; ++j)
-            if (i != j && graph.adjacent(i, j))
+        for (int j = 0 ; j < graph.size() ; ++j) {
+            if (i == j)
+                distances[i][j] = 0;
+            else if (graph.adjacent(i, j))
                 distances[i][j] = 1;
+            else
+                distances[i][j] = std::numeric_limits<int>::max();
+        }
 
     /* shorten */
-    for (int i = 0 ; i < graph.size() ; ++i)
-        for (int j = 0 ; j < graph.size() ; ++j)
-            for (int k = 0 ; k < graph.size() ; ++k) {
+    for (int k = 0 ; k < graph.size() ; ++k)
+        for (int i = 0 ; i < graph.size() ; ++i)
+            for (int j = 0 ; j < graph.size() ; ++j)
                 if (distances[i][k] != std::numeric_limits<int>::max() &&
                         distances[k][j] != std::numeric_limits<int>::max()) {
                     int d = distances[i][k] + distances[k][j];
                     if (distances[i][j] > d)
                         distances[i][j] = d;
                 }
-            }
 
     Graph result;
     result.resize(graph.size());
 
-    for (int i = 0 ; i < graph.size() ; ++i) {
-        for (int j = 0 ; j < graph.size() ; ++j) {
-            if (i == j)
-                continue;
-            if (distances[i][j] <= n)
+    for (int i = 0 ; i < graph.size() ; ++i)
+        for (int j = 0 ; j < graph.size() ; ++j)
+            if (i != j && distances[i][j] <= n)
                 result.add_edge(i, j);
-        }
-    }
 
     return result;
 }
