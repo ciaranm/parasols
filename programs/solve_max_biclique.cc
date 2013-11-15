@@ -4,6 +4,7 @@
 
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
+#include <graph/pairs.hh>
 
 #include <max_biclique/naive_max_biclique.hh>
 #include <max_biclique/cc_max_biclique.hh>
@@ -41,12 +42,13 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("break-ab-symmetry",  po::value<bool>(), "Break a/b symmetry (on by default)")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
+            ("pairs",                                "Input is in pairs format, not DIMACS")
             ;
 
         po::options_description all_options{ "All options" };
         all_options.add_options()
             ("algorithm", "Specify which algorithm to use")
-            ("input-file", "Specify the input file (DIMACS format)")
+            ("input-file", "Specify the input file (DIMACS format, unless --pairs is specified)")
             ;
 
         all_options.add(display_options);
@@ -114,7 +116,9 @@ auto main(int argc, char * argv[]) -> int
             params.break_ab_symmetry = options_vars["break-ab-symmetry"].as<bool>();
 
         /* Read in the graph */
-        auto graph = read_dimacs(options_vars["input-file"].as<std::string>());
+        auto graph = options_vars.count("pairs") ?
+            read_pairs(options_vars["input-file"].as<std::string>()) :
+            read_dimacs(options_vars["input-file"].as<std::string>());
 
         /* Do the actual run. */
         bool aborted = false;
