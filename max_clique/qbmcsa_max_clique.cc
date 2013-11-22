@@ -101,8 +101,14 @@ namespace
             ++position.back();
 
             // bound, timeout or early exit?
-            if (bound(c_popcount, colours[n], params, best_anywhere) || params.abort.load())
+            if (bound(c_popcount, colours[n], params, best_anywhere) || params.abort.load()) {
+                if (0 == c_popcount && maybe_queues) {
+                    for ( ; n >= 0 ; --n)
+                        maybe_queues->at(graph.size() - n - 1)->initial_producer_done();
+                }
+
                 return;
+            }
 
             auto v = p_order[n];
 
@@ -137,6 +143,10 @@ namespace
             c.unset(v);
             p.unset(v);
             --c_popcount;
+
+            if (0 == c_popcount && maybe_queues) {
+                maybe_queues->at(*position.begin() - 1)->initial_producer_done();
+            }
         }
     }
 
@@ -173,9 +183,6 @@ namespace
 
                     // populate!
                     expand<order_, size_>(graph, o, &queues, tc, tp, result, params, best_anywhere, position);
-
-                    for (auto & q : queues)
-                        q->initial_producer_done();
 
                     // merge results
                     std::unique_lock<std::mutex> guard(result_mutex);
