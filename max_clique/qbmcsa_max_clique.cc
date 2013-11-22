@@ -193,7 +193,7 @@ namespace
                             while (true) {
                                 // get some work to do
                                 QueueItem<size_> args;
-                                if (! queues.at(q)->dequeue_blocking(args))
+                                if (! queues.at((q + i) % graph.size())->dequeue_blocking(args))
                                     break;
 
                                 // re-evaluate the bound against our new best
