@@ -10,5 +10,6 @@ SOURCES := \
 	naive_max_clique.cc \
 	print_incumbent.cc \
 	tbmcsa_max_clique.cc \
+	qbmcsa_max_clique.cc \
 	tmcsa1_max_clique.cc
 
