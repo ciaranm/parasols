@@ -155,8 +155,12 @@ namespace
     {
         Queues<size_> queues;
         queues.reserve(graph.size());
-        for (int i = 0 ; i < graph.size() ; ++i)
+        Queue<int> queue_numbers_queue{ params.n_threads, false, false };
+        for (int i = 0 ; i < graph.size() ; ++i) {
             queues.push_back(std::make_shared<Queue<QueueItem<size_> > >(params.n_threads, false, false));
+            queue_numbers_queue.enqueue(int(i));
+        }
+        queue_numbers_queue.initial_producer_done();
 
         MaxCliqueResult result; // global result
         std::mutex result_mutex;
@@ -196,11 +200,20 @@ namespace
 
                         MaxCliqueResult tr; // local result
 
-                        for (int q = 0 ; q < graph.size() ; ++q) {
+                        FixedBitSet<size_> done_queues;
+                        done_queues.resize(graph.size());
+                        done_queues.set_all();
+
+                        while (! done_queues.empty()) {
+                            int current_queue;
+                            if (! queue_numbers_queue.dequeue_blocking(current_queue))
+                                current_queue = done_queues.first_set_bit();
+                            done_queues.unset(current_queue);
+
                             while (true) {
                                 // get some work to do
                                 QueueItem<size_> args;
-                                if (! queues.at((q + i) % graph.size())->dequeue_blocking(args))
+                                if (! queues.at(current_queue)->dequeue_blocking(args))
                                     break;
 
                                 // re-evaluate the bound against our new best
@@ -210,7 +223,7 @@ namespace
                                 // do some work
                                 expand<order_, size_>(graph, o, nullptr, args.c, args.p, tr, params, best_anywhere, args.position);
                             }
-                            }
+                        }
 
                         auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
