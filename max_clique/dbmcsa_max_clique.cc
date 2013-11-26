@@ -5,8 +5,11 @@
 #include <max_clique/print_incumbent.hh>
 #include <graph/degree_sort.hh>
 #include <graph/min_width_sort.hh>
+#include <threads/atomic_incumbent.hh>
 
 #include <algorithm>
+#include <thread>
+#include <mutex>
 
 using namespace parasols;
 
@@ -23,6 +26,33 @@ namespace
     };
 
     template <unsigned size_>
+    auto found_possible_new_best(
+            const FixedBitGraph<size_> & graph,
+            const std::vector<int> & o,
+            const FixedBitSet<size_> & c,
+            int c_popcount,
+            const MaxCliqueParams & params,
+            MaxCliqueResult & result,
+            AtomicIncumbent & best_anywhere,
+            const std::vector<int> & position) -> void
+    {
+        if (best_anywhere.update(c_popcount)) {
+            result.size = c_popcount;
+            result.members.clear();
+            for (int i = 0 ; i < graph.size() ; ++i)
+                if (c.test(i))
+                    result.members.insert(o[i]);
+            print_incumbent(params, result.size, position);
+        }
+    }
+
+    auto bound(unsigned c_popcount, unsigned cn, const MaxCliqueParams & params, AtomicIncumbent & best_anywhere) -> bool
+    {
+        unsigned best_anywhere_value = best_anywhere.get();
+        return (c_popcount + cn <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding);
+    }
+
+    template <unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
@@ -31,6 +61,7 @@ namespace
             FixedBitSet<size_> & c,                          // current candidate clique
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
+            AtomicIncumbent & best_anywhere,
             const MaxCliqueParams & params,
             std::vector<int> & positions,
             bool already_split
@@ -40,7 +71,7 @@ namespace
         int n = p.popcount() - 1;
 
         // bound, timeout or early exit?
-        if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+        if (bound(c_popcount, colours[n], params, best_anywhere) || params.abort.load())
             return;
 
         auto v = p_order[n];
@@ -55,16 +86,7 @@ namespace
         graph.intersect_with_row(v, new_p);
 
         if (new_p.empty()) {
-            // potential new best
-            if (c_popcount > result.size) {
-                result.size = c_popcount;
-                result.members.clear();
-                for (int i = 0 ; i < graph.size() ; ++i)
-                    if (c.test(i))
-                        result.members.insert(o[i]);
-
-                print_incumbent(params, c_popcount, positions);
-            }
+            found_possible_new_best(graph, o, c, c_popcount, params, result, best_anywhere, positions);
         }
         else {
             // get our coloured vertices
@@ -72,7 +94,7 @@ namespace
             std::array<unsigned, size_ * bits_per_word> new_p_order, new_colours;
             colourise<size_>(graph, new_p, new_p_order, new_colours);
             positions.push_back(0);
-            expand<size_>(graph, o, new_p_order, new_colours, c, new_p, result, params, positions, false);
+            expand<size_>(graph, o, new_p_order, new_colours, c, new_p, result, best_anywhere, params, positions, false);
             positions.pop_back();
         }
 
@@ -83,7 +105,7 @@ namespace
             --c_popcount;
 
             if (n > 0) {
-                expand<size_>(graph, o, p_order, colours, c, p, result, params, positions, false);
+                expand<size_>(graph, o, p_order, colours, c, p, result, best_anywhere, params, positions, false);
             }
         }
     }
@@ -92,7 +114,11 @@ namespace
     auto dbmcsa(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         MaxCliqueResult result;
+        std::mutex result_mutex;
         result.size = params.initial_bound;
+
+        AtomicIncumbent best_anywhere; // global incumbent
+        best_anywhere.update(params.initial_bound);
 
         std::vector<int> o(graph.size()); // vertex ordering
 
@@ -140,20 +166,48 @@ namespace
         colourise<size_>(bit_graph, p, new_p_order, new_colours);
 
         // first job
+        std::mutex next_job_mutex;
         Defer<size_> next_job{ new_p_order, new_colours, c, p, positions };
 
-        // go!
-        while (! next_job.p.empty()) {
-            // split
-            Defer<size_> job = next_job;
+        std::list<std::thread> threads; // workers
+        for (unsigned i = 0 ; i < params.n_threads ; ++i) {
+            threads.push_back(std::thread([&, i] {
 
-            ++next_job.positions.back();
-            auto v = next_job.p_order[next_job.p.popcount() - 1];
-            next_job.c.unset(v);
-            next_job.p.unset(v);
+                auto start_time = std::chrono::steady_clock::now(); // local start time
+                MaxCliqueResult tr; // local result
 
-            expand<size_>(bit_graph, o, job.p_order, job.colours, job.c, job.p, result, params, job.positions, true);
+                while (true) {
+                    Defer<size_> job;
+                    {
+                        std::unique_lock<std::mutex> guard(next_job_mutex);
+                        if (next_job.p.empty())
+                            break;
+
+                        // split
+                        job = next_job;
+
+                        ++next_job.positions.back();
+                        auto v = next_job.p_order[next_job.p.popcount() - 1];
+                        next_job.c.unset(v);
+                        next_job.p.unset(v);
+                    }
+
+                    expand<size_>(bit_graph, o, job.p_order, job.colours, job.c, job.p, tr, best_anywhere, params, job.positions, true);
+                }
+
+                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+
+                // merge results
+                {
+                    std::unique_lock<std::mutex> guard(result_mutex);
+                    result.merge(tr);
+                    result.times.push_back(overall_time);
+                }
+            }));
         }
+
+        for (auto & t : threads)
+            t.join();
 
         return result;
     }
