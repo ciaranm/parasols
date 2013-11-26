@@ -13,6 +13,16 @@ using namespace parasols;
 namespace
 {
     template <unsigned size_>
+    struct Defer
+    {
+        std::array<unsigned, size_ * bits_per_word> p_order;
+        std::array<unsigned, size_ * bits_per_word> colours;
+        FixedBitSet<size_> c;
+        FixedBitSet<size_> p;
+        std::vector<int> positions;
+    };
+
+    template <unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
@@ -22,7 +32,8 @@ namespace
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
-            std::vector<int> & position
+            std::vector<int> & positions,
+            bool already_split
             ) -> void
     {
         auto c_popcount = c.popcount();
@@ -33,11 +44,11 @@ namespace
             return;
 
         auto v = p_order[n];
+        ++positions.back();
 
         // consider taking v
         c.set(v);
         ++c_popcount;
-        ++position.back();
 
         // filter p to contain vertices adjacent to v
         FixedBitSet<size_> new_p = p;
@@ -52,7 +63,7 @@ namespace
                     if (c.test(i))
                         result.members.insert(o[i]);
 
-                print_incumbent(params, c_popcount, position);
+                print_incumbent(params, c_popcount, positions);
             }
         }
         else {
@@ -60,18 +71,20 @@ namespace
             ++result.nodes;
             std::array<unsigned, size_ * bits_per_word> new_p_order, new_colours;
             colourise<size_>(graph, new_p, new_p_order, new_colours);
-            position.push_back(0);
-            expand<size_>(graph, o, new_p_order, new_colours, c, new_p, result, params, position);
-            position.pop_back();
+            positions.push_back(0);
+            expand<size_>(graph, o, new_p_order, new_colours, c, new_p, result, params, positions, false);
+            positions.pop_back();
         }
 
-        // now consider not taking v
-        c.unset(v);
-        p.unset(v);
-        --c_popcount;
+        if (! already_split) {
+            // now consider not taking v
+            c.unset(v);
+            p.unset(v);
+            --c_popcount;
 
-        if (n > 0) {
-            expand<size_>(graph, o, p_order, colours, c, p, result, params, position);
+            if (n > 0) {
+                expand<size_>(graph, o, p_order, colours, c, p, result, params, positions, false);
+            }
         }
     }
 
@@ -126,8 +139,21 @@ namespace
         std::array<unsigned, size_ * bits_per_word> new_p_order, new_colours;
         colourise<size_>(bit_graph, p, new_p_order, new_colours);
 
+        // first job
+        Defer<size_> next_job{ new_p_order, new_colours, c, p, positions };
+
         // go!
-        expand<size_>(bit_graph, o, new_p_order, new_colours, c, p, result, params, positions);
+        while (! next_job.p.empty()) {
+            // split
+            Defer<size_> job = next_job;
+
+            ++next_job.positions.back();
+            auto v = next_job.p_order[next_job.p.popcount() - 1];
+            next_job.c.unset(v);
+            next_job.p.unset(v);
+
+            expand<size_>(bit_graph, o, job.p_order, job.colours, job.c, job.p, result, params, job.positions, true);
+        }
 
         return result;
     }
