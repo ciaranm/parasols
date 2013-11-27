@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <thread>
+#include <condition_variable>
 #include <mutex>
 
 using namespace parasols;
@@ -16,13 +17,13 @@ using namespace parasols;
 namespace
 {
     template <unsigned size_>
-    struct Defer
+    struct Job
     {
+        std::mutex mutex;
         std::array<unsigned, size_ * bits_per_word> p_order;
         std::array<unsigned, size_ * bits_per_word> colours;
         FixedBitSet<size_> c;
         FixedBitSet<size_> p;
-        std::vector<int> positions;
     };
 
     template <unsigned size_>
@@ -33,8 +34,7 @@ namespace
             int c_popcount,
             const MaxCliqueParams & params,
             MaxCliqueResult & result,
-            AtomicIncumbent & best_anywhere,
-            const std::vector<int> & position) -> void
+            AtomicIncumbent & best_anywhere) -> void
     {
         if (best_anywhere.update(c_popcount)) {
             result.size = c_popcount;
@@ -42,7 +42,7 @@ namespace
             for (int i = 0 ; i < graph.size() ; ++i)
                 if (c.test(i))
                     result.members.insert(o[i]);
-            print_incumbent(params, result.size, position);
+            print_incumbent(params, result.size);
         }
     }
 
@@ -53,7 +53,7 @@ namespace
     }
 
     template <unsigned size_>
-    auto expand(
+    auto expand_unstealable(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
             const std::array<unsigned, size_ * bits_per_word> & p_order,
@@ -62,9 +62,7 @@ namespace
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
             AtomicIncumbent & best_anywhere,
-            const MaxCliqueParams & params,
-            std::vector<int> & positions,
-            bool already_split
+            const MaxCliqueParams & params
             ) -> void
     {
         auto c_popcount = c.popcount();
@@ -75,7 +73,6 @@ namespace
             return;
 
         auto v = p_order[n];
-        ++positions.back();
 
         // consider taking v
         c.set(v);
@@ -86,29 +83,103 @@ namespace
         graph.intersect_with_row(v, new_p);
 
         if (new_p.empty()) {
-            found_possible_new_best(graph, o, c, c_popcount, params, result, best_anywhere, positions);
+            found_possible_new_best(graph, o, c, c_popcount, params, result, best_anywhere);
         }
         else {
             // get our coloured vertices
             ++result.nodes;
             std::array<unsigned, size_ * bits_per_word> new_p_order, new_colours;
             colourise<size_>(graph, new_p, new_p_order, new_colours);
-            positions.push_back(0);
-            expand<size_>(graph, o, new_p_order, new_colours, c, new_p, result, best_anywhere, params, positions, false);
-            positions.pop_back();
+            expand_unstealable<size_>(graph, o, new_p_order, new_colours, c, new_p, result, best_anywhere, params);
         }
 
-        if (! already_split) {
-            // now consider not taking v
-            c.unset(v);
-            p.unset(v);
-            --c_popcount;
-
-            if (n > 0) {
-                expand<size_>(graph, o, p_order, colours, c, p, result, best_anywhere, params, positions, false);
-            }
+        // now consider not taking v
+        c.unset(v);
+        p.unset(v);
+        if (n > 0) {
+            expand_unstealable<size_>(graph, o, p_order, colours, c, p, result, best_anywhere, params);
         }
     }
+
+    template <unsigned size_>
+    auto expand(
+            const FixedBitGraph<size_> & graph,
+            const std::vector<int> & o,
+            Job<size_> * job,
+            std::unique_lock<std::mutex> & job_guard,
+            Job<size_> * child_job,
+            std::mutex & stealing_mutex,
+            std::condition_variable & stealing_cv,
+            std::list<Job<size_> *> & steal_queue,
+            MaxCliqueResult & result,
+            AtomicIncumbent & best_anywhere,
+            const MaxCliqueParams & params
+            ) -> bool
+    {
+        auto job_c_popcount = job->c.popcount();
+        int n = job->p.popcount() - 1;
+
+        // bound, timeout or early exit?
+        if (-1 == n || bound(job_c_popcount, job->colours[n], params, best_anywhere) || params.abort.load())
+            return false;
+
+        auto v = job->p_order[n];
+
+        auto c = job->c;
+        auto p = job->p;
+
+        // prepare next step in the job
+        job->c.unset(v);
+        job->p.unset(v);
+        job_guard.unlock();
+
+        // consider taking v
+        c.set(v);
+
+        // filter p to contain vertices adjacent to v
+        FixedBitSet<size_> new_p = p;
+        graph.intersect_with_row(v, new_p);
+
+        if (new_p.empty()) {
+            found_possible_new_best(graph, o, c, c.popcount(), params, result, best_anywhere);
+        }
+        else {
+            // get our coloured vertices
+            ++result.nodes;
+
+            if (child_job) {
+                child_job->c = c;
+                child_job->p = new_p;
+                colourise<size_>(graph, child_job->p, child_job->p_order, child_job->colours);
+
+                {
+                    std::unique_lock<std::mutex> guard(stealing_mutex);
+                    steal_queue.push_front(child_job);
+                    stealing_cv.notify_all();
+                }
+
+                while (true) {
+                    std::unique_lock<std::mutex> child_job_guard(child_job->mutex);
+                    if (! expand<size_>(graph, o, child_job, child_job_guard, nullptr,
+                                stealing_mutex, stealing_cv, steal_queue, result, best_anywhere, params))
+                        break;
+                }
+
+                {
+                    std::unique_lock<std::mutex> guard(stealing_mutex);
+                    steal_queue.remove(child_job);
+                }
+            }
+            else {
+                std::array<unsigned, size_ * bits_per_word> new_p_order, new_colours;
+                colourise<size_>(graph, new_p, new_p_order, new_colours);
+                expand_unstealable<size_>(graph, o, new_p_order, new_colours, c, new_p, result, best_anywhere, params);
+            }
+        }
+
+        return true;
+    }
+
 
     template <MaxCliqueOrder order_, unsigned size_>
     auto dbmcsa(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
@@ -121,13 +192,6 @@ namespace
         best_anywhere.update(params.initial_bound);
 
         std::vector<int> o(graph.size()); // vertex ordering
-
-        FixedBitSet<size_> c; // current candidate clique
-        c.resize(graph.size());
-
-        FixedBitSet<size_> p; // potential additions
-        p.resize(graph.size());
-        p.set_all();
 
         // populate our order with every vertex initially
         std::iota(o.begin(), o.end(), 0);
@@ -156,18 +220,22 @@ namespace
                 if (graph.adjacent(o[i], o[j]))
                     bit_graph.add_edge(i, j);
 
-        std::vector<int> positions;
-        positions.reserve(graph.size());
-        positions.push_back(0);
-
         // initial ordering
         ++result.nodes;
-        std::array<unsigned, size_ * bits_per_word> new_p_order, new_colours;
-        colourise<size_>(bit_graph, p, new_p_order, new_colours);
+
+        Job<size_> top_job;
 
         // first job
-        std::mutex next_job_mutex;
-        Defer<size_> next_job{ new_p_order, new_colours, c, p, positions };
+        top_job.c.resize(graph.size());
+        top_job.p.resize(graph.size());
+        top_job.p.set_all();
+        colourise<size_>(bit_graph, top_job.p, top_job.p_order, top_job.colours);
+
+        std::mutex stealing_mutex;
+        std::condition_variable stealing_cv;
+        bool finished = false;
+        int number_busy = params.n_threads;
+        std::list<Job<size_> *> steal_queue;
 
         std::list<std::thread> threads; // workers
         for (unsigned i = 0 ; i < params.n_threads ; ++i) {
@@ -176,23 +244,41 @@ namespace
                 auto start_time = std::chrono::steady_clock::now(); // local start time
                 MaxCliqueResult tr; // local result
 
+                Job<size_> this_thread_job;
+
                 while (true) {
-                    Defer<size_> job;
-                    {
-                        std::unique_lock<std::mutex> guard(next_job_mutex);
-                        if (next_job.p.empty())
-                            break;
+                    std::unique_lock<std::mutex> guard(top_job.mutex);
+                    if (! expand<size_>(bit_graph, o,
+                            &top_job, guard, &this_thread_job,
+                            stealing_mutex, stealing_cv, steal_queue,
+                            tr, best_anywhere, params))
+                        break;
+                }
 
-                        // split
-                        job = next_job;
+                while (! finished) {
+                    std::unique_lock<std::mutex> guard(stealing_mutex);
+                    if (0 == --number_busy) {
+                        finished = true;
+                        stealing_cv.notify_all();
+                    } else {
+                        bool found_something = false;
+                        while (! steal_queue.empty()) {
+                            std::unique_lock<std::mutex> steal_guard((*steal_queue.begin())->mutex);
+                            if (! (*steal_queue.begin())->p.empty()) {
+                                found_something = true;
+                                ++number_busy;
+                                guard.unlock();
+                                expand<size_>(bit_graph, o, *steal_queue.begin(), steal_guard, nullptr,
+                                        stealing_mutex, stealing_cv, steal_queue, tr, best_anywhere, params);
+                                break;
+                            }
+                            else
+                                steal_queue.pop_front();
+                        }
 
-                        ++next_job.positions.back();
-                        auto v = next_job.p_order[next_job.p.popcount() - 1];
-                        next_job.c.unset(v);
-                        next_job.p.unset(v);
+                        if (! found_something)
+                            stealing_cv.wait(guard);
                     }
-
-                    expand<size_>(bit_graph, o, job.p_order, job.colours, job.c, job.p, tr, best_anywhere, params, job.positions, true);
                 }
 
                 auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
