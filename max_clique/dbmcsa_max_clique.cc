@@ -270,8 +270,9 @@ namespace
                             if (! (*s)->p.empty()) {
                                 found_something = true;
                                 ++number_busy;
+                                bool resplit = ((*s)->c.popcount() <= 1);
                                 guard.unlock();
-                                expand<size_>(bit_graph, o, *s, steal_guard, nullptr,
+                                expand<size_>(bit_graph, o, *s, steal_guard, resplit ? &this_thread_job : nullptr,
                                         stealing_mutex, stealing_cv, steal_queue, tr, best_anywhere, params);
                                 break;
                             }
