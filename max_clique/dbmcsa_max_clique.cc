@@ -154,7 +154,7 @@ namespace
 
                 {
                     std::unique_lock<std::mutex> guard(stealing_mutex);
-                    steal_queue.push_front(child_job);
+                    steal_queue.push_back(child_job);
                     stealing_cv.notify_all();
                 }
 
@@ -255,25 +255,26 @@ namespace
                         break;
                 }
 
-                while (! finished) {
+                while (true) {
                     std::unique_lock<std::mutex> guard(stealing_mutex);
+                    if (finished)
+                        break;
+
                     if (0 == --number_busy) {
                         finished = true;
                         stealing_cv.notify_all();
                     } else {
                         bool found_something = false;
-                        while (! steal_queue.empty()) {
-                            std::unique_lock<std::mutex> steal_guard((*steal_queue.begin())->mutex);
-                            if (! (*steal_queue.begin())->p.empty()) {
+                        for (auto s = steal_queue.begin() ; s != steal_queue.end() ; ++s) {
+                            std::unique_lock<std::mutex> steal_guard((*s)->mutex);
+                            if (! (*s)->p.empty()) {
                                 found_something = true;
                                 ++number_busy;
                                 guard.unlock();
-                                expand<size_>(bit_graph, o, *steal_queue.begin(), steal_guard, nullptr,
+                                expand<size_>(bit_graph, o, *s, steal_guard, nullptr,
                                         stealing_mutex, stealing_cv, steal_queue, tr, best_anywhere, params);
                                 break;
                             }
-                            else
-                                steal_queue.pop_front();
                         }
 
                         if (! found_something)
