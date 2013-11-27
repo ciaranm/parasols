@@ -242,6 +242,7 @@ namespace
             threads.push_back(std::thread([&, i] {
 
                 auto start_time = std::chrono::steady_clock::now(); // local start time
+                auto last_useful_time = start_time; // gets updated
                 MaxCliqueResult tr; // local result
 
                 Job<size_> this_thread_job;
@@ -254,6 +255,8 @@ namespace
                             tr, best_anywhere, params))
                         break;
                 }
+
+                last_useful_time = std::chrono::steady_clock::now();
 
                 while (true) {
                     std::unique_lock<std::mutex> guard(stealing_mutex);
@@ -274,6 +277,7 @@ namespace
                                 guard.unlock();
                                 expand<size_>(bit_graph, o, *s, steal_guard, resplit ? &this_thread_job : nullptr,
                                         stealing_mutex, stealing_cv, steal_queue, tr, best_anywhere, params);
+                                last_useful_time = std::chrono::steady_clock::now();
                                 break;
                             }
                         }
@@ -283,7 +287,7 @@ namespace
                     }
                 }
 
-                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(last_useful_time - start_time);
 
                 // merge results
                 {
