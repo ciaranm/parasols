@@ -36,12 +36,6 @@ namespace parasols
         std::list<std::chrono::milliseconds> times;
 
         /**
-         * Number of 'top' nodes we've successfully processed. Potentially
-         * useful for guessing how far we've progressed if a timeout occurs.
-         */
-        unsigned long long top_nodes_done = 0;
-
-        /**
          * Merge two results together (add nodes, etc). Used by threads.
          */
         auto merge(const MaxCliqueResult &) -> void;

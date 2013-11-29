@@ -174,10 +174,6 @@ auto parasols::tmcsa1_max_clique(const Graph & graph, const MaxCliqueParams & pa
                         args.c.reserve(graph.size());
                         expand(graph, buckets, nullptr, params.work_donation ? &queue : nullptr,
                                 args.c, args.o, tr, params, best_anywhere);
-
-                        // keep track of top nodes done
-                        if (! params.abort.load())
-                            ++tr.top_nodes_done;
                     }
 
                     auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);

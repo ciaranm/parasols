@@ -227,7 +227,7 @@ auto main(int argc, char * argv[]) -> int
         }
 
         if (aborted)
-            std::cout << " aborted " << result.top_nodes_done;
+            std::cout << " aborted";
 
         std::cout << std::endl;
 

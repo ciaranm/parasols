@@ -45,8 +45,7 @@ Where the first runtime is the overall time (excluding reading in the graph) in
 steady-clock ms, and any additional values are per-thread runtimes.
 
 If work donation is enabled, a fourth line will show how many times this
-happened. If a timeout is specified, the first line will also say 'aborted n',
-where n is the number of queued nodes processed to completion.
+happened. If a timeout is specified, the first line will also say 'aborted'.
 
 solve_max_biclique
 ------------------

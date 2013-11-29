@@ -217,10 +217,6 @@ namespace
                             // do some work
                             expand<order_, size_>(graph, o, nullptr, params.work_donation ? &queue : nullptr, last_donation_time,
                                     args.c, args.p, tr, params, best_anywhere, args.position);
-
-                            // keep track of top nodes done
-                            if (! params.abort.load())
-                                ++tr.top_nodes_done;
                         }
 
                         auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
