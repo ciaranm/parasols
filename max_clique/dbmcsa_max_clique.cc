@@ -65,6 +65,7 @@ namespace
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
             Queue<QueueItem<size_> > * const maybe_queue,    // not null if we're populating: enqueue here
+            bool blocking_enqueue,
             StealPoint<size_> * const steal_point,
             FixedBitSet<size_> & c,                          // current candidate clique
             FixedBitSet<size_> & p,                          // potential additions
@@ -121,11 +122,15 @@ namespace
                     if (maybe_queue) {
                         auto new_position = position;
                         new_position.push_back(0);
-                        maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
+                        if (blocking_enqueue)
+                            maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
+                        else
+                            maybe_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) });
                     }
                     else {
                         position.push_back(0);
-                        expand<order_, size_>(graph, o, maybe_queue, nullptr, c, new_p, 0, result, params, best_anywhere, position);
+                        expand<order_, size_>(graph, o, maybe_queue, false,
+                                nullptr, c, new_p, 0, result, params, best_anywhere, position);
                         position.pop_back();
                     }
                 }
@@ -168,7 +173,7 @@ namespace
                     position.push_back(0);
 
                     // populate!
-                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, 0, result, params, best_anywhere, position);
+                    expand<order_, size_>(graph, o, &queue, true, nullptr, tc, tp, 0, result, params, best_anywhere, position);
 
                     // merge results
                     queue.initial_producer_done();
@@ -210,7 +215,7 @@ namespace
                                 }
 
                                 // do some work
-                                expand<order_, size_>(graph, o, nullptr, &steal_points[i],
+                                expand<order_, size_>(graph, o, nullptr, false, &steal_points[i],
                                         args.c, args.p, 0, tr, params, best_anywhere, args.position);
                             }
 
@@ -221,7 +226,7 @@ namespace
                                 for (auto & s : steal_points) {
                                     std::unique_lock<std::mutex> guard(s.mutex);
                                     s.was_stolen = true;
-                                    expand<order_, size_>(graph, o, next_queue, nullptr, s.c, s.p, s.skip, tr, params, best_anywhere, s.position);
+                                    expand<order_, size_>(graph, o, next_queue, false, nullptr, s.c, s.p, s.skip, tr, params, best_anywhere, s.position);
                                 }
 
                                 next_queue->initial_producer_done();
