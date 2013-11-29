@@ -9,6 +9,7 @@ SUBMAKEFILES := \
 	programs/solve_max_biclique.mk \
 	programs/solve_max_clique.mk \
 	programs/solve_roommates.mk \
+	programs/test_max_clique.mk \
 	programs/max_clique_graph.mk \
 	roommates/roommates.mk \
 	solver/solver.mk \
@@ -21,5 +22,6 @@ boost_ldlibs := $(shell if test -f `$(CXX) $$CXXFLAGS $$LDFLAGS --print-file-nam
     then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
     else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi )
 
-override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3
+override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3 -pthread
+override LDFLAGS += -pthread
 
