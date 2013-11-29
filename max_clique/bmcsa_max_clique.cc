@@ -55,7 +55,6 @@ namespace
                 if (c_popcount > result.size) {
                     if (params.enumerate) {
                         ++result.result_count;
-                        result.size = c_popcount - 1;
                     }
                     else
                         result.size = c_popcount;
