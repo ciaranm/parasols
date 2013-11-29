@@ -43,6 +43,8 @@ namespace parasols
             const bool _donations_possible;
             const bool _donate_when_empty;
 
+            std::atomic<bool> _want_producer;
+
             /* These protect and watch all subsequent private members. */
             std::mutex _mutex;
             std::condition_variable _cond;
@@ -64,6 +66,7 @@ namespace parasols
             Queue(unsigned number_of_dequeuers, bool donations_possible, bool donate_when_empty) :
                 _donations_possible(donations_possible),
                 _donate_when_empty(donate_when_empty),
+                _want_producer(true),
                 _initial_producer_done(false),
                 _number_busy(number_of_dequeuers),
                 _number_idle(0)
@@ -209,6 +212,17 @@ namespace parasols
                 return _donations_possible &&
                     (_donate_when_empty || _number_idle.load(std::memory_order_relaxed) > 0) &&
                     _want_donations.load(std::memory_order_relaxed);
+            }
+
+            /**
+             * Do we want a producer?
+             *
+             * This will return true exactly once. Use of this is optional.
+             */
+            bool want_producer()
+            {
+                bool result = true;
+                return _want_producer.compare_exchange_strong(result, false);
             }
     };
 }

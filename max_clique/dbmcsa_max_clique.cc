@@ -28,6 +28,17 @@ namespace
     };
 
     template <unsigned size_>
+    struct StealPoint
+    {
+        std::mutex mutex;
+        FixedBitSet<size_> c;
+        FixedBitSet<size_> p;
+        std::vector<int> position;
+        int skip = 0;
+        bool was_stolen = false;
+    };
+
+    template <unsigned size_>
     auto found_possible_new_best(const FixedBitGraph<size_> & graph, const std::vector<int> & o,
             const FixedBitSet<size_> & c, int c_popcount,
             const MaxCliqueParams & params, MaxCliqueResult & result, AtomicIncumbent & best_anywhere,
@@ -54,8 +65,10 @@ namespace
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
             Queue<QueueItem<size_> > * const maybe_queue,    // not null if we're populating: enqueue here
+            StealPoint<size_> * const steal_point,
             FixedBitSet<size_> & c,                          // current candidate clique
             FixedBitSet<size_> & p,                          // potential additions
+            int skip,
             MaxCliqueResult & result,
             const MaxCliqueParams & params,
             AtomicIncumbent & best_anywhere,
@@ -83,30 +96,38 @@ namespace
             c.set(v);
             ++c_popcount;
 
-            // filter p to contain vertices adjacent to v
-            FixedBitSet<size_> new_p = p;
-            new_p = p;
-            graph.intersect_with_row(v, new_p);
-
-            if (new_p.empty()) {
-                found_possible_new_best(graph, o, c, c_popcount, params, result, best_anywhere, position);
+            if (skip > 0) {
+                --skip;
             }
-            else
-            {
-                // do we enqueue or recurse?
-                bool should_expand = true;
+            else {
+                // export stealable?
+                if (steal_point) {
+                    std::unique_lock<std::mutex> guard(steal_point->mutex);
+                    if (steal_point->was_stolen)
+                        return;
 
-                if (maybe_queue && c_popcount == 1) {
-                    auto new_position = position;
-                    new_position.push_back(0);
-                    maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
-                    should_expand = false;
+                    ++steal_point->skip;
                 }
 
-                if (should_expand) {
-                    position.push_back(0);
-                    expand<order_, size_>(graph, o, maybe_queue, c, new_p, result, params, best_anywhere, position);
-                    position.pop_back();
+                // filter p to contain vertices adjacent to v
+                FixedBitSet<size_> new_p = p;
+                new_p = p;
+                graph.intersect_with_row(v, new_p);
+
+                if (new_p.empty())
+                    found_possible_new_best(graph, o, c, c_popcount, params, result, best_anywhere, position);
+                else
+                {
+                    if (maybe_queue) {
+                        auto new_position = position;
+                        new_position.push_back(0);
+                        maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
+                    }
+                    else {
+                        position.push_back(0);
+                        expand<order_, size_>(graph, o, maybe_queue, nullptr, c, new_p, 0, result, params, best_anywhere, position);
+                        position.pop_back();
+                    }
                 }
             }
 
@@ -121,6 +142,7 @@ namespace
     auto max_clique(const FixedBitGraph<size_> & graph, const std::vector<int> & o, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         Queue<QueueItem<size_> > queue{ params.n_threads, false, false }; // work queue
+        Queue<QueueItem<size_> > queue_2{ params.n_threads, false, false }; // work queue, depth 2
 
         MaxCliqueResult result; // global result
         std::mutex result_mutex;
@@ -146,13 +168,16 @@ namespace
                     position.push_back(0);
 
                     // populate!
-                    expand<order_, size_>(graph, o, &queue, tc, tp, result, params, best_anywhere, position);
+                    expand<order_, size_>(graph, o, &queue, nullptr, tc, tp, 0, result, params, best_anywhere, position);
 
                     // merge results
                     queue.initial_producer_done();
                     std::unique_lock<std::mutex> guard(result_mutex);
                     result.merge(tr);
                     }));
+
+        /* steal points */
+        std::vector<StealPoint<size_> > steal_points((params.n_threads));
 
         /* workers */
         for (unsigned i = 0 ; i < params.n_threads ; ++i) {
@@ -161,18 +186,49 @@ namespace
 
                         MaxCliqueResult tr; // local result
 
+                        auto * current_queue = &queue;
+                        auto * next_queue = &queue_2;
                         while (true) {
-                            // get some work to do
-                            QueueItem<size_> args;
-                            if (! queue.dequeue_blocking(args))
+                            while (true) {
+                                // get some work to do
+                                QueueItem<size_> args;
+                                if (! current_queue->dequeue_blocking(args))
+                                    break;
+
+                                // re-evaluate the bound against our new best
+                                if (args.cn <= best_anywhere.get())
+                                    continue;
+
+                                // set up steal point
+                                {
+                                    std::unique_lock<std::mutex> guard(steal_points[i].mutex);
+                                    steal_points[i].c = args.c;
+                                    steal_points[i].p = args.p;
+                                    steal_points[i].position = args.position;
+                                    steal_points[i].skip = 0;
+                                    steal_points[i].was_stolen = false;
+                                }
+
+                                // do some work
+                                expand<order_, size_>(graph, o, nullptr, &steal_points[i],
+                                        args.c, args.p, 0, tr, params, best_anywhere, args.position);
+                            }
+
+                            if (! next_queue)
                                 break;
 
-                            // re-evaluate the bound against our new best
-                            if (args.cn <= best_anywhere.get())
-                                continue;
+                            if (next_queue->want_producer()) {
+                                for (auto & s : steal_points) {
+                                    std::unique_lock<std::mutex> guard(s.mutex);
+                                    s.was_stolen = true;
+                                    expand<order_, size_>(graph, o, next_queue, nullptr, s.c, s.p, s.skip, tr, params, best_anywhere, s.position);
+                                }
 
-                            // do some work
-                            expand<order_, size_>(graph, o, nullptr, args.c, args.p, tr, params, best_anywhere, args.position);
+                                next_queue->initial_producer_done();
+                            }
+
+                            current_queue = next_queue;
+                            next_queue = nullptr;
                         }
 
                         auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
