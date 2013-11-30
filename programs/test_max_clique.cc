@@ -9,7 +9,6 @@
 #include <max_clique/cco_max_clique.hh>
 #include <max_clique/tmcsa1_max_clique.hh>
 #include <max_clique/tbmcsa_max_clique.hh>
-#include <max_clique/qbmcsa_max_clique.hh>
 #include <max_clique/dbmcsa_max_clique.hh>
 
 #include <boost/program_options.hpp>
@@ -58,11 +57,6 @@ namespace
         std::make_tuple( std::string{ "tbmcsa2" },    tbmcsa_max_clique<MaxCliqueOrder::MinWidth>),
         std::make_tuple( std::string{ "tbmcsa3" },    tbmcsa_max_clique<MaxCliqueOrder::ExDegree>),
         std::make_tuple( std::string{ "tbmcsar" },    tbmcsa_max_clique<MaxCliqueOrder::DynExDegree>),
-
-        std::make_tuple( std::string{ "qbmcsa1" },    qbmcsa_max_clique<MaxCliqueOrder::Degree>),
-        std::make_tuple( std::string{ "qbmcsa2" },    qbmcsa_max_clique<MaxCliqueOrder::MinWidth>),
-        std::make_tuple( std::string{ "qbmcsa3" },    qbmcsa_max_clique<MaxCliqueOrder::ExDegree>),
-        std::make_tuple( std::string{ "qbmcsar" },    qbmcsa_max_clique<MaxCliqueOrder::DynExDegree>),
 
         std::make_tuple( std::string{ "dbmcsa1" },    dbmcsa_max_clique<MaxCliqueOrder::Degree>),
         std::make_tuple( std::string{ "dbmcsa2" },    dbmcsa_max_clique<MaxCliqueOrder::MinWidth>),
