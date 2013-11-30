@@ -31,6 +31,8 @@ namespace
     struct StealPoint
     {
         std::mutex mutex;
+        std::condition_variable cv;
+        bool ready = false;
         FixedBitSet<size_> c;
         FixedBitSet<size_> p;
         std::vector<int> position;
@@ -106,6 +108,16 @@ namespace
                     std::unique_lock<std::mutex> guard(steal_point->mutex);
                     if (steal_point->was_stolen)
                         return;
+
+                    if (! steal_point->ready) {
+                        steal_point->c = c;
+                        steal_point->p = p;
+                        steal_point->position = position;
+                        steal_point->skip = 0;
+                        steal_point->was_stolen = false;
+                        steal_point->ready = true;
+                        steal_point->cv.notify_all();
+                    }
 
                     ++steal_point->skip;
                 }
@@ -204,19 +216,21 @@ namespace
                                 if (args.cn <= best_anywhere.get())
                                     continue;
 
-                                // set up steal point
+                                // do some work
                                 {
                                     std::unique_lock<std::mutex> guard(steal_points[i].mutex);
-                                    steal_points[i].c = args.c;
-                                    steal_points[i].p = args.p;
-                                    steal_points[i].position = args.position;
-                                    steal_points[i].skip = 0;
-                                    steal_points[i].was_stolen = false;
+                                    steal_points[i].ready = false;
                                 }
 
-                                // do some work
                                 expand<order_, size_>(graph, o, nullptr, false, &steal_points[i],
                                         args.c, args.p, 0, tr, params, best_anywhere, args.position);
+
+                                {
+                                    std::unique_lock<std::mutex> guard(steal_points[i].mutex);
+                                    steal_points[i].ready = true;
+                                    steal_points[i].p = FixedBitSet<size_>();
+                                    steal_points[i].cv.notify_all();
+                                }
                             }
 
                             if (! next_queue)
@@ -225,6 +239,9 @@ namespace
                             if (next_queue->want_producer()) {
                                 for (auto & s : steal_points) {
                                     std::unique_lock<std::mutex> guard(s.mutex);
+                                    while (! s.ready)
+                                        s.cv.wait(guard);
+
                                     s.was_stolen = true;
                                     expand<order_, size_>(graph, o, next_queue, false, nullptr, s.c, s.p, s.skip, tr, params, best_anywhere, s.position);
                                 }
