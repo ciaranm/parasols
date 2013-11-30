@@ -243,7 +243,13 @@ namespace
                                         s.cv.wait(guard);
 
                                     s.was_stolen = true;
-                                    expand<order_, size_>(graph, o, next_queue, false, nullptr, s.c, s.p, s.skip, tr, params, best_anywhere, s.position);
+                                    auto c = s.c;
+                                    auto p = s.p;
+                                    auto skip = s.skip;
+                                    auto position = s.position;
+                                    guard.unlock();
+
+                                    expand<order_, size_>(graph, o, next_queue, false, nullptr, c, p, skip, tr, params, best_anywhere, position);
                                 }
 
                                 next_queue->initial_producer_done();
