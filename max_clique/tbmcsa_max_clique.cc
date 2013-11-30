@@ -127,7 +127,7 @@ namespace
                 if (maybe_queue && c_popcount == params.split_depth) {
                     auto new_position = position;
                     new_position.push_back(0);
-                    maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
+                    maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), c_popcount + colours[n], std::move(new_position) }, params.n_threads);
                     should_expand = false;
                 }
                 else if (new_p.popcount() < params.min_donate_size) {
@@ -137,7 +137,7 @@ namespace
                             (donation_queue->want_donations() && waited_long_enough(params, last_donation_time)))) {
                     auto new_position = position;
                     new_position.push_back(0);
-                    donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) });
+                    donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), c_popcount + colours[n], std::move(new_position) });
                     should_expand = false;
                     chose_to_donate = true;
                     ++result.donations;

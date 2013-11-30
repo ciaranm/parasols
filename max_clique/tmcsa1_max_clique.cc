@@ -93,11 +93,11 @@ namespace
                 bool should_expand = true;
 
                 if (maybe_queue && c.size() == params.split_depth) {
-                    maybe_queue->enqueue_blocking(QueueItem{ c, std::move(new_o), colours[n] }, params.n_threads);
+                    maybe_queue->enqueue_blocking(QueueItem{ c, std::move(new_o), unsigned(c.size()) + colours[n] }, params.n_threads);
                     should_expand = false;
                 }
                 else if (donation_queue && (chose_to_donate || donation_queue->want_donations())) {
-                    donation_queue->enqueue(QueueItem{ c, std::move(new_o), colours[n] });
+                    donation_queue->enqueue(QueueItem{ c, std::move(new_o), unsigned(c.size()) + colours[n] });
                     should_expand = false;
                     chose_to_donate = true;
                     ++result.donations;

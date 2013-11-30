@@ -135,9 +135,9 @@ namespace
                         auto new_position = position;
                         new_position.push_back(0);
                         if (blocking_enqueue)
-                            maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) }, params.n_threads);
+                            maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), c_popcount + colours[n], std::move(new_position) }, params.n_threads);
                         else
-                            maybe_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), colours[n], std::move(new_position) });
+                            maybe_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), c_popcount + colours[n], std::move(new_position) });
                     }
                     else {
                         position.push_back(0);
