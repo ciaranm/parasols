@@ -207,6 +207,14 @@ namespace
                         auto * next_queue = &queue_2;
                         while (true) {
                             while (true) {
+                                // clear steal point
+                                {
+                                    std::unique_lock<std::mutex> guard(steal_points[i].mutex);
+                                    steal_points[i].ready = true;
+                                    steal_points[i].p = FixedBitSet<size_>();
+                                    steal_points[i].cv.notify_all();
+                                }
+
                                 // get some work to do
                                 QueueItem<size_> args;
                                 if (! current_queue->dequeue_blocking(args))
@@ -216,21 +224,15 @@ namespace
                                 if (args.cn <= best_anywhere.get())
                                     continue;
 
-                                // do some work
+                                // not ready to be stolen from yet
                                 {
                                     std::unique_lock<std::mutex> guard(steal_points[i].mutex);
                                     steal_points[i].ready = false;
                                 }
 
+                                // do some work
                                 expand<order_, size_>(graph, o, nullptr, false, &steal_points[i],
                                         args.c, args.p, 0, tr, params, best_anywhere, args.position);
-
-                                {
-                                    std::unique_lock<std::mutex> guard(steal_points[i].mutex);
-                                    steal_points[i].ready = true;
-                                    steal_points[i].p = FixedBitSet<size_>();
-                                    steal_points[i].cv.notify_all();
-                                }
                             }
 
                             if (! next_queue)
