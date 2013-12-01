@@ -221,8 +221,9 @@ namespace
 
                         MaxCliqueResult tr; // local result
 
-                        auto * current_queue = &queue;
-                        auto * next_queue = &queue_2;
+                        auto * current_queue = &queue, next_queue = &queue_2;
+                        auto * current_steal_points = &steal_points;
+
                         while (true) {
                             while (true) {
                                 // get some work to do
@@ -234,22 +235,26 @@ namespace
                                 if (args.cn <= best_anywhere.get())
                                     continue;
 
-                                steal_points[i].not_ready();
+                                if (current_steal_points)
+                                    (*current_steal_points)[i].not_ready();
 
                                 // do some work
-                                expand<order_, size_>(graph, o, nullptr, false, &steal_points[i],
+                                expand<order_, size_>(graph, o, nullptr, false,
+                                        current_steal_points ? &(*current_steal_points)[i] : nullptr,
                                         args.c, args.p, 0, tr, params, best_anywhere, args.position);
 
-                                steal_points[i].not_ready();
+                                if (current_steal_points)
+                                    (*current_steal_points)[i].not_ready();
                             }
 
-                            steal_points[i].finished();
+                            if (current_steal_points)
+                                (*current_steal_points)[i].finished();
 
                             if (! next_queue)
                                 break;
 
                             if (next_queue->want_producer()) {
-                                for (auto & s : steal_points) {
+                                for (auto & s : *current_steal_points) {
                                     std::unique_lock<std::mutex> guard(s.mutex);
                                     while (! s.ready)
                                         s.cv.wait(guard);
@@ -261,7 +266,8 @@ namespace
                                     auto position = s.position;
                                     guard.unlock();
 
-                                    expand<order_, size_>(graph, o, next_queue, false, nullptr, c, p, skip, tr, params, best_anywhere, position);
+                                    expand<order_, size_>(graph, o, next_queue, false, nullptr,
+                                            c, p, skip, tr, params, best_anywhere, position);
                                 }
 
                                 next_queue->initial_producer_done();
@@ -269,6 +275,7 @@ namespace
 
                             current_queue = next_queue;
                             next_queue = nullptr;
+                            current_steal_points = nullptr;
                         }
 
                         auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
