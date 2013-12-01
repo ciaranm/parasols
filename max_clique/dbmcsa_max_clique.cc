@@ -38,6 +38,24 @@ namespace
         std::vector<int> position;
         int skip = 0;
         bool was_stolen = false;
+
+        void not_ready()
+        {
+            std::unique_lock<std::mutex> guard(mutex);
+            ready = false;
+            was_stolen = false;
+            skip = 0;
+        }
+
+        void finished()
+        {
+            std::unique_lock<std::mutex> guard(mutex);
+            ready = true;
+            was_stolen = false;
+            skip = 0;
+            p = FixedBitSet<size_>();
+            cv.notify_all();
+        }
     };
 
     template <unsigned size_>
@@ -207,14 +225,6 @@ namespace
                         auto * next_queue = &queue_2;
                         while (true) {
                             while (true) {
-                                // clear steal point
-                                {
-                                    std::unique_lock<std::mutex> guard(steal_points[i].mutex);
-                                    steal_points[i].ready = true;
-                                    steal_points[i].p = FixedBitSet<size_>();
-                                    steal_points[i].cv.notify_all();
-                                }
-
                                 // get some work to do
                                 QueueItem<size_> args;
                                 if (! current_queue->dequeue_blocking(args))
@@ -224,16 +234,16 @@ namespace
                                 if (args.cn <= best_anywhere.get())
                                     continue;
 
-                                // not ready to be stolen from yet
-                                {
-                                    std::unique_lock<std::mutex> guard(steal_points[i].mutex);
-                                    steal_points[i].ready = false;
-                                }
+                                steal_points[i].not_ready();
 
                                 // do some work
                                 expand<order_, size_>(graph, o, nullptr, false, &steal_points[i],
                                         args.c, args.p, 0, tr, params, best_anywhere, args.position);
+
+                                steal_points[i].not_ready();
                             }
+
+                            steal_points[i].finished();
 
                             if (! next_queue)
                                 break;
