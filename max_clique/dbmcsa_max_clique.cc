@@ -87,6 +87,7 @@ namespace
             Queue<QueueItem<size_> > * const maybe_queue,    // not null if we're populating: enqueue here
             bool blocking_enqueue,
             StealPoint<size_> * const steal_point,
+            StealPoint<size_> * const next_steal_point,
             FixedBitSet<size_> & c,                          // current candidate clique
             FixedBitSet<size_> & p,                          // potential additions
             int skip,
@@ -159,8 +160,13 @@ namespace
                     }
                     else {
                         position.push_back(0);
+                        if (next_steal_point)
+                            next_steal_point->not_ready();
                         expand<order_, size_>(graph, o, maybe_queue, false,
-                                nullptr, c, new_p, 0, result, params, best_anywhere, position);
+                                next_steal_point, nullptr,
+                                c, new_p, 0, result, params, best_anywhere, position);
+                        if (next_steal_point)
+                            next_steal_point->not_ready();
                         position.pop_back();
                     }
                 }
@@ -178,6 +184,7 @@ namespace
     {
         Queue<QueueItem<size_> > queue{ params.n_threads, false, false }; // work queue
         Queue<QueueItem<size_> > queue_2{ params.n_threads, false, false }; // work queue, depth 2
+        Queue<QueueItem<size_> > queue_3{ params.n_threads, false, false }; // work queue, depth 3
 
         MaxCliqueResult result; // global result
         std::mutex result_mutex;
@@ -203,7 +210,8 @@ namespace
                     position.push_back(0);
 
                     // populate!
-                    expand<order_, size_>(graph, o, &queue, true, nullptr, tc, tp, 0, result, params, best_anywhere, position);
+                    expand<order_, size_>(graph, o, &queue, true, nullptr, nullptr,
+                        tc, tp, 0, result, params, best_anywhere, position);
 
                     // merge results
                     queue.initial_producer_done();
@@ -212,7 +220,8 @@ namespace
                     }));
 
         /* steal points */
-        std::vector<StealPoint<size_> > steal_points((params.n_threads));
+        std::vector<StealPoint<size_> > steal_points_1((params.n_threads));
+        std::vector<StealPoint<size_> > steal_points_2((params.n_threads));
 
         /* workers */
         for (unsigned i = 0 ; i < params.n_threads ; ++i) {
@@ -221,8 +230,8 @@ namespace
 
                         MaxCliqueResult tr; // local result
 
-                        auto * current_queue = &queue, next_queue = &queue_2;
-                        auto * current_steal_points = &steal_points;
+                        auto * current_queue = &queue, next_queue = &queue_2, next_next_queue = &queue_3;
+                        auto * current_steal_points = &steal_points_1, next_steal_points = &steal_points_2;
 
                         while (true) {
                             while (true) {
@@ -237,18 +246,25 @@ namespace
 
                                 if (current_steal_points)
                                     (*current_steal_points)[i].not_ready();
+                                if (next_steal_points)
+                                    (*next_steal_points)[i].not_ready();
 
                                 // do some work
                                 expand<order_, size_>(graph, o, nullptr, false,
                                         current_steal_points ? &(*current_steal_points)[i] : nullptr,
+                                        next_steal_points ? &(*next_steal_points)[i] : nullptr,
                                         args.c, args.p, 0, tr, params, best_anywhere, args.position);
 
                                 if (current_steal_points)
                                     (*current_steal_points)[i].not_ready();
+                                if (next_steal_points)
+                                    (*next_steal_points)[i].not_ready();
                             }
 
                             if (current_steal_points)
                                 (*current_steal_points)[i].finished();
+                            if (next_steal_points)
+                                (*next_steal_points)[i].finished();
 
                             if (! next_queue)
                                 break;
@@ -266,7 +282,8 @@ namespace
                                     auto position = s.position;
                                     guard.unlock();
 
-                                    expand<order_, size_>(graph, o, next_queue, false, nullptr,
+                                    expand<order_, size_>(graph, o, next_queue, false,
+                                            nullptr, nullptr,
                                             c, p, skip, tr, params, best_anywhere, position);
                                 }
 
@@ -274,8 +291,10 @@ namespace
                             }
 
                             current_queue = next_queue;
-                            next_queue = nullptr;
-                            current_steal_points = nullptr;
+                            next_queue = next_next_queue;
+                            next_next_queue = nullptr;
+                            current_steal_points = next_steal_points;
+                            next_steal_points = nullptr;
                         }
 
                         auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
