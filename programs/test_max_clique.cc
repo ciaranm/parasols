@@ -87,12 +87,14 @@ bool compare(int size, int samples,
             params1.original_graph = &graph;
             params1.abort.store(false);
             params1.start_time = std::chrono::steady_clock::now();
+            params1.n_threads = std::thread::hardware_concurrency();
             MaxCliqueResult result1 = algorithm1(graph, params1);
 
             MaxCliqueParams params2;
             params2.original_graph = &graph;
             params2.abort.store(false);
             params2.start_time = std::chrono::steady_clock::now();
+            params2.n_threads = std::thread::hardware_concurrency();
             MaxCliqueResult result2 = algorithm2(graph, params2);
 
             if (result1.size != result2.size) {
