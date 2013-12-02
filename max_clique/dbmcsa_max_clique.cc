@@ -105,7 +105,7 @@ namespace
         colourise<size_>(graph, p, p_order, colours);
 
         // for each v in p... (v comes later)
-        for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
+        for (int n_start = p.popcount() - 1, n = n_start ; n >= 0 ; --n) {
             ++position.back();
 
             // bound, timeout or early exit?
@@ -115,11 +115,11 @@ namespace
             auto v = p_order[n];
 
             // consider taking v
-            c.set(v);
-            ++c_popcount;
-
             if (skip > 0) {
                 --skip;
+
+                // just go straight to considering not taking v
+                p.unset(v);
             }
             else {
                 // export stealable?
@@ -140,6 +140,10 @@ namespace
 
                     ++steal_point->skip;
                 }
+
+                // consider taking v
+                c.set(v);
+                ++c_popcount;
 
                 // filter p to contain vertices adjacent to v
                 FixedBitSet<size_> new_p = p;
@@ -170,12 +174,12 @@ namespace
                         position.pop_back();
                     }
                 }
-            }
 
-            // now consider not taking v
-            c.unset(v);
-            p.unset(v);
-            --c_popcount;
+                // now consider not taking v
+                c.unset(v);
+                p.unset(v);
+                --c_popcount;
+            }
         }
     }
 
