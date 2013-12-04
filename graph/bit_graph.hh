@@ -238,6 +238,14 @@ namespace parasols
             {
                 p.intersect_with_complement(_adjacency[row]);
             }
+
+            /**
+             * Fetch the neighbourhood of a particular vertex.
+             */
+            auto neighbourhood(int vertex) const -> FixedBitSet<size_>
+            {
+                return _adjacency[vertex];
+            }
     };
 
     /**
