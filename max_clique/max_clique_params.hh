@@ -82,6 +82,17 @@ namespace parasols
         ExDegree,   /// Prosser's style 3
         DynExDegree /// Tomita's MCR ordering (?)
     };
+
+    /**
+     * Used by CCO variants to control permutations.
+     */
+    enum class CCOPermutations
+    {
+        None,
+        Defer1,
+        Defer2,
+        Sort
+    };
 }
 
 #endif

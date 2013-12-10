@@ -16,6 +16,7 @@
 #include <max_clique/tbmcsa_max_clique.hh>
 #include <max_clique/dbmcsa_max_clique.hh>
 #include <max_clique/cco_max_clique.hh>
+#include <max_clique/bicco_max_clique.hh>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -69,6 +70,11 @@ auto main(int argc, char * argv[]) -> int
         std::make_tuple( std::string{ "ccod1r" },     run_with_power(cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::DynExDegree>) ),
         std::make_tuple( std::string{ "ccod2r" },     run_with_power(cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::DynExDegree>) ),
         std::make_tuple( std::string{ "ccosr" },      run_with_power(cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree>) ),
+
+        std::make_tuple( std::string{ "biccon1" },    run_with_power(bicco_max_clique<CCOPermutations::None, MaxCliqueOrder::Degree>) ),
+        std::make_tuple( std::string{ "biccon2" },    run_with_power(bicco_max_clique<CCOPermutations::None, MaxCliqueOrder::MinWidth>) ),
+        std::make_tuple( std::string{ "biccon3" },    run_with_power(bicco_max_clique<CCOPermutations::None, MaxCliqueOrder::ExDegree>) ),
+        std::make_tuple( std::string{ "bicconr" },    run_with_power(bicco_max_clique<CCOPermutations::None, MaxCliqueOrder::DynExDegree>) ),
 
         std::make_tuple( std::string{ "tmcsa1" },     run_with_power(tmcsa1_max_clique) ),
         std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>) ),
