@@ -74,6 +74,8 @@ void table(
         std::vector<double> omega_average((algorithms.size()));
         std::vector<double> time_average((algorithms.size()));
         std::vector<double> find_time_average((algorithms.size()));
+        std::vector<double> nodes_average((algorithms.size()));
+        std::vector<double> find_nodes_average((algorithms.size()));
 
         for (int n = 0 ; n < samples ; ++n) {
             Graph graph(size, false);
@@ -100,6 +102,7 @@ void table(
 
                     omega_average.at(a) += double(result.size) / double(samples);
                     time_average.at(a) += double(overall_time.count()) / double(samples);
+                    nodes_average.at(a) += double(result.nodes) / double(samples);
                     omega = result.size;
                 }
 
@@ -117,6 +120,7 @@ void table(
                     auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
 
                     find_time_average.at(a) += double(overall_time.count()) / double(samples);
+                    find_nodes_average.at(a) += double(result.nodes) / double(samples);
                 }
             }
         }
@@ -126,7 +130,11 @@ void table(
             if (0 == a)
                 std::cout << " " << omega_average.at(a);
 
-            std::cout << " " << time_average.at(a) << " " << find_time_average.at(a);
+            std::cout
+                << " " << time_average.at(a)
+                << " " << find_time_average.at(a)
+                << " " << nodes_average.at(a)
+                << " " << find_nodes_average.at(a);
         }
         std::cout << std::endl;
     }
