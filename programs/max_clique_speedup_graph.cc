@@ -80,8 +80,10 @@ void table(
         std::vector<double> omega_average((algorithms.size()));
         std::vector<double> time_average((algorithms.size()));
         std::vector<double> find_time_average((algorithms.size()));
+        std::vector<double> prove_time_average((algorithms.size()));
         std::vector<double> nodes_average((algorithms.size()));
         std::vector<double> find_nodes_average((algorithms.size()));
+        std::vector<double> prove_nodes_average((algorithms.size()));
 
         for (int n = 0 ; n < samples ; ++n) {
             Graph graph(size, false);
@@ -128,6 +130,23 @@ void table(
                     find_time_average.at(a) += double(overall_time.count()) / double(samples);
                     find_nodes_average.at(a) += double(result.nodes) / double(samples);
                 }
+
+                {
+                    MaxCliqueParams params;
+                    params.n_threads = std::thread::hardware_concurrency();
+                    params.original_graph = &graph;
+                    params.abort.store(false);
+                    params.initial_bound = omega;
+
+                    params.start_time = std::chrono::steady_clock::now();
+
+                    MaxCliqueResult result = algorithms.at(a)(graph, params);
+
+                    auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+
+                    prove_time_average.at(a) += double(overall_time.count()) / double(samples);
+                    prove_nodes_average.at(a) += double(result.nodes) / double(samples);
+                }
             }
         }
 
@@ -139,8 +158,10 @@ void table(
             std::cout
                 << " " << time_average.at(a)
                 << " " << find_time_average.at(a)
+                << " " << prove_time_average.at(a)
                 << " " << nodes_average.at(a)
-                << " " << find_nodes_average.at(a);
+                << " " << find_nodes_average.at(a)
+                << " " << prove_nodes_average.at(a);
         }
         std::cout << std::endl;
     }
