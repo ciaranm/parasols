@@ -8,10 +8,94 @@
 
 #include <algorithm>
 
+#ifdef DISTRIBUTION_INSTRUMENTATION
+#  include <iostream>
+#endif
+
 using namespace parasols;
 
 namespace
 {
+#ifdef DISTRIBUTION_INSTRUMENTATION
+    struct DistributionCounter
+    {
+        std::vector<std::vector<double> > data;
+
+        ~DistributionCounter()
+        {
+            for (unsigned i = 0 ; i < data.size() ; ++i) {
+                unsigned total = 0;
+                std::vector<unsigned> buckets((21));
+                for (auto & d : data.at(i)) {
+                    ++total;
+                    ++buckets.at(int((d + 1) * 10));
+                }
+
+                for (int b = 0 ; b < 21 ; ++b)
+                    if (0 == total)
+                        std::cerr << i << " " << ((b - 10) / 10.0) << " " << 0.0 << std::endl;
+                    else
+                        std::cerr << i << " " << ((b - 10) / 10.0) << " " << ((0.0 + buckets.at(b)) / total) << std::endl;
+
+                std::cerr << std::endl;
+            }
+        }
+
+        void add(std::vector<std::pair<double, double> > & colour_class_sizes)
+        {
+            if (colour_class_sizes.size() < 2)
+                return;
+
+            // second is size
+            std::stable_sort(colour_class_sizes.begin(), colour_class_sizes.end(), [] (
+                        const std::pair<double, double> & a,
+                        const std::pair<double, double> & b) {
+                    return a.second > b.second;
+                    });
+
+            // second is actual rank
+            for (unsigned i = 0 ; i < colour_class_sizes.size() ; ) {
+                unsigned j = i;
+                double v = (i + 1);
+                while (j + 1 < colour_class_sizes.size() && colour_class_sizes.at(j + 1) == colour_class_sizes.at(i)) {
+                    ++j;
+                    v += (j + 1);
+                }
+
+                v /= (j - i + 1);
+                for ( ; i <= j ; ++i)
+                    colour_class_sizes.at(i).second = v;
+            }
+
+            double first_mean = 0.0, second_mean = 0.0;
+            for (auto & c : colour_class_sizes) {
+                first_mean += c.first;
+                second_mean += c.second;
+            }
+            first_mean /= colour_class_sizes.size();
+            second_mean /= colour_class_sizes.size();
+
+            double top = 0.0;
+            for (auto & c : colour_class_sizes)
+                top += (c.first - first_mean) * (c.second - second_mean);
+
+            double bottom_first = 0.0, bottom_second = 0.0;
+            for (auto & c : colour_class_sizes) {
+                bottom_first += (c.first - first_mean) * (c.first - first_mean);
+                bottom_second += (c.second - second_mean) * (c.second - second_mean);
+            }
+
+            double rho = top / sqrt(bottom_first * bottom_second);
+
+            if (data.size() < colour_class_sizes.size() + 1)
+                data.resize(colour_class_sizes.size() + 1);
+            data.at(colour_class_sizes.size()).push_back(rho);
+        }
+    };
+
+    static DistributionCounter distribution_counter;
+#endif
+
     template <CCOPermutations perm_>
     struct SelectCCOPerm;
 
@@ -29,6 +113,10 @@ namespace
             unsigned colour = 0;           // current colour
             unsigned i = 0;                // position in result
 
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            std::vector<std::pair<double, double> > colour_class_sizes;
+#endif
+
             // while we've things left to colour
             while (! p_left.empty()) {
                 // next colour
@@ -37,6 +125,9 @@ namespace
                 FixedBitSet<size_> q = p_left;
 
                 // while we can still give something this colour
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                unsigned number_with_this_colour = 0;
+#endif
                 while (! q.empty()) {
                     // first thing we can colour
                     int v = q.first_set_bit();
@@ -50,8 +141,19 @@ namespace
                     result[i] = colour;
                     p_order[i] = v;
                     ++i;
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                    ++number_with_this_colour;
+#endif
                 }
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, number_with_this_colour));
+#endif
             }
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            distribution_counter.add(colour_class_sizes);
+#endif
         }
     };
 
@@ -71,6 +173,10 @@ namespace
 
             unsigned d = 0;                // number deferred
             std::array<unsigned, size_ * bits_per_word> defer;
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            std::vector<std::pair<double, double> > colour_class_sizes;
+#endif
 
             // while we've things left to colour
             while (! p_left.empty()) {
@@ -102,6 +208,11 @@ namespace
                     --colour;
                     defer[d++] = p_order[i];
                 }
+                else {
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                    colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, number_with_this_colour));
+#endif
+                }
             }
 
             for (unsigned n = 0 ; n < d ; ++n) {
@@ -109,7 +220,15 @@ namespace
                 p_order[i] = defer[n];
                 result[i] = colour;
                 i++;
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, 1));
+#endif
             }
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            distribution_counter.add(colour_class_sizes);
+#endif
         }
     };
 
@@ -129,6 +248,10 @@ namespace
 
             unsigned d1 = 0, d2 = 0;       // number deferred
             std::array<unsigned, size_ * bits_per_word> defer1, defer2;
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            std::vector<std::pair<double, double> > colour_class_sizes;
+#endif
 
             // while we've things left to colour
             while (! p_left.empty()) {
@@ -164,6 +287,11 @@ namespace
                     defer2[d2++] = p_order[--i];
                     defer2[d2++] = p_order[--i];
                 }
+                else {
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                    colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, number_with_this_colour));
+#endif
+                }
             }
 
             for (unsigned n = 0 ; n < d2 ; n += 2) {
@@ -174,6 +302,9 @@ namespace
                 p_order[i] = defer2[n + 1];
                 result[i] = colour;
                 i++;
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, 2));
+#endif
             }
 
             for (unsigned n = 0 ; n < d1 ; ++n) {
@@ -181,7 +312,14 @@ namespace
                 p_order[i] = defer1[n];
                 result[i] = colour;
                 i++;
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, 1));
+#endif
             }
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            distribution_counter.add(colour_class_sizes);
+#endif
         }
     };
 
@@ -231,6 +369,10 @@ namespace
                     return a.size() > b.size();
                     });
 
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            std::vector<std::pair<double, double> > colour_class_sizes;
+#endif
+
             for (auto & colour_class : colour_classes) {
                 ++colour;
                 for (auto & v : colour_class) {
@@ -238,7 +380,14 @@ namespace
                     p_order[i] = v;
                     ++i;
                 }
+#ifdef DISTRIBUTION_INSTRUMENTATION
+                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, colour_class.size()));
+#endif
             }
+
+#ifdef DISTRIBUTION_INSTRUMENTATION
+            distribution_counter.add(colour_class_sizes);
+#endif
         }
     };
 
