@@ -17,9 +17,14 @@ namespace parasols
      */
     class Graph
     {
-        private:
+        public:
+            /**
+             * The adjaceny matrix type. Shouldn't really be public, but we
+             * snoop around inside it when doing message passing.
+             */
             using AdjacencyMatrix = std::vector<std::uint8_t>;
 
+        private:
             int _size = 0;
             AdjacencyMatrix _adjacency;
             bool _add_one_for_output;
@@ -76,6 +81,15 @@ namespace parasols
              * into a string for human consumption.
              */
             auto vertex_name(int a) const -> std::string;
+
+            /**
+             * The adjaceny matrix. Shouldn't really be public, but we snoop
+             * around inside it when doing message passing.
+             */
+            auto adjaceny_matrix() -> AdjacencyMatrix &
+            {
+                return _adjacency;
+            }
     };
 }
 
