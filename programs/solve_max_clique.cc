@@ -5,6 +5,7 @@
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 #include <graph/pairs.hh>
+#include <graph/net.hh>
 #include <graph/power.hh>
 #include <graph/is_clique.hh>
 #include <graph/is_club.hh>
@@ -107,13 +108,14 @@ auto main(int argc, char * argv[]) -> int
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ("check-club",                           "Check whether our s-clique is also an s-club")
             ("pairs",                                "Input is in pairs format, not DIMACS")
+            ("net",                                  "Input is in net format, not DIMACS")
             ;
 
         po::options_description all_options{ "All options" };
         all_options.add_options()
             ("algorithm",  "Specify which algorithm to use")
             ("input-file", po::value<std::vector<std::string> >(),
-                           "Specify the input file (DIMACS format, unless --pairs is specified). May be specified multiple times.")
+                           "Specify the input file (DIMACS format, unless --pairs or --net is specified). May be specified multiple times.")
             ;
 
         all_options.add(display_options);
@@ -211,7 +213,8 @@ auto main(int argc, char * argv[]) -> int
                 params.power = options_vars["power"].as<int>();
 
             /* Read in the graph */
-            auto graph = options_vars.count("pairs") ?  read_pairs(input_file) : read_dimacs(input_file);
+            auto graph = options_vars.count("pairs") ?
+                read_pairs(input_file) : options_vars.count("net") ? read_net(input_file) : read_dimacs(input_file);
             params.original_graph = &graph;
 
             /* Do the actual run. */

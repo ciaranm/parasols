@@ -6,6 +6,7 @@ SOURCES := \
 	min_width_sort.cc \
 	dimacs.cc \
 	pairs.cc \
+	net.cc \
 	graph.cc \
 	power.cc \
 	is_clique.cc \
