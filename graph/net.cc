@@ -37,12 +37,13 @@ auto parasols::read_net(const std::string & filename) -> Graph
             comment{ R"((%.*)?)" },
             problem{ R"(\*\s*Vertices\s+(\d+))" },
             description{ R"(\d+\s+".*")" },
+            arcs{ R"(\*\s*Arcslist)" },
             edge_start{ R"(\*\s*Edgeslist)" };
 
         boost::smatch match;
         if (regex_match(line, match, comment)) {
         }
-        else if (regex_match(line, match, description)) {
+        else if (regex_match(line, match, description) || regex_match(line, match, arcs)) {
         }
         else if (regex_match(line, match, problem)) {
             if (0 != result.size())
