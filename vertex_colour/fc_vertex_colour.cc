@@ -1,8 +1,9 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <vertex_colour/fc_vertex_colour.hh>
+#include <graph/degree_sort.hh>
 
-#include <iostream>
+#include <algorithm>
 
 using namespace parasols;
 
@@ -11,8 +12,9 @@ namespace
     auto expand(
             const Graph & graph,
             const VertexColouringParams & params,
+            std::vector<int> & order,
             std::vector<int> & current,
-            std::vector<std::vector<int> > & allowed,
+            std::vector<std::vector<bool> > & allowed,
             int vertex,
             int k_max,
             int & best_k,
@@ -39,16 +41,29 @@ namespace
                 break;
 
             if (allowed[k - 1][vertex]) {
-                current[vertex] = k;
+                current[order[vertex]] = k;
                 auto save_allowed_km1 = allowed[k - 1];
 
                 for (int a = 0 ; a < graph.size() ; ++a)
-                    if (graph.adjacent(vertex, a))
-                        allowed[k - 1][a] = 0;
+                    if (graph.adjacent(order[vertex], order[a])) {
+                        if (allowed[k - 1][a]) {
+                            allowed[k - 1][a] = false;
+                            bool any = false;
+                            for (int c = 0 ; c < best_k ; ++c)
+                                if (allowed[c][a]) {
+                                    any = true;
+                                    break;
+                                }
+                            if (! any) {
+                                allowed[k - 1] = save_allowed_km1;
+                                return;
+                            }
+                        }
+                    }
 
-                expand(graph, params, current, allowed, vertex + 1, std::max(k, k_max), best_k, best, nodes);
+                expand(graph, params, order, current, allowed, vertex + 1, std::max(k, k_max), best_k, best, nodes);
                 allowed[k - 1] = save_allowed_km1;
-                current[vertex] = 0;
+                current[order[vertex]] = 0;
             }
         }
     }
@@ -57,18 +72,27 @@ namespace
 auto parasols::fc_vertex_colour(const Graph & graph, const VertexColouringParams & params) -> VertexColouringResult
 {
     VertexColouringResult result;
-    result.colours = graph.size() + 1;
+
+    if (0 == params.initial_bound)
+        result.colours = graph.size() + 1;
+    else
+        result.colours = params.initial_bound;
+
     result.colouring.resize(graph.size());
 
     std::vector<int> current((graph.size()));
 
-    std::vector<std::vector<int> > allowed((graph.size()));
+    std::vector<std::vector<bool> > allowed((graph.size()));
     for (auto & a : allowed) {
         a.resize(graph.size());
-        std::fill(a.begin(), a.end(), 1);
+        std::fill(a.begin(), a.end(), true);
     }
 
-    expand(graph, params, current, allowed, 0, 0, result.colours, result.colouring, result.nodes);
+    std::vector<int> order((graph.size()));
+    std::iota(order.begin(), order.end(), 0);
+    dynexdegree_sort(graph, order, false);
+
+    expand(graph, params, order, current, allowed, 0, 0, result.colours, result.colouring, result.nodes);
 
     return result;
 }

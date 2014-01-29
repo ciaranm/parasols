@@ -10,6 +10,9 @@ namespace parasols
 {
     struct VertexColouringParams
     {
+        /// Override the initial size of the incumbent.
+        unsigned initial_bound = 0;
+
         /// If this is set to true, we should abort due to a time limit.
         std::atomic<bool> abort;
 

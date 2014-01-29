@@ -36,6 +36,7 @@ auto main(int argc, char * argv[]) -> int
             ("help",                                 "Display help information")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ("pairs",                                "Input is in pairs format, not DIMACS")
+            ("initial-bound",      po::value<int>(), "Specify an initial bound")
             ;
 
         po::options_description all_options{ "All options" };
@@ -100,6 +101,9 @@ auto main(int argc, char * argv[]) -> int
 
             /* Figure out what our options should be. */
             VertexColouringParams params;
+
+            if (options_vars.count("initial-bound"))
+                params.initial_bound = options_vars["initial-bound"].as<int>();
 
             /* Read in the graph */
             auto graph = options_vars.count("pairs") ? read_pairs(input_file) : read_dimacs(input_file);
