@@ -12,11 +12,13 @@ SUBMAKEFILES := \
 	programs/solve_max_biclique.mk \
 	programs/solve_max_clique.mk \
 	programs/solve_roommates.mk \
+	programs/solve_vertex_colouring.mk \
 	programs/test_max_clique.mk \
 	programs/mpi_max_clique.mk \
 	roommates/roommates.mk \
 	solver/solver.mk \
-	threads/threads.mk
+	threads/threads.mk \
+	vertex_colour/vertex_colour.mk
 
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)

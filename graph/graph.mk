@@ -10,5 +10,6 @@ SOURCES := \
 	graph.cc \
 	power.cc \
 	is_clique.cc \
-	is_club.cc
+	is_club.cc \
+	is_vertex_colouring.cc
 
