@@ -8,6 +8,9 @@
 #include <graph/is_vertex_colouring.hh>
 
 #include <vertex_colour/naive_vertex_colour.hh>
+#include <vertex_colour/fc_vertex_colour.hh>
+
+#include <vertex_colour/vertex_colouring_params.hh>
 #include <vertex_colour/vertex_colouring_result.hh>
 
 #include <boost/program_options.hpp>
@@ -22,6 +25,11 @@ namespace po = boost::program_options;
 
 auto main(int argc, char * argv[]) -> int
 {
+    auto algorithms = {
+        std::make_tuple( std::string{ "naive" },      run_this(naive_vertex_colour) ),
+        std::make_tuple( std::string{ "fc" },         run_this(fc_vertex_colour) )
+    };
+
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()
@@ -66,6 +74,21 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
+        /* Turn an algorithm string name into a runnable function. */
+        auto algorithm = algorithms.begin(), algorithm_end = algorithms.end();
+        for ( ; algorithm != algorithm_end ; ++algorithm)
+            if (std::get<0>(*algorithm) == options_vars["algorithm"].as<std::string>())
+                break;
+
+        /* Unknown algorithm? Show a message and exit. */
+        if (algorithm == algorithm_end) {
+            std::cerr << "Unknown algorithm " << options_vars["algorithm"].as<std::string>() << ", choose from:";
+            for (auto a : algorithms)
+                std::cerr << " " << std::get<0>(a);
+            std::cerr << std::endl;
+            return EXIT_FAILURE;
+        }
+
         /* For each input file... */
         auto input_files = options_vars["input-file"].as<std::vector<std::string> >();
         bool first = true;
@@ -82,7 +105,7 @@ auto main(int argc, char * argv[]) -> int
             auto graph = options_vars.count("pairs") ? read_pairs(input_file) : read_dimacs(input_file);
 
             bool aborted = false;
-            auto result = run_this(naive_vertex_colour)(
+            auto result = std::get<1>(*algorithm)(
                     graph,
                     params,
                     aborted,
