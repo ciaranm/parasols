@@ -24,11 +24,11 @@ namespace parasols
     };
 
     /**
-     * Read a (v,v) format file into a Graph.
+     * Read a (v,v) or (v v) format file into a Graph.
      *
-     * The first line is the number of vertices. The second is the number of
+     * The first number is the number of vertices. The second is the number of
      * edges (this is often wrong, and is ignored). Subsequent lines are pairs
-     * v1,v2 of edges.
+     * v1,v2 or v1 v2 of edges.
      *
      * \throw InvalidPairsFile
      */

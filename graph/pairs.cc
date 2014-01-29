@@ -19,31 +19,49 @@ auto InvalidPairsFile::what() const throw () -> const char *
 
 auto parasols::read_pairs(const std::string & filename) -> Graph
 {
-    Graph result(0, false);
-
     std::ifstream infile{ filename };
     if (! infile)
         throw InvalidPairsFile{ filename, "unable to open file" };
 
     std::string line;
 
+    static const boost::regex double_header{ R"((\d+)\s+(\d+)\s*)" };
+    bool one_indexed;
+    unsigned size;
+
     if (! std::getline(infile, line))
         throw InvalidPairsFile{ filename, "cannot parse number of vertices" };
-    result.resize(std::stoi(line));
 
-    std::getline(infile, line);
+    {
+        boost::smatch match;
+        if (regex_match(line, match, double_header)) {
+            one_indexed = true;
+            size = std::stoi(match.str(1));
+        }
+        else {
+            one_indexed = false;
+            size = std::stoi(line);
+            std::getline(infile, line);
+        }
+    }
+
+    Graph result(size, one_indexed);
 
     while (std::getline(infile, line)) {
         if (line.empty())
             continue;
 
-        static const boost::regex edge{ R"((\d+),(\d+)\s*)" };
+        static const boost::regex edge{ R"((\d+)(,|\s+)(\d+)\s*)" };
         boost::smatch match;
 
         if (regex_match(line, match, edge)) {
-            /* An edge. DIMACS files are 1-indexed. We assume we've already had
-             * a problem line (if not our size will be 0, so we'll throw). */
-            int a{ std::stoi(match.str(1)) }, b{ std::stoi(match.str(2)) };
+            int a{ std::stoi(match.str(1)) }, b{ std::stoi(match.str(3)) };
+
+            if (one_indexed) {
+                --a;
+                --b;
+            }
+
             if (a >= result.size() || b >= result.size())
                 throw InvalidPairsFile{ filename, "line '" + line + "' edge index out of bounds" };
             else if (a == b)
