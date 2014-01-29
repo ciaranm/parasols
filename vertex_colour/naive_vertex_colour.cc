@@ -36,7 +36,7 @@ namespace
         if (params.abort.load())
             return;
 
-        if (vertex == graph.size() + 1) {
+        if (vertex == graph.size()) {
             if (k_max < best_k) {
                 best_k = k_max;
                 best = current;
