@@ -69,9 +69,17 @@ auto parasols::read_net(const std::string & filename) -> Graph
 
         if (! (line_s >> f))
             throw InvalidNetFile{ filename, "cannot parse edge line '" + line + "'" };
+        --f;
 
-        while (line_s >> t)
+        if (f < 0 || f >= result.size())
+            throw InvalidNetFile{ filename, "invalid f value" };
+
+        while (line_s >> t) {
+            --t;
+            if (t < 0 || t >= result.size() || t == f)
+                throw InvalidNetFile{ filename, "invalid t value " + std::to_string(t) + " (" + std::to_string(f) + ", " + std::to_string(result.size()) + ")" };
             result.add_edge(f, t);
+        }
 
         if (! line_s.eof())
             throw InvalidNetFile{ filename, "cannot parse edge line '" + line + "'" };
