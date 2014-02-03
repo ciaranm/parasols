@@ -244,6 +244,8 @@ namespace
                                 if (! current_queue->dequeue_blocking(args))
                                     break;
 
+                                print_position(params, "dequeued", args.position);
+
                                 // re-evaluate the bound against our new best
                                 if (args.cn <= best_anywhere.get())
                                     continue;
@@ -285,6 +287,8 @@ namespace
                                     auto skip = s.skip;
                                     auto position = s.position;
                                     guard.unlock();
+
+                                    print_position(params, "stole", position);
 
                                     expand<order_, size_>(graph, o, next_queue, false,
                                             nullptr, nullptr,
