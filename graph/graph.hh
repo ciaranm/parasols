@@ -90,6 +90,14 @@ namespace parasols
             {
                 return _adjacency;
             }
+
+            /**
+             * Add one for output?
+             */
+            auto add_one_for_output() const -> bool
+            {
+                return _add_one_for_output;
+            }
     };
 }
 

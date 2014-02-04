@@ -30,6 +30,10 @@ namespace parasols
         /// Enumerate solutions (only works with initial_bound).
         bool enumerate = false;
 
+        /// Indicates that the complement has been taken, for independent set
+        /// (handled by the runner).
+        bool complement = false;
+
         /// Indicates that the graph has already been raised to this power, for
         /// s-clique (handled by the runner).
         unsigned power = 1;

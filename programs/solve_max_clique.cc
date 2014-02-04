@@ -7,6 +7,7 @@
 #include <graph/pairs.hh>
 #include <graph/net.hh>
 #include <graph/power.hh>
+#include <graph/complement.hh>
 #include <graph/is_clique.hh>
 #include <graph/is_club.hh>
 
@@ -104,6 +105,7 @@ auto main(int argc, char * argv[]) -> int
             ("donation-delay",     po::value<int>(), "Delay between choosing to donate twice (in microseconds) (where relevant)")
             ("min-donation-size",  po::value<int>(), "Do not donate below this size (where relevant)")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
+            ("complement",                           "Take the complement of the graph (to solve independent set)")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ("check-club",                           "Check whether our s-clique is also an s-club")
@@ -215,6 +217,12 @@ auto main(int argc, char * argv[]) -> int
             /* Read in the graph */
             auto graph = options_vars.count("pairs") ?
                 read_pairs(input_file) : options_vars.count("net") ? read_net(input_file) : read_dimacs(input_file);
+
+            if (options_vars.count("complement")) {
+                graph = complement(graph); // don't time this
+                params.complement = true;
+            }
+
             params.original_graph = &graph;
 
             /* Do the actual run. */
