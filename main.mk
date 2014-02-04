@@ -5,6 +5,7 @@ SUBMAKEFILES := \
 	max_clique/max_clique_mpi.mk \
 	programs/create_random_bipartite_graph.mk \
 	programs/create_random_graph.mk \
+	programs/max_biclique_speedup_graph.mk \
 	programs/max_clique_graph.mk \
 	programs/max_clique_speedup_graph.mk \
 	programs/roommates_frequencies.mk \
