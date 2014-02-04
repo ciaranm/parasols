@@ -22,7 +22,8 @@ namespace
             FixedBitSet<size_> & ca,
             FixedBitSet<size_> & cb,
             FixedBitSet<size_> & pa,
-            FixedBitSet<size_> & pb
+            FixedBitSet<size_> & pb,
+            std::vector<int> & position
             ) -> void
     {
         ++result.nodes;
@@ -34,6 +35,8 @@ namespace
 
         // for each v in pa...
         while (! pa.empty()) {
+            ++position.back();
+
             // timeout or early exit?
             if (result.size >= params.stop_after_finding || params.abort.load())
                 return;
@@ -72,12 +75,14 @@ namespace
                     if (cb.test(i))
                         result.members_b.insert(o[i]);
 
-                print_incumbent(params, result.size);
+                print_incumbent(params, result.size, position);
             }
 
             if (! new_pb.empty()) {
                 /* swap a and b */
-                naive_expand(graph, params, result, o, cb, ca, new_pb, new_pa);
+                position.push_back(0);
+                naive_expand(graph, params, result, o, cb, ca, new_pb, new_pa, position);
+                position.pop_back();
             }
 
             // now consider not taking v
@@ -105,7 +110,8 @@ namespace
             FixedBitSet<size_> & pa,
             FixedBitSet<size_> & pb,
             bool pa_is_independent,
-            bool pb_is_independent
+            bool pb_is_independent,
+            std::vector<int> & position
             ) -> void
     {
         ++result.nodes;
@@ -120,6 +126,7 @@ namespace
 
         // for each v in pa...
         for (int n = pa_popcount - 1 ; n >= 0 ; --n) {
+            ++position.back();
 
             // timeout or early exit?
             if (result.size >= params.stop_after_finding || params.abort.load())
@@ -161,15 +168,17 @@ namespace
                     if (cb.test(i))
                         result.members_b.insert(o[i]);
 
-                print_incumbent(params, result.size);
+                print_incumbent(params, result.size, position);
             }
 
             if (! new_pb.empty()) {
                 /* swap a and b */
+                position.push_back(0);
                 if (new_pa_is_independent && pb_is_independent)
-                    naive_expand(graph, params, result, o, cb, ca, new_pb, new_pa);
+                    naive_expand(graph, params, result, o, cb, ca, new_pb, new_pa, position);
                 else
-                    expand(graph, params, result, o, cb, ca, new_pb, new_pa, pb_is_independent, new_pa_is_independent);
+                    expand(graph, params, result, o, cb, ca, new_pb, new_pa, pb_is_independent, new_pa_is_independent, position);
+                position.pop_back();
             }
 
             // now consider not taking v
@@ -215,8 +224,12 @@ namespace
                 if (graph.adjacent(o[i], o[j]))
                     bit_graph.add_edge(i, j);
 
+        std::vector<int> positions;
+        positions.reserve(graph.size());
+        positions.push_back(0);
+
         // go!
-        expand(bit_graph, params, result, o, ca, cb, pa, pb, false, false);
+        expand(bit_graph, params, result, o, ca, cb, pa, pb, false, false, positions);
 
         return result;
     }
