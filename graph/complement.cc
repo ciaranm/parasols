@@ -10,7 +10,7 @@ auto parasols::complement(const Graph & graph) -> Graph
 
     for (int i = 0 ; i < graph.size() ; ++i)
         for (int j = 0 ; j < graph.size() ; ++j)
-            if (! graph.adjacent(i, j))
+            if (i != j && ! graph.adjacent(i, j))
                 result.add_edge(i, j);
 
     return result;
