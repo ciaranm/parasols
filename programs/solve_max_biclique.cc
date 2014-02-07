@@ -10,6 +10,7 @@
 #include <max_biclique/cc_max_biclique.hh>
 #include <max_biclique/ccd_max_biclique.hh>
 #include <max_biclique/degree_max_biclique.hh>
+#include <max_biclique/dccd_max_biclique.hh>
 
 #include <boost/program_options.hpp>
 
@@ -28,7 +29,8 @@ auto main(int argc, char * argv[]) -> int
         std::make_pair( std::string{ "naive" },   run_this(naive_max_biclique) ),
         std::make_pair( std::string{ "cc" },      run_this(cc_max_biclique) ),
         std::make_pair( std::string{ "ccd" },     run_this(ccd_max_biclique) ),
-        std::make_pair( std::string{ "degree" },  run_this(degree_max_biclique) )
+        std::make_pair( std::string{ "degree" },  run_this(degree_max_biclique) ),
+        std::make_pair( std::string{ "dccd" },    run_this(dccd_max_biclique) )
     };
 
     try {
