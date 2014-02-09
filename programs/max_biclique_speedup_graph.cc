@@ -5,6 +5,7 @@
 
 #include <max_biclique/naive_max_biclique.hh>
 #include <max_biclique/ccd_max_biclique.hh>
+#include <max_biclique/dccd_max_biclique.hh>
 
 #include <boost/program_options.hpp>
 
@@ -15,6 +16,7 @@
 #include <random>
 #include <thread>
 #include <cstdlib>
+#include <cmath>
 
 using namespace parasols;
 namespace po = boost::program_options;
@@ -25,7 +27,8 @@ namespace
 {
     auto algorithms = {
         std::make_tuple( std::string{ "naive" },      naive_max_biclique ),
-        std::make_tuple( std::string{ "ccd" },        ccd_max_biclique )
+        std::make_tuple( std::string{ "ccd" },        ccd_max_biclique ),
+        std::make_tuple( std::string{ "dccd" },       dccd_max_biclique )
     };
 }
 
@@ -43,6 +46,9 @@ void table(
             std::vector<double> nodes_average((algorithms.size()));
             std::vector<double> find_nodes_average((algorithms.size()));
             std::vector<double> prove_nodes_average((algorithms.size()));
+            std::vector<double> speedup_average((algorithms.size()));
+            std::vector<std::vector<double> > times((samples));
+            std::vector<std::vector<double> > speedups((samples));
 
             for (int n = 0 ; n < samples ; ++n) {
                 Graph graph(size, false);
@@ -53,12 +59,13 @@ void table(
                         if (dist(rnd) <= (double(p) / 100.0))
                             graph.add_edge(e, f);
 
+                double baseline = 0.0;
                 for (unsigned a = 0 ; a < algorithms.size() ; ++a) {
                     unsigned omega;
+
                     {
                         MaxBicliqueParams params;
-                        params.n_threads = std::thread::hardware_concurrency();
-                        params.abort.store(false);
+                        params.n_threads = 2;
                         params.break_ab_symmetry = symmetry;
 
                         params.start_time = std::chrono::steady_clock::now();
@@ -70,12 +77,18 @@ void table(
                         omega_average.at(a) += double(result.size) / double(samples);
                         time_average.at(a) += double(overall_time.count()) / double(samples);
                         nodes_average.at(a) += double(result.nodes) / double(samples);
+                        times.at(a).push_back(double(overall_time.count()));
                         omega = result.size;
+
+                        if (0 == a)
+                            baseline = double(overall_time.count());
+                        speedups.at(a).push_back(baseline / double(overall_time.count()));
+                        speedup_average.at(a) += (baseline / double(overall_time.count())) / samples;
                     }
 
                     {
                         MaxBicliqueParams params;
-                        params.n_threads = std::thread::hardware_concurrency();
+                        params.n_threads = 2;
                         params.abort.store(false);
                         params.stop_after_finding = omega;
                         params.break_ab_symmetry = symmetry;
@@ -92,7 +105,7 @@ void table(
 
                     {
                         MaxBicliqueParams params;
-                        params.n_threads = std::thread::hardware_concurrency();
+                        params.n_threads = 2;
                         params.abort.store(false);
                         params.initial_bound = omega;
                         params.break_ab_symmetry = symmetry;
@@ -116,8 +129,21 @@ void table(
                 if (0 == a && 0 == symmetry)
                     std::cout << " " << omega_average.at(a);
 
+                double ts = 0.0;
+                for (int n = 0 ; n < samples ; ++n)
+                    ts += (times.at(a).at(n) - time_average.at(a)) * (times.at(a).at(n) - time_average.at(a));
+                ts = std::sqrt(ts / samples);
+
+                double ss = 0.0;
+                for (int n = 0 ; n < samples ; ++n)
+                    ss += (speedups.at(a).at(n) - speedup_average.at(a)) * (speedups.at(a).at(n) - speedup_average.at(a));
+                ss = std::sqrt(ss / samples);
+
                 std::cout
                     << " " << time_average.at(a)
+                    << " " << ts
+                    << " " << speedup_average.at(a)
+                    << " " << ss
                     << " " << find_time_average.at(a)
                     << " " << prove_time_average.at(a)
                     << " " << nodes_average.at(a)

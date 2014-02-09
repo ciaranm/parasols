@@ -2,7 +2,6 @@ SUBMAKEFILES := \
 	graph/graph.mk \
 	max_biclique/max_biclique.mk \
 	max_clique/max_clique.mk \
-	max_clique/max_clique_mpi.mk \
 	programs/create_random_bipartite_graph.mk \
 	programs/create_random_graph.mk \
 	programs/max_biclique_speedup_graph.mk \
@@ -15,7 +14,6 @@ SUBMAKEFILES := \
 	programs/solve_roommates.mk \
 	programs/solve_vertex_colouring.mk \
 	programs/test_max_clique.mk \
-	programs/mpi_max_clique.mk \
 	roommates/roommates.mk \
 	solver/solver.mk \
 	threads/threads.mk \
