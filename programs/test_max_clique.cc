@@ -4,10 +4,8 @@
 #include <max_clique/max_clique_result.hh>
 
 #include <max_clique/naive_max_clique.hh>
-#include <max_clique/mcsa1_max_clique.hh>
 #include <max_clique/bmcsa_max_clique.hh>
 #include <max_clique/cco_max_clique.hh>
-#include <max_clique/tmcsa1_max_clique.hh>
 #include <max_clique/tbmcsa_max_clique.hh>
 #include <max_clique/dbmcsa_max_clique.hh>
 
@@ -30,7 +28,7 @@ namespace
 {
     auto algorithms = {
         std::make_tuple( std::string{ "naive" },      naive_max_clique ),
-        std::make_tuple( std::string{ "mcsa1" },      mcsa1_max_clique ),
+
         std::make_tuple( std::string{ "bmcsa1" },     bmcsa_max_clique<MaxCliqueOrder::Degree> ),
         std::make_tuple( std::string{ "bmcsa3" },     bmcsa_max_clique<MaxCliqueOrder::ExDegree> ),
         std::make_tuple( std::string{ "bmcsar" },     bmcsa_max_clique<MaxCliqueOrder::DynExDegree> ),
@@ -52,7 +50,6 @@ namespace
         std::make_tuple( std::string{ "ccod2r" },     cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::DynExDegree> ),
         std::make_tuple( std::string{ "ccosr" },      cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree> ),
 
-        std::make_tuple( std::string{ "tmcsa1" },     tmcsa1_max_clique ),
         std::make_tuple( std::string{ "tbmcsa1" },    tbmcsa_max_clique<MaxCliqueOrder::Degree> ),
         std::make_tuple( std::string{ "tbmcsa2" },    tbmcsa_max_clique<MaxCliqueOrder::MinWidth> ),
         std::make_tuple( std::string{ "tbmcsa3" },    tbmcsa_max_clique<MaxCliqueOrder::ExDegree> ),
