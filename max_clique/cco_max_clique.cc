@@ -233,97 +233,6 @@ namespace
     };
 
     template <>
-    struct SelectCCOPerm<CCOPermutations::Defer2>
-    {
-        template <unsigned size_>
-        static auto colour_class_order(
-                const FixedBitGraph<size_> & graph,
-                const FixedBitSet<size_> & p,
-                std::array<unsigned, size_ * bits_per_word> & p_order,
-                std::array<unsigned, size_ * bits_per_word> & result) -> void
-        {
-            FixedBitSet<size_> p_left = p; // not coloured yet
-            unsigned colour = 0;           // current colour
-            unsigned i = 0;                // position in result
-
-            unsigned d1 = 0, d2 = 0;       // number deferred
-            std::array<unsigned, size_ * bits_per_word> defer1, defer2;
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            std::vector<std::pair<double, double> > colour_class_sizes;
-#endif
-
-            // while we've things left to colour
-            while (! p_left.empty()) {
-                // next colour
-                ++colour;
-                // things that can still be given this colour
-                FixedBitSet<size_> q = p_left;
-
-                // while we can still give something this colour
-                unsigned number_with_this_colour = 0;
-                while (! q.empty()) {
-                    // first thing we can colour
-                    int v = q.first_set_bit();
-                    p_left.unset(v);
-                    q.unset(v);
-
-                    // can't give anything adjacent to this the same colour
-                    graph.intersect_with_row_complement(v, q);
-
-                    // record in result
-                    result[i] = colour;
-                    p_order[i] = v;
-                    ++i;
-                    ++number_with_this_colour;
-                }
-
-                if (1 == number_with_this_colour) {
-                    --colour;
-                    defer1[d1++] = p_order[--i];
-                }
-                else if (2 == number_with_this_colour) {
-                    --colour;
-                    defer2[d2++] = p_order[--i];
-                    defer2[d2++] = p_order[--i];
-                }
-                else {
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                    colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, number_with_this_colour));
-#endif
-                }
-            }
-
-            for (unsigned n = 0 ; n < d2 ; n += 2) {
-                ++colour;
-                p_order[i] = defer2[n];
-                result[i] = colour;
-                i++;
-                p_order[i] = defer2[n + 1];
-                result[i] = colour;
-                i++;
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, 2));
-#endif
-            }
-
-            for (unsigned n = 0 ; n < d1 ; ++n) {
-                ++colour;
-                p_order[i] = defer1[n];
-                result[i] = colour;
-                i++;
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, 1));
-#endif
-            }
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            distribution_counter.add(colour_class_sizes);
-#endif
-        }
-    };
-
-    template <>
     struct SelectCCOPerm<CCOPermutations::Sort>
     {
         template <unsigned size_>
@@ -550,21 +459,17 @@ auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & param
 
 template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer2, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

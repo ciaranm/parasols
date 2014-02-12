@@ -82,7 +82,6 @@ namespace parasols
     {
         None,
         Defer1,
-        Defer2,
         Sort
     };
 }
