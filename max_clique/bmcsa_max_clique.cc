@@ -3,8 +3,7 @@
 #include <max_clique/bmcsa_max_clique.hh>
 #include <max_clique/colourise.hh>
 #include <max_clique/print_incumbent.hh>
-#include <graph/degree_sort.hh>
-#include <graph/min_width_sort.hh>
+
 #include <graph/is_club.hh>
 
 #include <algorithm>
@@ -13,7 +12,7 @@ using namespace parasols;
 
 namespace
 {
-    template <MaxCliqueOrder order_, unsigned size_>
+    template <unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,                      // vertex ordering
@@ -76,7 +75,7 @@ namespace
             }
             else {
                 position.push_back(0);
-                expand<order_, size_>(graph, o, c, new_p, result, params, position);
+                expand<size_>(graph, o, c, new_p, result, params, position);
                 position.pop_back();
             }
 
@@ -87,7 +86,7 @@ namespace
         }
     }
 
-    template <MaxCliqueOrder order_, unsigned size_>
+    template <unsigned size_>
     auto bmcsa(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         MaxCliqueResult result;
@@ -104,21 +103,7 @@ namespace
 
         // populate our order with every vertex initially
         std::iota(o.begin(), o.end(), 0);
-
-        switch (order_) {
-            case MaxCliqueOrder::Degree:
-                degree_sort(graph, o, false);
-                break;
-            case MaxCliqueOrder::MinWidth:
-                min_width_sort(graph, o, false);
-                break;
-            case MaxCliqueOrder::ExDegree:
-                exdegree_sort(graph, o, false);
-                break;
-            case MaxCliqueOrder::DynExDegree:
-                dynexdegree_sort(graph, o, false);
-                break;
-        }
+        params.order_function(graph, o);
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;
@@ -134,7 +119,7 @@ namespace
         positions.push_back(0);
 
         // go!
-        expand<order_, size_>(bit_graph, o, c, p, result, params, positions);
+        expand<size_>(bit_graph, o, c, p, result, params, positions);
 
         // hack for enumerate
         if (params.enumerate)
@@ -144,40 +129,34 @@ namespace
     }
 }
 
-template <MaxCliqueOrder order_>
 auto parasols::bmcsa_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return bmcsa<order_, 1>(graph, params);
+        return bmcsa<1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return bmcsa<order_, 2>(graph, params);
+        return bmcsa<2>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return bmcsa<order_, 4>(graph, params);
+        return bmcsa<4>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return bmcsa<order_, 8>(graph, params);
+        return bmcsa<8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return bmcsa<order_, 16>(graph, params);
+        return bmcsa<16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return bmcsa<order_, 32>(graph, params);
+        return bmcsa<32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return bmcsa<order_, 64>(graph, params);
+        return bmcsa<64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return bmcsa<order_, 128>(graph, params);
+        return bmcsa<128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return bmcsa<order_, 256>(graph, params);
+        return bmcsa<256>(graph, params);
     else if (graph.size() < 512 * bits_per_word)
-        return bmcsa<order_, 512>(graph, params);
+        return bmcsa<512>(graph, params);
     else if (graph.size() < 1024 * bits_per_word)
-        return bmcsa<order_, 1024>(graph, params);
+        return bmcsa<1024>(graph, params);
     else
         throw GraphTooBig();
 }
-
-template auto parasols::bmcsa_max_clique<MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::bmcsa_max_clique<MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::bmcsa_max_clique<MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::bmcsa_max_clique<MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

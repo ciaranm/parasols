@@ -2,9 +2,8 @@
 
 #include <max_clique/cco_max_clique.hh>
 #include <max_clique/print_incumbent.hh>
+
 #include <graph/bit_graph.hh>
-#include <graph/degree_sort.hh>
-#include <graph/min_width_sort.hh>
 
 #include <algorithm>
 
@@ -368,7 +367,7 @@ namespace
         }
     }
 
-    template <CCOPermutations perm_, MaxCliqueOrder order_, unsigned size_>
+    template <CCOPermutations perm_, unsigned size_>
     auto cco(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
     {
         MaxCliqueResult result;
@@ -385,21 +384,7 @@ namespace
 
         // populate our order with every vertex initially
         std::iota(o.begin(), o.end(), 0);
-
-        switch (order_) {
-            case MaxCliqueOrder::Degree:
-                degree_sort(graph, o, false);
-                break;
-            case MaxCliqueOrder::MinWidth:
-                min_width_sort(graph, o, false);
-                break;
-            case MaxCliqueOrder::ExDegree:
-                exdegree_sort(graph, o, false);
-                break;
-            case MaxCliqueOrder::DynExDegree:
-                dynexdegree_sort(graph, o, false);
-                break;
-        }
+        params.order_function(graph, o);
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;
@@ -425,59 +410,47 @@ namespace
     }
 }
 
-template <CCOPermutations perm_, MaxCliqueOrder order_>
+template <CCOPermutations perm_>
 auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return cco<perm_, order_, 1>(graph, params);
+        return cco<perm_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return cco<perm_, order_, 2>(graph, params);
+        return cco<perm_, 2>(graph, params);
     else if (graph.size() < 3 * bits_per_word)
-        return cco<perm_, order_, 3>(graph, params);
+        return cco<perm_, 3>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return cco<perm_, order_, 4>(graph, params);
+        return cco<perm_, 4>(graph, params);
     else if (graph.size() < 5 * bits_per_word)
-        return cco<perm_, order_, 5>(graph, params);
+        return cco<perm_, 5>(graph, params);
     else if (graph.size() < 6 * bits_per_word)
-        return cco<perm_, order_, 6>(graph, params);
+        return cco<perm_, 6>(graph, params);
     else if (graph.size() < 7 * bits_per_word)
-        return cco<perm_, order_, 7>(graph, params);
+        return cco<perm_, 7>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return cco<perm_, order_, 8>(graph, params);
+        return cco<perm_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return cco<perm_, order_, 16>(graph, params);
+        return cco<perm_, 16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return cco<perm_, order_, 32>(graph, params);
+        return cco<perm_, 32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return cco<perm_, order_, 64>(graph, params);
+        return cco<perm_, 64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return cco<perm_, order_, 128>(graph, params);
+        return cco<perm_, 128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return cco<perm_, order_, 256>(graph, params);
+        return cco<perm_, 256>(graph, params);
     else if (graph.size() < 512 * bits_per_word)
-        return cco<perm_, order_, 512>(graph, params);
+        return cco<perm_, 512>(graph, params);
     else if (graph.size() < 1024 * bits_per_word)
-        return cco<perm_, order_, 1024>(graph, params);
+        return cco<perm_, 1024>(graph, params);
     else
         throw GraphTooBig();
 }
 
-template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::Degree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-
-template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::MinWidth>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-
-template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::ExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-
-template auto parasols::cco_max_clique<CCOPermutations::None, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

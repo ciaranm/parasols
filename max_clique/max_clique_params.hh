@@ -3,15 +3,21 @@
 #ifndef PARASOLS_GUARD_MAX_CLIQUE_MAX_CLIQUE_PARAMS_HH
 #define PARASOLS_GUARD_MAX_CLIQUE_MAX_CLIQUE_PARAMS_HH 1
 
+#include <graph/graph.hh>
 #include <list>
 #include <limits>
 #include <chrono>
 #include <atomic>
 #include <vector>
-#include <graph/graph.hh>
+#include <functional>
 
 namespace parasols
 {
+    /**
+     * Initial vertex ordering to use.
+     */
+    using MaxCliqueOrderFunction = std::function<void (const Graph &, std::vector<int> &)>;
+
     /**
      * Parameters for a max clique algorithm.
      *
@@ -62,17 +68,9 @@ namespace parasols
 
         /// The unmangled graph, for club verification.
         const Graph * original_graph = nullptr;
-    };
 
-    /**
-     * Initial vertex ordering to use.
-     */
-    enum class MaxCliqueOrder
-    {
-        Degree,     /// Prosser's style 1
-        MinWidth,   /// Prosser's style 2
-        ExDegree,   /// Prosser's style 3
-        DynExDegree /// Tomita's MCR ordering (?)
+        /// Initial vertex ordering.
+        MaxCliqueOrderFunction order_function;
     };
 
     /**

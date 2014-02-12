@@ -2,7 +2,7 @@
 
 #include <max_clique/mpi_max_clique.hh>
 #include <max_clique/colourise.hh>
-#include <graph/degree_sort.hh>
+
 #include <boost/mpi.hpp>
 
 using namespace parasols;
@@ -83,7 +83,7 @@ namespace
 
             std::vector<int> o(graph.size()); // potential additions, ordered
             std::iota(o.begin(), o.end(), 0);
-            degree_sort(graph, o, false);
+            params.order_function(graph, o);
 
             std::vector<int> c; // current candidate clique
             c.reserve(graph.size());

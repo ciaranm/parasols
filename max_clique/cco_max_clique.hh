@@ -12,7 +12,7 @@ namespace parasols
     /**
      * Max clique algorithm.
      */
-    template <CCOPermutations, MaxCliqueOrder>
+    template <CCOPermutations>
     auto cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
 }
 

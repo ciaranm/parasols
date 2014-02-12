@@ -9,6 +9,8 @@
 #include <max_clique/tbmcsa_max_clique.hh>
 #include <max_clique/dbmcsa_max_clique.hh>
 
+#include <graph/degree_sort.hh>
+
 #include <boost/program_options.hpp>
 
 #include <iostream>
@@ -26,39 +28,24 @@ std::mt19937 rnd;
 namespace
 {
     auto algorithms = {
-        std::make_tuple( std::string{ "naive" },      naive_max_clique ),
+        std::make_tuple( std::string{ "naive" },     naive_max_clique ),
 
-        std::make_tuple( std::string{ "bmcsa1" },     bmcsa_max_clique<MaxCliqueOrder::Degree> ),
-        std::make_tuple( std::string{ "bmcsa3" },     bmcsa_max_clique<MaxCliqueOrder::ExDegree> ),
-        std::make_tuple( std::string{ "bmcsar" },     bmcsa_max_clique<MaxCliqueOrder::DynExDegree> ),
+        std::make_tuple( std::string{ "bmcsa" },     bmcsa_max_clique ),
 
-        std::make_tuple( std::string{ "ccon1" },      cco_max_clique<CCOPermutations::None, MaxCliqueOrder::Degree> ),
-        std::make_tuple( std::string{ "ccod11" },     cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::Degree> ),
-        std::make_tuple( std::string{ "ccos1" },      cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::Degree> ),
-        std::make_tuple( std::string{ "ccon2" },      cco_max_clique<CCOPermutations::None, MaxCliqueOrder::MinWidth> ),
-        std::make_tuple( std::string{ "ccod12" },     cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::MinWidth> ),
-        std::make_tuple( std::string{ "ccos2" },      cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::MinWidth> ),
-        std::make_tuple( std::string{ "ccon3" },      cco_max_clique<CCOPermutations::None, MaxCliqueOrder::ExDegree> ),
-        std::make_tuple( std::string{ "ccod13" },     cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::ExDegree> ),
-        std::make_tuple( std::string{ "ccos3" },      cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::ExDegree> ),
-        std::make_tuple( std::string{ "cconr" },      cco_max_clique<CCOPermutations::None, MaxCliqueOrder::DynExDegree> ),
-        std::make_tuple( std::string{ "ccod1r" },     cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::DynExDegree> ),
-        std::make_tuple( std::string{ "ccosr" },      cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree> ),
+        std::make_tuple( std::string{ "ccon" },      cco_max_clique<CCOPermutations::None> ),
+        std::make_tuple( std::string{ "ccod" },      cco_max_clique<CCOPermutations::Defer1> ),
+        std::make_tuple( std::string{ "ccos" },      cco_max_clique<CCOPermutations::Sort> ),
 
-        std::make_tuple( std::string{ "tbmcsa1" },    tbmcsa_max_clique<MaxCliqueOrder::Degree> ),
-        std::make_tuple( std::string{ "tbmcsa2" },    tbmcsa_max_clique<MaxCliqueOrder::MinWidth> ),
-        std::make_tuple( std::string{ "tbmcsa3" },    tbmcsa_max_clique<MaxCliqueOrder::ExDegree> ),
-        std::make_tuple( std::string{ "tbmcsar" },    tbmcsa_max_clique<MaxCliqueOrder::DynExDegree> ),
+        std::make_tuple( std::string{ "tbmcsa" },    tbmcsa_max_clique ),
 
-        std::make_tuple( std::string{ "dbmcsa1" },    dbmcsa_max_clique<MaxCliqueOrder::Degree> ),
-        std::make_tuple( std::string{ "dbmcsa2" },    dbmcsa_max_clique<MaxCliqueOrder::MinWidth> ),
-        std::make_tuple( std::string{ "dbmcsa3" },    dbmcsa_max_clique<MaxCliqueOrder::ExDegree> ),
-        std::make_tuple( std::string{ "dbmcsar" },    dbmcsa_max_clique<MaxCliqueOrder::DynExDegree> )
+        std::make_tuple( std::string{ "dbmcsa" },    dbmcsa_max_clique )
     };
 }
 
 void table(int size, int samples, const std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> & algorithm)
 {
+    using namespace std::placeholders;
+
     std::cout << "# probability omega_average nodes_average time_average "
         << "find_omega_average find_nodes_average find_time_average" << std::endl;
 
@@ -79,6 +66,7 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
             unsigned omega;
             {
                 MaxCliqueParams params;
+                params.order_function = std::bind(degree_sort, _1, _2, false);
                 params.original_graph = &graph;
                 params.abort.store(false);
 
@@ -96,6 +84,7 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
 
             {
                 MaxCliqueParams params;
+                params.order_function = std::bind(degree_sort, _1, _2, false);
                 params.original_graph = &graph;
                 params.abort.store(false);
                 params.stop_after_finding = omega;

@@ -10,6 +10,8 @@
 #include <graph/complement.hh>
 #include <graph/is_clique.hh>
 #include <graph/is_club.hh>
+#include <graph/degree_sort.hh>
+#include <graph/min_width_sort.hh>
 
 #include <max_clique/naive_max_clique.hh>
 #include <max_clique/bmcsa_max_clique.hh>
@@ -46,35 +48,27 @@ namespace
 
 auto main(int argc, char * argv[]) -> int
 {
+    using namespace std::placeholders;
+
     auto algorithms = {
-        std::make_tuple( std::string{ "naive" },      run_with_power(naive_max_clique) ),
+        std::make_tuple( std::string{ "naive" },     run_with_power(naive_max_clique) ),
 
-        std::make_tuple( std::string{ "bmcsa1" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::Degree>) ),
-        std::make_tuple( std::string{ "bmcsa3" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::ExDegree>) ),
-        std::make_tuple( std::string{ "bmcsar" },     run_with_power(bmcsa_max_clique<MaxCliqueOrder::DynExDegree>) ),
+        std::make_tuple( std::string{ "bmcsa" },     run_with_power(bmcsa_max_clique) ),
 
-        std::make_tuple( std::string{ "ccon1" },      run_with_power(cco_max_clique<CCOPermutations::None, MaxCliqueOrder::Degree>) ),
-        std::make_tuple( std::string{ "ccod11" },     run_with_power(cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::Degree>) ),
-        std::make_tuple( std::string{ "ccos1" },      run_with_power(cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::Degree>) ),
-        std::make_tuple( std::string{ "ccon2" },      run_with_power(cco_max_clique<CCOPermutations::None, MaxCliqueOrder::MinWidth>) ),
-        std::make_tuple( std::string{ "ccod12" },     run_with_power(cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::MinWidth>) ),
-        std::make_tuple( std::string{ "ccos2" },      run_with_power(cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::MinWidth>) ),
-        std::make_tuple( std::string{ "ccon3" },      run_with_power(cco_max_clique<CCOPermutations::None, MaxCliqueOrder::ExDegree>) ),
-        std::make_tuple( std::string{ "ccod13" },     run_with_power(cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::ExDegree>) ),
-        std::make_tuple( std::string{ "ccos3" },      run_with_power(cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::ExDegree>) ),
-        std::make_tuple( std::string{ "cconr" },      run_with_power(cco_max_clique<CCOPermutations::None, MaxCliqueOrder::DynExDegree>) ),
-        std::make_tuple( std::string{ "ccod1r" },     run_with_power(cco_max_clique<CCOPermutations::Defer1, MaxCliqueOrder::DynExDegree>) ),
-        std::make_tuple( std::string{ "ccosr" },      run_with_power(cco_max_clique<CCOPermutations::Sort, MaxCliqueOrder::DynExDegree>) ),
+        std::make_tuple( std::string{ "ccon" },      run_with_power(cco_max_clique<CCOPermutations::None>) ),
+        std::make_tuple( std::string{ "ccod" },      run_with_power(cco_max_clique<CCOPermutations::Defer1>) ),
+        std::make_tuple( std::string{ "ccos" },      run_with_power(cco_max_clique<CCOPermutations::Sort>) ),
 
-        std::make_tuple( std::string{ "tbmcsa1" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::Degree>) ),
-        std::make_tuple( std::string{ "tbmcsa2" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::MinWidth>) ),
-        std::make_tuple( std::string{ "tbmcsa3" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::ExDegree>) ),
-        std::make_tuple( std::string{ "tbmcsar" },    run_with_power(tbmcsa_max_clique<MaxCliqueOrder::DynExDegree>) ),
+        std::make_tuple( std::string{ "tbmcsa" },    run_with_power(tbmcsa_max_clique) ),
 
-        std::make_tuple( std::string{ "dbmcsa1" },    run_with_power(dbmcsa_max_clique<MaxCliqueOrder::Degree>) ),
-        std::make_tuple( std::string{ "dbmcsa2" },    run_with_power(dbmcsa_max_clique<MaxCliqueOrder::MinWidth>) ),
-        std::make_tuple( std::string{ "dbmcsa3" },    run_with_power(dbmcsa_max_clique<MaxCliqueOrder::ExDegree>) ),
-        std::make_tuple( std::string{ "dbmcsar" },    run_with_power(dbmcsa_max_clique<MaxCliqueOrder::DynExDegree>) )
+        std::make_tuple( std::string{ "dbmcsa" },    run_with_power(dbmcsa_max_clique) )
+    };
+
+    auto orders = {
+        std::make_tuple( std::string{ "deg" },       std::bind(degree_sort, _1, _2, false) ),
+        std::make_tuple( std::string{ "ex" },        std::bind(exdegree_sort, _1, _2, false) ),
+        std::make_tuple( std::string{ "dynex" },     std::bind(dynexdegree_sort, _1, _2, false) ),
+        std::make_tuple( std::string{ "mw" },        std::bind(min_width_sort, _1, _2, false) )
     };
 
     try {
@@ -100,6 +94,7 @@ auto main(int argc, char * argv[]) -> int
         po::options_description all_options{ "All options" };
         all_options.add_options()
             ("algorithm",  "Specify which algorithm to use")
+            ("order",      "Specify the initial vertex order")
             ("input-file", po::value<std::vector<std::string> >(),
                            "Specify the input file (DIMACS format, unless --pairs or --net is specified). May be specified multiple times.")
             ;
@@ -109,6 +104,7 @@ auto main(int argc, char * argv[]) -> int
         po::positional_options_description positional_options;
         positional_options
             .add("algorithm", 1)
+            .add("order", 1)
             .add("input-file", -1)
             ;
 
@@ -121,7 +117,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* --help? Show a message, and exit. */
         if (options_vars.count("help")) {
-            std::cout << "Usage: " << argv[0] << " [options] algorithm file" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] algorithm order file[...]" << std::endl;
             std::cout << std::endl;
             std::cout << display_options << std::endl;
             return EXIT_SUCCESS;
@@ -129,7 +125,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* No algorithm or no input file specified? Show a message and exit. */
         if (! options_vars.count("algorithm") || options_vars.count("input-file") < 1) {
-            std::cout << "Usage: " << argv[0] << " [options] algorithm file[...]" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] algorithm order file[...]" << std::endl;
             return EXIT_FAILURE;
         }
 
@@ -148,6 +144,23 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
+        /* Turn an order string name into a runnable function. */
+        MaxCliqueOrderFunction order_function;
+        for (auto order = orders.begin() ; order != orders.end() ; ++order)
+            if (std::get<0>(*order) == options_vars["order"].as<std::string>()) {
+                order_function = std::get<1>(*order);
+                break;
+            }
+
+        /* Unknown algorithm? Show a message and exit. */
+        if (! order_function) {
+            std::cerr << "Unknown order " << options_vars["order"].as<std::string>() << ", choose from:";
+            for (auto a : orders)
+                std::cerr << " " << std::get<0>(a);
+            std::cerr << std::endl;
+            return EXIT_FAILURE;
+        }
+
         /* For each input file... */
         auto input_files = options_vars["input-file"].as<std::vector<std::string> >();
         bool first = true;
@@ -159,6 +172,8 @@ auto main(int argc, char * argv[]) -> int
 
             /* Figure out what our options should be. */
             MaxCliqueParams params;
+
+            params.order_function = order_function;
 
             if (options_vars.count("threads"))
                 params.n_threads = options_vars["threads"].as<int>();

@@ -15,7 +15,6 @@ namespace parasols
      * This is San Segundo's BBMCI with a selectable initial vertex ordering,
      * or Prosser's BBMC1 for some value of 1.
      */
-    template <MaxCliqueOrder order_>
     auto bmcsa_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
 }
 

@@ -9,7 +9,6 @@
 
 namespace parasols
 {
-    template <MaxCliqueOrder order_>
     auto dbmcsa_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
 }
 
