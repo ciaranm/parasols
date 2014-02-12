@@ -29,11 +29,13 @@ solve_max_clique
 
 This solves the maximum clique problem.
 
-To run, do 'solve_max_clique algorithm filename.clq' where filename.clq is in
-the DIMACS format, and algorithm is one of "naive mcsa1 tmcsa1 bmcsa1 tbmcsa1".
-The 't' is for threaded, the 'b' is for bitset encoding, and for 'mcsa1' refer
-to Prosser's 2012 "Exact Algorithms for Maximum Clique: A Computational Study".
-There are various options, use 'solve_max_clique --help' to list them.
+To run, do:
+
+    solve_max_clique algorithm order filename.clq
+
+where filename.clq is in the DIMACS format, algorithm is one of "naive bmcsa
+ccon ccod ccos tbmcsa dbmcsa", and order is one of "deg ex dynex mw". There are
+various options, use 'solve_max_clique --help' to list them.
 
 The output is as follows:
 
@@ -42,10 +44,8 @@ The output is as follows:
     runtimes
 
 Where the first runtime is the overall time (excluding reading in the graph) in
-steady-clock ms, and any additional values are per-thread runtimes.
-
-If work donation is enabled, a fourth line will show how many times this
-happened. If a timeout is specified, the first line will also say 'aborted'.
+steady-clock ms, and any additional values are per-thread runtimes. If a
+timeout is specified, the first line will also say 'aborted'.
 
 solve_max_biclique
 ------------------
@@ -55,8 +55,8 @@ This solves the maximum biclique problem.
 Right now the code only handles balanced, induced bicliques in an arbitrary
 graph.
 
-To run, do 'solve_max_biclique algorithm filename.clq' where filename.clq is
-in the DIMACS format, and algorithm is one of "naive cc". There are various
+To run, do 'solve_max_biclique algorithm filename.clq' where filename.clq is in
+the DIMACS format, and algorithm is one of "naive ccd". There are various
 options, use 'solve_max_biclique --help' to list them.
 
 The output is:
@@ -65,20 +65,6 @@ The output is:
     witness_a
     witness_b
     runtimes
-
-solve_roommates
----------------
-
-This solves the stable roommates problem (which is not actually hard).
-
-solve_balanced_pairs
---------------------
-
-Generates all pairs of sets (a, b) where a and b are disjoint, have the same
-cardinality, and whose elements are drawn from 1..n. The point is to illustrate
-the symmetry breaking used in max_biclique: if --break-ab-symmetry is
-specified, all unordered pairs are generated (i.e. if (a, b) is generated, (b,
-a) is not).
 
 create_random_graph
 -------------------
