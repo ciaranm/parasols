@@ -254,7 +254,7 @@ namespace
             const std::vector<int> & o,
             const MaxBicliqueParams & params) -> MaxBicliqueResult
     {
-        Queue<QueueItem<size_> > queue{ params.n_threads, false, false }; // work queue
+        Queue<QueueItem<size_> > queue{ params.n_threads, false }; // work queue
 
         MaxBicliqueResult result; // global result
         std::mutex result_mutex;

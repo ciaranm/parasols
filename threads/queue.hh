@@ -41,7 +41,6 @@ namespace parasols
     {
         private:
             const bool _donations_possible;
-            const bool _donate_when_empty;
 
             std::atomic<bool> _want_producer;
 
@@ -61,11 +60,9 @@ namespace parasols
         public:
             /**
              * We need to know how many consumers we will have. We also allow
-             * donations to be disabled. If donate_when_empty is true, donation
-             * starts even if no thread is idle. */
-            Queue(unsigned number_of_dequeuers, bool donations_possible, bool donate_when_empty) :
+             * donations to be disabled. */
+            Queue(unsigned number_of_dequeuers, bool donations_possible) :
                 _donations_possible(donations_possible),
-                _donate_when_empty(donate_when_empty),
                 _want_producer(true),
                 _initial_producer_done(false),
                 _number_busy(number_of_dequeuers),
@@ -210,7 +207,7 @@ namespace parasols
                 /* No locking. It's ok if we see an 'older' value of
                  * _want_donations. */
                 return _donations_possible &&
-                    (_donate_when_empty || _number_idle.load(std::memory_order_relaxed) > 0) &&
+                    _number_idle.load(std::memory_order_relaxed) > 0 &&
                     _want_donations.load(std::memory_order_relaxed);
             }
 

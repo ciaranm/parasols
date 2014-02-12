@@ -44,12 +44,6 @@ namespace parasols
         /// Splitting distance, where appropriate.
         unsigned split_depth = 1;
 
-        /// Min size to donate, where appropriate.
-        unsigned min_donate_size = 1;
-
-        /// Override initial order and bounds, if not empty.
-        std::vector<std::pair<unsigned, unsigned> > initial_order_and_bounds;
-
         /// If true, print every time we find a better incumbent.
         bool print_incumbents = false;
 
@@ -59,12 +53,6 @@ namespace parasols
 
         /// If true, enable work donation.
         bool work_donation = false;
-
-        /// If true, donate when the queue is empty, even if nothing is idle.
-        bool donate_when_empty = true;
-
-        /// Delay between choosing to donate.
-        unsigned donation_wait = 0;
 
         /// If this is set to true, we should abort due to a time limit.
         std::atomic<bool> abort;

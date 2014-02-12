@@ -186,9 +186,9 @@ namespace
     template <MaxCliqueOrder order_, unsigned size_>
     auto max_clique(const FixedBitGraph<size_> & graph, const std::vector<int> & o, const MaxCliqueParams & params) -> MaxCliqueResult
     {
-        Queue<QueueItem<size_> > queue{ params.n_threads, false, false }; // work queue
-        Queue<QueueItem<size_> > queue_2{ params.n_threads, false, false }; // work queue, depth 2
-        Queue<QueueItem<size_> > queue_3{ params.n_threads, false, false }; // work queue, depth 3
+        Queue<QueueItem<size_> > queue{ params.n_threads, false }; // work queue
+        Queue<QueueItem<size_> > queue_2{ params.n_threads, false }; // work queue, depth 2
+        Queue<QueueItem<size_> > queue_3{ params.n_threads, false }; // work queue, depth 3
 
         MaxCliqueResult result; // global result
         std::mutex result_mutex;

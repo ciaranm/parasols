@@ -56,23 +56,6 @@ namespace
         return (c_popcount + cn <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding);
     }
 
-    auto waited_long_enough(
-            const MaxCliqueParams & params,
-            std::chrono::time_point<std::chrono::steady_clock> & last_donation_time) -> bool
-    {
-        if (0 == params.donation_wait)
-            return true;
-
-        auto now = std::chrono::steady_clock::now();
-        auto delta = std::chrono::duration_cast<std::chrono::microseconds>(now - last_donation_time);
-        if (delta.count() > params.donation_wait) {
-            last_donation_time = now;
-            return true;
-        }
-        else
-            return false;
-    }
-
     template <MaxCliqueOrder order_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
@@ -130,11 +113,7 @@ namespace
                     maybe_queue->enqueue_blocking(QueueItem<size_>{ c, std::move(new_p), c_popcount + colours[n], std::move(new_position) }, params.n_threads);
                     should_expand = false;
                 }
-                else if (new_p.popcount() < params.min_donate_size) {
-                    chose_to_donate = false;
-                }
-                else if (donation_queue && (chose_to_donate ||
-                            (donation_queue->want_donations() && waited_long_enough(params, last_donation_time)))) {
+                else if (donation_queue && (chose_to_donate || donation_queue->want_donations())) {
                     auto new_position = position;
                     new_position.push_back(0);
                     donation_queue->enqueue(QueueItem<size_>{ c, std::move(new_p), c_popcount + colours[n], std::move(new_position) });
@@ -160,7 +139,7 @@ namespace
     template <MaxCliqueOrder order_, unsigned size_>
     auto max_clique(const FixedBitGraph<size_> & graph, const std::vector<int> & o, const MaxCliqueParams & params) -> MaxCliqueResult
     {
-        Queue<QueueItem<size_> > queue{ params.n_threads, params.work_donation, params.donate_when_empty }; // work queue
+        Queue<QueueItem<size_> > queue{ params.n_threads, params.work_donation }; // work queue
 
         MaxCliqueResult result; // global result
         std::mutex result_mutex;
