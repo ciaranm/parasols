@@ -435,8 +435,16 @@ auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & param
         return cco<perm_, order_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
         return cco<perm_, order_, 2>(graph, params);
+    else if (graph.size() < 3 * bits_per_word)
+        return cco<perm_, order_, 3>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
         return cco<perm_, order_, 4>(graph, params);
+    else if (graph.size() < 5 * bits_per_word)
+        return cco<perm_, order_, 5>(graph, params);
+    else if (graph.size() < 6 * bits_per_word)
+        return cco<perm_, order_, 6>(graph, params);
+    else if (graph.size() < 7 * bits_per_word)
+        return cco<perm_, order_, 7>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
         return cco<perm_, order_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
