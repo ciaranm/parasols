@@ -3,12 +3,21 @@
 #ifndef PARASOLS_GUARD_MAX_BICLIQUE_MAX_BICLIQUE_PARAMS_HH
 #define PARASOLS_GUARD_MAX_BICLIQUE_MAX_BICLIQUE_PARAMS_HH 1
 
+#include <graph/graph.hh>
+
 #include <limits>
 #include <chrono>
 #include <atomic>
+#include <vector>
+#include <functional>
 
 namespace parasols
 {
+    /**
+     * Initial vertex ordering to use.
+     */
+    using MaxBicliqueOrderFunction = std::function<void (const Graph &, std::vector<int> &)>;
+
     struct MaxBicliqueParams
     {
         /// If true, break a/b symmetry.
@@ -31,6 +40,9 @@ namespace parasols
 
         /// The start time of the algorithm.
         std::chrono::time_point<std::chrono::steady_clock> start_time;
+
+        /// Initial vertex ordering.
+        MaxBicliqueOrderFunction order_function;
     };
 }
 

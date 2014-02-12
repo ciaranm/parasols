@@ -5,7 +5,6 @@
 #include <max_biclique/clique_cover.hh>
 
 #include <graph/bit_graph.hh>
-#include <graph/degree_sort.hh>
 
 #include <algorithm>
 
@@ -213,7 +212,7 @@ namespace
 
         std::vector<int> o(graph.size()); // vertex ordering
         std::iota(o.begin(), o.end(), 0);
-        degree_sort(graph, o, false);
+        params.order_function(graph, o);
 
         // re-encode graph as a bit graph
         FixedBitGraph<size_> bit_graph;

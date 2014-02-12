@@ -7,6 +7,8 @@
 #include <max_biclique/ccd_max_biclique.hh>
 #include <max_biclique/dccd_max_biclique.hh>
 
+#include <graph/degree_sort.hh>
+
 #include <boost/program_options.hpp>
 
 #include <iostream>
@@ -37,6 +39,8 @@ void table(
         int samples,
         const std::vector<std::function<MaxBicliqueResult (const Graph &, const MaxBicliqueParams &)> > & algorithms)
 {
+    using namespace std::placeholders;
+
     for (int p = 1 ; p < 100 ; ++p) {
         for (int symmetry = 0 ; symmetry <= 1 ; ++symmetry) {
             std::vector<double> omega_average((algorithms.size()));
@@ -67,6 +71,7 @@ void table(
                         MaxBicliqueParams params;
                         params.n_threads = 2;
                         params.break_ab_symmetry = symmetry;
+                        params.order_function = std::bind(degree_sort, _1, _2, false);
 
                         params.start_time = std::chrono::steady_clock::now();
 
@@ -92,6 +97,7 @@ void table(
                         params.abort.store(false);
                         params.stop_after_finding = omega;
                         params.break_ab_symmetry = symmetry;
+                        params.order_function = std::bind(degree_sort, _1, _2, false);
 
                         params.start_time = std::chrono::steady_clock::now();
 
@@ -109,6 +115,7 @@ void table(
                         params.abort.store(false);
                         params.initial_bound = omega;
                         params.break_ab_symmetry = symmetry;
+                        params.order_function = std::bind(degree_sort, _1, _2, false);
 
                         params.start_time = std::chrono::steady_clock::now();
 

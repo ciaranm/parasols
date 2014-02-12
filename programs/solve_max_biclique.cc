@@ -5,6 +5,8 @@
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 #include <graph/pairs.hh>
+#include <graph/degree_sort.hh>
+#include <graph/min_width_sort.hh>
 
 #include <max_biclique/naive_max_biclique.hh>
 #include <max_biclique/ccd_max_biclique.hh>
@@ -23,10 +25,19 @@ namespace po = boost::program_options;
 
 auto main(int argc, char * argv[]) -> int
 {
+    using namespace std::placeholders;
+
     auto algorithms = {
         std::make_pair( std::string{ "naive" },   run_this(naive_max_biclique) ),
         std::make_pair( std::string{ "ccd" },     run_this(ccd_max_biclique) ),
         std::make_pair( std::string{ "dccd" },    run_this(dccd_max_biclique) )
+    };
+
+    auto orders = {
+        std::make_tuple( std::string{ "deg" },       std::bind(degree_sort, _1, _2, false) ),
+        std::make_tuple( std::string{ "ex" },        std::bind(exdegree_sort, _1, _2, false) ),
+        std::make_tuple( std::string{ "dynex" },     std::bind(dynexdegree_sort, _1, _2, false) ),
+        std::make_tuple( std::string{ "mw" },        std::bind(min_width_sort, _1, _2, false) )
     };
 
     try {
@@ -45,7 +56,8 @@ auto main(int argc, char * argv[]) -> int
 
         po::options_description all_options{ "All options" };
         all_options.add_options()
-            ("algorithm", "Specify which algorithm to use")
+            ("algorithm",  "Specify which algorithm to use")
+            ("order",      "Specify the initial vertex order")
             ("input-file", "Specify the input file (DIMACS format, unless --pairs is specified)")
             ;
 
@@ -54,6 +66,7 @@ auto main(int argc, char * argv[]) -> int
         po::positional_options_description positional_options;
         positional_options
             .add("algorithm", 1)
+            .add("order", 1)
             .add("input-file", 1)
             ;
 
@@ -66,7 +79,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* --help? Show a message, and exit. */
         if (options_vars.count("help")) {
-            std::cout << "Usage: " << argv[0] << " [options] algorithm file" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] algorithm order file" << std::endl;
             std::cout << std::endl;
             std::cout << display_options << std::endl;
             return EXIT_SUCCESS;
@@ -74,7 +87,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* No algorithm or no input file specified? Show a message and exit. */
         if (! options_vars.count("algorithm") || ! options_vars.count("input-file")) {
-            std::cout << "Usage: " << argv[0] << " [options] algorithm file" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] algorithm order file" << std::endl;
             return EXIT_FAILURE;
         }
 
@@ -93,8 +106,26 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
+        /* Turn an order string name into a runnable function. */
+        MaxBicliqueOrderFunction order_function;
+        for (auto order = orders.begin() ; order != orders.end() ; ++order)
+            if (std::get<0>(*order) == options_vars["order"].as<std::string>()) {
+                order_function = std::get<1>(*order);
+                break;
+            }
+
+        /* Unknown algorithm? Show a message and exit. */
+        if (! order_function) {
+            std::cerr << "Unknown order " << options_vars["order"].as<std::string>() << ", choose from:";
+            for (auto a : orders)
+                std::cerr << " " << std::get<0>(a);
+            std::cerr << std::endl;
+            return EXIT_FAILURE;
+        }
+
         /* Figure out what our options should be. */
         MaxBicliqueParams params;
+        params.order_function = order_function;
 
         if (options_vars.count("threads"))
             params.n_threads = options_vars["threads"].as<int>();
