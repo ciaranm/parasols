@@ -7,7 +7,6 @@ SUBMAKEFILES := \
 	programs/max_biclique_speedup_graph.mk \
 	programs/max_clique_graph.mk \
 	programs/max_clique_speedup_graph.mk \
-	programs/solve_balanced_pairs.mk \
 	programs/solve_max_biclique.mk \
 	programs/solve_max_clique.mk \
 	programs/solve_vertex_colouring.mk \
