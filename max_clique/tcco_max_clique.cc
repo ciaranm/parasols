@@ -65,10 +65,10 @@ namespace
                         position.reserve(graph.size());
                         position.push_back(0);
 
-                        std::vector<int> start_at;
+                        Skips skips;
 
                         // populate!
-                        expand(c, p, position, &queue, local_result, start_at);
+                        expand(c, p, position, &queue, local_result, &skips);
 
                         // merge results
                         queue.initial_producer_done();
@@ -103,7 +103,7 @@ namespace
                                 position.push_back(0);
 
                                 // do some work
-                                expand(c, p, position, nullptr, local_result, args.skips.start_at);
+                                expand(c, p, position, nullptr, local_result, &args.skips);
                             }
 
                             auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
@@ -127,7 +127,7 @@ namespace
         auto incremement_nodes(
                 Queue<QueueItem<size_> > * const,
                 MaxCliqueResult & local_result,
-                std::vector<int> &) -> void
+                Skips * const) -> void
         {
             ++local_result.nodes;
         }
@@ -138,7 +138,7 @@ namespace
                 std::vector<int> & position,
                 Queue<QueueItem<size_> > * const maybe_queue,
                 MaxCliqueResult & local_result,
-                std::vector<int> & start_at
+                Skips * const skips
                 ) -> void
         {
             if (maybe_queue) {
@@ -147,7 +147,7 @@ namespace
                 maybe_queue->enqueue(QueueItem<size_>{ std::move(start_at) });
             }
             else
-                expand(c, p, position, nullptr, local_result, start_at);
+                expand(c, p, position, nullptr, local_result, skips);
         }
 
         auto potential_new_best(
@@ -156,7 +156,7 @@ namespace
                 std::vector<int> & position,
                 Queue<QueueItem<size_> > * const,
                 MaxCliqueResult & local_result,
-                std::vector<int> &
+                Skips * const
                 ) -> void
         {
             if (best_anywhere.update(c_popcount)) {
@@ -180,10 +180,10 @@ namespace
                 unsigned c_popcount,
                 Queue<QueueItem<size_> > * const,
                 MaxCliqueResult &,
-                std::vector<int> & start_at) -> void
+                Skips * const skips) -> void
         {
-            if (start_at.size() > c_popcount) {
-                skip = start_at.at(c_popcount);
+            if (skips && skips->start_at.size() > c_popcount) {
+                skip = skips->start_at.at(c_popcount);
                 skip_was_nonzero = true;
                 --skip;
             }
