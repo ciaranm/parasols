@@ -2,12 +2,7 @@
 
 #include <max_clique/max_clique_params.hh>
 #include <max_clique/max_clique_result.hh>
-
-#include <max_clique/naive_max_clique.hh>
-#include <max_clique/bmcsa_max_clique.hh>
-#include <max_clique/cco_max_clique.hh>
-#include <max_clique/tbmcsa_max_clique.hh>
-#include <max_clique/dbmcsa_max_clique.hh>
+#include <max_clique/algorithms.hh>
 
 #include <graph/degree_sort.hh>
 
@@ -25,23 +20,6 @@ using namespace parasols;
 namespace po = boost::program_options;
 
 std::mt19937 rnd;
-
-namespace
-{
-    auto algorithms = {
-        std::make_tuple( std::string{ "naive" },   naive_max_clique ),
-
-        std::make_tuple( std::string{ "bmcsa1" },  bmcsa_max_clique ),
-
-        std::make_tuple( std::string{ "ccon" },    cco_max_clique<CCOPermutations::None> ),
-        std::make_tuple( std::string{ "ccod" },    cco_max_clique<CCOPermutations::Defer1> ),
-        std::make_tuple( std::string{ "ccos" },    cco_max_clique<CCOPermutations::Sort> ),
-
-        std::make_tuple( std::string{ "tbmcsa" },  tbmcsa_max_clique ),
-
-        std::make_tuple( std::string{ "dbmcsa" },  dbmcsa_max_clique )
-    };
-}
 
 bool compare(int size, int samples,
         const std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> & algorithm1,
@@ -143,27 +121,27 @@ auto main(int argc, char * argv[]) -> int
         int samples = options_vars["samples"].as<int>();
 
         /* Turn an algorithm string name into a runnable function. */
-        auto algorithm1 = algorithms.begin(), algorithm1_end = algorithms.end();
+        auto algorithm1 = max_clique_algorithms.begin(), algorithm1_end = max_clique_algorithms.end();
         for ( ; algorithm1 != algorithm1_end ; ++algorithm1)
             if (std::get<0>(*algorithm1) == options_vars["algorithm1"].as<std::string>())
                 break;
 
         if (algorithm1 == algorithm1_end) {
             std::cerr << "Unknown algorithm " << options_vars["algorithm1"].as<std::string>() << ", choose from:";
-            for (auto a : algorithms)
+            for (auto a : max_clique_algorithms)
                 std::cerr << " " << std::get<0>(a);
             std::cerr << std::endl;
             return EXIT_FAILURE;
         }
 
-        auto algorithm2 = algorithms.begin(), algorithm2_end = algorithms.end();
+        auto algorithm2 = max_clique_algorithms.begin(), algorithm2_end = max_clique_algorithms.end();
         for ( ; algorithm2 != algorithm2_end ; ++algorithm2)
             if (std::get<0>(*algorithm2) == options_vars["algorithm2"].as<std::string>())
                 break;
 
         if (algorithm2 == algorithm2_end) {
             std::cerr << "Unknown algorithm " << options_vars["algorithm2"].as<std::string>() << ", choose from:";
-            for (auto a : algorithms)
+            for (auto a : max_clique_algorithms)
                 std::cerr << " " << std::get<0>(a);
             std::cerr << std::endl;
             return EXIT_FAILURE;

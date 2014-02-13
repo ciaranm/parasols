@@ -8,9 +8,7 @@
 #include <graph/net.hh>
 #include <graph/is_vertex_colouring.hh>
 
-#include <vertex_colour/naive_vertex_colour.hh>
-#include <vertex_colour/fc_vertex_colour.hh>
-
+#include <vertex_colour/algorithms.hh>
 #include <vertex_colour/vertex_colouring_params.hh>
 #include <vertex_colour/vertex_colouring_result.hh>
 
@@ -27,11 +25,6 @@ namespace po = boost::program_options;
 auto main(int argc, char * argv[]) -> int
 {
     using namespace std::placeholders;
-
-    auto algorithms = {
-        std::make_tuple( std::string{ "naive" },      run_this(naive_vertex_colour) ),
-        std::make_tuple( std::string{ "fc" },         run_this(fc_vertex_colour) )
-    };
 
     auto formats = {
         std::make_pair( std::string{ "dimacs" },  std::function<Graph (const std::string &)>{ std::bind(read_dimacs, _1) } ),
@@ -135,7 +128,7 @@ auto main(int argc, char * argv[]) -> int
             auto graph = std::get<1>(*format)(input_file);
 
             bool aborted = false;
-            auto result = std::get<1>(*algorithm)(
+            auto result = run_this(std::get<1>(*algorithm))(
                     graph,
                     params,
                     aborted,

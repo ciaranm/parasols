@@ -7,5 +7,6 @@ SOURCES := \
 	max_biclique_params.cc \
 	max_biclique_result.cc \
 	naive_max_biclique.cc \
-	print_incumbent.cc
+	print_incumbent.cc \
+	algorithms.cc
 

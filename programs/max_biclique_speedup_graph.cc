@@ -2,10 +2,7 @@
 
 #include <max_biclique/max_biclique_params.hh>
 #include <max_biclique/max_biclique_result.hh>
-
-#include <max_biclique/naive_max_biclique.hh>
-#include <max_biclique/ccd_max_biclique.hh>
-#include <max_biclique/dccd_max_biclique.hh>
+#include <max_biclique/algorithms.hh>
 
 #include <graph/degree_sort.hh>
 
@@ -24,15 +21,6 @@ using namespace parasols;
 namespace po = boost::program_options;
 
 std::mt19937 rnd;
-
-namespace
-{
-    auto algorithms = {
-        std::make_tuple( std::string{ "naive" },      naive_max_biclique ),
-        std::make_tuple( std::string{ "ccd" },        ccd_max_biclique ),
-        std::make_tuple( std::string{ "dccd" },       dccd_max_biclique )
-    };
-}
 
 void table(
         int size,
@@ -214,14 +202,14 @@ auto main(int argc, char * argv[]) -> int
         std::vector<std::function<MaxBicliqueResult (const Graph &, const MaxBicliqueParams &)> > selected_algorithms;
         for (auto & s : options_vars["algorithm"].as<std::vector<std::string> >()) {
             /* Turn an algorithm string name into a runnable function. */
-            auto algorithm = algorithms.begin(), algorithm_end = algorithms.end();
+            auto algorithm = max_biclique_algorithms.begin(), algorithm_end = max_biclique_algorithms.end();
             for ( ; algorithm != algorithm_end ; ++algorithm)
                 if (std::get<0>(*algorithm) == s)
                     break;
 
             if (algorithm == algorithm_end) {
                 std::cerr << "Unknown algorithm " << s << ", choose from:";
-                for (auto a : algorithms)
+                for (auto a : max_biclique_algorithms)
                     std::cerr << " " << std::get<0>(a);
                 std::cerr << std::endl;
                 return EXIT_FAILURE;

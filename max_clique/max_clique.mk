@@ -9,5 +9,6 @@ SOURCES := \
 	naive_max_clique.cc \
 	print_incumbent.cc \
 	tbmcsa_max_clique.cc \
-	dbmcsa_max_clique.cc
+	dbmcsa_max_clique.cc \
+	algorithms.cc
 

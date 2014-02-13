@@ -9,9 +9,7 @@
 #include <graph/degree_sort.hh>
 #include <graph/min_width_sort.hh>
 
-#include <max_biclique/naive_max_biclique.hh>
-#include <max_biclique/ccd_max_biclique.hh>
-#include <max_biclique/dccd_max_biclique.hh>
+#include <max_biclique/algorithms.hh>
 
 #include <boost/program_options.hpp>
 
@@ -27,12 +25,6 @@ namespace po = boost::program_options;
 auto main(int argc, char * argv[]) -> int
 {
     using namespace std::placeholders;
-
-    auto algorithms = {
-        std::make_pair( std::string{ "naive" },   run_this(naive_max_biclique) ),
-        std::make_pair( std::string{ "ccd" },     run_this(ccd_max_biclique) ),
-        std::make_pair( std::string{ "dccd" },    run_this(dccd_max_biclique) )
-    };
 
     auto orders = {
         std::make_pair( std::string{ "deg" },     std::bind(degree_sort, _1, _2, false) ),
@@ -100,7 +92,7 @@ auto main(int argc, char * argv[]) -> int
         }
 
         /* Turn an algorithm string name into a runnable function. */
-        auto algorithm = algorithms.begin(), algorithm_end = algorithms.end();
+        auto algorithm = max_biclique_algorithms.begin(), algorithm_end = max_biclique_algorithms.end();
         for ( ; algorithm != algorithm_end ; ++algorithm)
             if (algorithm->first == options_vars["algorithm"].as<std::string>())
                 break;
@@ -108,7 +100,7 @@ auto main(int argc, char * argv[]) -> int
         /* Unknown algorithm? Show a message and exit. */
         if (algorithm == algorithm_end) {
             std::cerr << "Unknown algorithm " << options_vars["algorithm"].as<std::string>() << ", choose from:";
-            for (auto a : algorithms)
+            for (auto a : max_biclique_algorithms)
                 std::cerr << " " << a.first;
             std::cerr << std::endl;
             return EXIT_FAILURE;
@@ -173,7 +165,7 @@ auto main(int argc, char * argv[]) -> int
 
         /* Do the actual run. */
         bool aborted = false;
-        auto result = algorithm->second(
+        auto result = run_this(algorithm->second)(
                 graph,
                 params,
                 aborted,

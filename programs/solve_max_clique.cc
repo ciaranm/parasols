@@ -13,11 +13,7 @@
 #include <graph/degree_sort.hh>
 #include <graph/min_width_sort.hh>
 
-#include <max_clique/naive_max_clique.hh>
-#include <max_clique/bmcsa_max_clique.hh>
-#include <max_clique/tbmcsa_max_clique.hh>
-#include <max_clique/dbmcsa_max_clique.hh>
-#include <max_clique/cco_max_clique.hh>
+#include <max_clique/algorithms.hh>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
@@ -49,20 +45,6 @@ namespace
 auto main(int argc, char * argv[]) -> int
 {
     using namespace std::placeholders;
-
-    auto algorithms = {
-        std::make_tuple( std::string{ "naive" },     run_with_power(naive_max_clique) ),
-
-        std::make_tuple( std::string{ "bmcsa" },     run_with_power(bmcsa_max_clique) ),
-
-        std::make_tuple( std::string{ "ccon" },      run_with_power(cco_max_clique<CCOPermutations::None>) ),
-        std::make_tuple( std::string{ "ccod" },      run_with_power(cco_max_clique<CCOPermutations::Defer1>) ),
-        std::make_tuple( std::string{ "ccos" },      run_with_power(cco_max_clique<CCOPermutations::Sort>) ),
-
-        std::make_tuple( std::string{ "tbmcsa" },    run_with_power(tbmcsa_max_clique) ),
-
-        std::make_tuple( std::string{ "dbmcsa" },    run_with_power(dbmcsa_max_clique) )
-    };
 
     auto orders = {
         std::make_tuple( std::string{ "deg" },       std::bind(degree_sort, _1, _2, false) ),
@@ -136,7 +118,7 @@ auto main(int argc, char * argv[]) -> int
         }
 
         /* Turn an algorithm string name into a runnable function. */
-        auto algorithm = algorithms.begin(), algorithm_end = algorithms.end();
+        auto algorithm = max_clique_algorithms.begin(), algorithm_end = max_clique_algorithms.end();
         for ( ; algorithm != algorithm_end ; ++algorithm)
             if (std::get<0>(*algorithm) == options_vars["algorithm"].as<std::string>())
                 break;
@@ -144,7 +126,7 @@ auto main(int argc, char * argv[]) -> int
         /* Unknown algorithm? Show a message and exit. */
         if (algorithm == algorithm_end) {
             std::cerr << "Unknown algorithm " << options_vars["algorithm"].as<std::string>() << ", choose from:";
-            for (auto a : algorithms)
+            for (auto a : max_clique_algorithms)
                 std::cerr << " " << std::get<0>(a);
             std::cerr << std::endl;
             return EXIT_FAILURE;
@@ -238,7 +220,7 @@ auto main(int argc, char * argv[]) -> int
 
             /* Do the actual run. */
             bool aborted = false;
-            auto result = std::get<1>(*algorithm)(
+            auto result = run_with_power(std::get<1>(*algorithm))(
                     graph,
                     params,
                     aborted,
