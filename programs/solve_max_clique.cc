@@ -71,6 +71,13 @@ auto main(int argc, char * argv[]) -> int
         std::make_tuple( std::string{ "mw" },        std::bind(min_width_sort, _1, _2, false) )
     };
 
+    auto formats = {
+        std::make_pair( std::string{ "dimacs" },  std::function<Graph (const std::string &)>{ std::bind(read_dimacs, _1) } ),
+        std::make_pair( std::string{ "pairs0" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, false) } ),
+        std::make_pair( std::string{ "pairs1" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, true) } ),
+        std::make_pair( std::string{ "net" },     std::function<Graph (const std::string &)>{ std::bind(read_net, _1) } )
+    };
+
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()
@@ -87,8 +94,7 @@ auto main(int argc, char * argv[]) -> int
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ("check-club",                           "Check whether our s-clique is also an s-club")
-            ("pairs",                                "Input is in pairs format, not DIMACS")
-            ("net",                                  "Input is in net format, not DIMACS")
+            ("format",             po::value<std::string>(), "Specify the format of the input")
             ;
 
         po::options_description all_options{ "All options" };
@@ -96,7 +102,7 @@ auto main(int argc, char * argv[]) -> int
             ("algorithm",  "Specify which algorithm to use")
             ("order",      "Specify the initial vertex order")
             ("input-file", po::value<std::vector<std::string> >(),
-                           "Specify the input file (DIMACS format, unless --pairs or --net is specified). May be specified multiple times.")
+                           "Specify the input file (DIMACS format, unless --format is specified). May be specified multiple times.")
             ;
 
         all_options.add(display_options);
@@ -204,9 +210,24 @@ auto main(int argc, char * argv[]) -> int
             if (options_vars.count("power"))
                 params.power = options_vars["power"].as<int>();
 
+            /* Turn a format name into a runnable function. */
+            auto format = formats.begin(), format_end = formats.end();
+            if (options_vars.count("format"))
+                for ( ; format != format_end ; ++format)
+                    if (format->first == options_vars["format"].as<std::string>())
+                        break;
+
+            /* Unknown format? Show a message and exit. */
+            if (format == format_end) {
+                std::cerr << "Unknown format " << options_vars["format"].as<std::string>() << ", choose from:";
+                for (auto a : formats)
+                    std::cerr << " " << a.first;
+                std::cerr << std::endl;
+                return EXIT_FAILURE;
+            }
+
             /* Read in the graph */
-            auto graph = options_vars.count("pairs") ?
-                read_pairs(input_file) : options_vars.count("net") ? read_net(input_file) : read_dimacs(input_file);
+            auto graph = std::get<1>(*format)(input_file);
 
             if (options_vars.count("complement")) {
                 graph = complement(graph); // don't time this

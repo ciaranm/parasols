@@ -17,7 +17,7 @@ auto InvalidPairsFile::what() const throw () -> const char *
     return _what.c_str();
 }
 
-auto parasols::read_pairs(const std::string & filename) -> Graph
+auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Graph
 {
     std::ifstream infile{ filename };
     if (! infile)
@@ -26,7 +26,6 @@ auto parasols::read_pairs(const std::string & filename) -> Graph
     std::string line;
 
     static const boost::regex double_header{ R"((\d+)\s+(\d+)\s*)" };
-    bool one_indexed;
     unsigned size;
 
     if (! std::getline(infile, line))
@@ -34,12 +33,9 @@ auto parasols::read_pairs(const std::string & filename) -> Graph
 
     {
         boost::smatch match;
-        if (regex_match(line, match, double_header)) {
-            one_indexed = true;
+        if (regex_match(line, match, double_header))
             size = std::stoi(match.str(1));
-        }
         else {
-            one_indexed = false;
             size = std::stoi(line);
             std::getline(infile, line);
         }
@@ -62,7 +58,7 @@ auto parasols::read_pairs(const std::string & filename) -> Graph
                 --b;
             }
 
-            if (a >= result.size() || b >= result.size())
+            if (a >= result.size() || b >= result.size() || a < 0 || b < 0)
                 throw InvalidPairsFile{ filename, "line '" + line + "' edge index out of bounds" };
             else if (a == b)
                 throw InvalidPairsFile{ filename, "line '" + line + "' contains a loop" };

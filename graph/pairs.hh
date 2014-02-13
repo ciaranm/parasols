@@ -32,7 +32,7 @@ namespace parasols
      *
      * \throw InvalidPairsFile
      */
-    auto read_pairs(const std::string & filename) -> Graph;
+    auto read_pairs(const std::string & filename, bool one_indexed) -> Graph;
 }
 
 #endif

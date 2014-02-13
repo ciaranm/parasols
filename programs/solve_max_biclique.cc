@@ -5,6 +5,7 @@
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 #include <graph/pairs.hh>
+#include <graph/net.hh>
 #include <graph/degree_sort.hh>
 #include <graph/min_width_sort.hh>
 
@@ -34,10 +35,17 @@ auto main(int argc, char * argv[]) -> int
     };
 
     auto orders = {
-        std::make_tuple( std::string{ "deg" },       std::bind(degree_sort, _1, _2, false) ),
-        std::make_tuple( std::string{ "ex" },        std::bind(exdegree_sort, _1, _2, false) ),
-        std::make_tuple( std::string{ "dynex" },     std::bind(dynexdegree_sort, _1, _2, false) ),
-        std::make_tuple( std::string{ "mw" },        std::bind(min_width_sort, _1, _2, false) )
+        std::make_pair( std::string{ "deg" },     std::bind(degree_sort, _1, _2, false) ),
+        std::make_pair( std::string{ "ex" },      std::bind(exdegree_sort, _1, _2, false) ),
+        std::make_pair( std::string{ "dynex" },   std::bind(dynexdegree_sort, _1, _2, false) ),
+        std::make_pair( std::string{ "mw" },      std::bind(min_width_sort, _1, _2, false) )
+    };
+
+    auto formats = {
+        std::make_pair( std::string{ "dimacs" },  std::function<Graph (const std::string &)>{ std::bind(read_dimacs, _1) } ),
+        std::make_pair( std::string{ "pairs0" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, false) } ),
+        std::make_pair( std::string{ "pairs1" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, true) } ),
+        std::make_pair( std::string{ "net" },     std::function<Graph (const std::string &)>{ std::bind(read_net, _1) } )
     };
 
     try {
@@ -51,7 +59,7 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("break-ab-symmetry",  po::value<bool>(), "Break a/b symmetry (on by default)")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
-            ("pairs",                                "Input is in pairs format, not DIMACS")
+            ("format",             po::value<std::string>(), "Specify the format of the input")
             ;
 
         po::options_description all_options{ "All options" };
@@ -144,10 +152,24 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("break-ab-symmetry"))
             params.break_ab_symmetry = options_vars["break-ab-symmetry"].as<bool>();
 
+        /* Turn a format name into a runnable function. */
+        auto format = formats.begin(), format_end = formats.end();
+        if (options_vars.count("format"))
+            for ( ; format != format_end ; ++format)
+                if (format->first == options_vars["format"].as<std::string>())
+                    break;
+
+        /* Unknown format? Show a message and exit. */
+        if (format == format_end) {
+            std::cerr << "Unknown format " << options_vars["format"].as<std::string>() << ", choose from:";
+            for (auto a : formats)
+                std::cerr << " " << a.first;
+            std::cerr << std::endl;
+            return EXIT_FAILURE;
+        }
+
         /* Read in the graph */
-        auto graph = options_vars.count("pairs") ?
-            read_pairs(options_vars["input-file"].as<std::string>()) :
-            read_dimacs(options_vars["input-file"].as<std::string>());
+        auto graph = std::get<1>(*format)(options_vars["input-file"].as<std::string>());
 
         /* Do the actual run. */
         bool aborted = false;

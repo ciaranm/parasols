@@ -5,6 +5,7 @@
 #include <graph/graph.hh>
 #include <graph/dimacs.hh>
 #include <graph/pairs.hh>
+#include <graph/net.hh>
 #include <graph/is_vertex_colouring.hh>
 
 #include <vertex_colour/naive_vertex_colour.hh>
@@ -25,9 +26,18 @@ namespace po = boost::program_options;
 
 auto main(int argc, char * argv[]) -> int
 {
+    using namespace std::placeholders;
+
     auto algorithms = {
         std::make_tuple( std::string{ "naive" },      run_this(naive_vertex_colour) ),
         std::make_tuple( std::string{ "fc" },         run_this(fc_vertex_colour) )
+    };
+
+    auto formats = {
+        std::make_pair( std::string{ "dimacs" },  std::function<Graph (const std::string &)>{ std::bind(read_dimacs, _1) } ),
+        std::make_pair( std::string{ "pairs0" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, false) } ),
+        std::make_pair( std::string{ "pairs1" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, true) } ),
+        std::make_pair( std::string{ "net" },     std::function<Graph (const std::string &)>{ std::bind(read_net, _1) } )
     };
 
     try {
@@ -105,8 +115,24 @@ auto main(int argc, char * argv[]) -> int
             if (options_vars.count("initial-bound"))
                 params.initial_bound = options_vars["initial-bound"].as<int>();
 
+            /* Turn a format name into a runnable function. */
+            auto format = formats.begin(), format_end = formats.end();
+            if (options_vars.count("format"))
+                for ( ; format != format_end ; ++format)
+                    if (format->first == options_vars["format"].as<std::string>())
+                        break;
+
+            /* Unknown format? Show a message and exit. */
+            if (format == format_end) {
+                std::cerr << "Unknown format " << options_vars["format"].as<std::string>() << ", choose from:";
+                for (auto a : formats)
+                    std::cerr << " " << a.first;
+                std::cerr << std::endl;
+                return EXIT_FAILURE;
+            }
+
             /* Read in the graph */
-            auto graph = options_vars.count("pairs") ? read_pairs(input_file) : read_dimacs(input_file);
+            auto graph = std::get<1>(*format)(input_file);
 
             bool aborted = false;
             auto result = std::get<1>(*algorithm)(
