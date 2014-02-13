@@ -96,14 +96,39 @@ namespace
 #endif
 
     template <CCOPermutations perm_>
-    struct SelectCCOPerm;
-
-    template <>
-    struct SelectCCOPerm<CCOPermutations::None>
+    struct SelectColourClassOrderOverload
     {
-        template <unsigned size_>
-        static auto colour_class_order(
-                const FixedBitGraph<size_> & graph,
+    };
+
+    template <CCOPermutations perm_, unsigned size_>
+    struct CCOBase
+    {
+        FixedBitGraph<size_> graph;
+        const MaxCliqueParams & params;
+        MaxCliqueResult result;
+        std::vector<int> order;
+
+        CCOBase(const Graph & g, const MaxCliqueParams & p) :
+            params(p),
+            order(g.size())
+        {
+            result.size = params.initial_bound;
+
+            // populate our order with every vertex initially
+            std::iota(order.begin(), order.end(), 0);
+            params.order_function(g, order);
+
+            // re-encode graph as a bit graph
+            graph.resize(g.size());
+
+            for (int i = 0 ; i < g.size() ; ++i)
+                for (int j = 0 ; j < g.size() ; ++j)
+                    if (g.adjacent(order[i], order[j]))
+                        graph.add_edge(i, j);
+        }
+
+        auto colour_class_order(
+                const SelectColourClassOrderOverload<CCOPermutations::None> &,
                 const FixedBitSet<size_> & p,
                 std::array<unsigned, size_ * bits_per_word> & p_order,
                 std::array<unsigned, size_ * bits_per_word> & result) -> void
@@ -154,14 +179,9 @@ namespace
             distribution_counter.add(colour_class_sizes);
 #endif
         }
-    };
 
-    template <>
-    struct SelectCCOPerm<CCOPermutations::Defer1>
-    {
-        template <unsigned size_>
-        static auto colour_class_order(
-                const FixedBitGraph<size_> & graph,
+        auto colour_class_order(
+                const SelectColourClassOrderOverload<CCOPermutations::Defer1> &,
                 const FixedBitSet<size_> & p,
                 std::array<unsigned, size_ * bits_per_word> & p_order,
                 std::array<unsigned, size_ * bits_per_word> & result) -> void
@@ -229,14 +249,9 @@ namespace
             distribution_counter.add(colour_class_sizes);
 #endif
         }
-    };
 
-    template <>
-    struct SelectCCOPerm<CCOPermutations::Sort>
-    {
-        template <unsigned size_>
-        static auto colour_class_order(
-                const FixedBitGraph<size_> & graph,
+        auto colour_class_order(
+                const SelectColourClassOrderOverload<CCOPermutations::Sort> &,
                 const FixedBitSet<size_> & p,
                 std::array<unsigned, size_ * bits_per_word> & p_order,
                 std::array<unsigned, size_ * bits_per_word> & result) -> void
@@ -300,154 +315,159 @@ namespace
     };
 
     template <CCOPermutations perm_, unsigned size_>
-    auto expand(
-            const FixedBitGraph<size_> & graph,
-            const std::vector<int> & o,                      // vertex ordering
-            FixedBitSet<size_> & c,                          // current candidate clique
-            FixedBitSet<size_> & p,                          // potential additions
-            MaxCliqueResult & result,
-            const MaxCliqueParams & params,
-            std::vector<int> & position
-            ) -> void
+    struct CCO : CCOBase<perm_, size_>
     {
-        ++result.nodes;
+        using CCOBase<perm_, size_>::CCOBase;
 
-        auto c_popcount = c.popcount();
+        using CCOBase<perm_, size_>::graph;
+        using CCOBase<perm_, size_>::order;
+        using CCOBase<perm_, size_>::params;
+        using CCOBase<perm_, size_>::result;
+        using CCOBase<perm_, size_>::colour_class_order;
 
-        // get our coloured vertices
-        std::array<unsigned, size_ * bits_per_word> p_order, colours;
-        SelectCCOPerm<perm_>::template colour_class_order<size_>(graph, p, p_order, colours);
+        auto run() -> void
+        {
+            FixedBitSet<size_> c; // current candidate clique
+            c.resize(graph.size());
 
-        // for each v in p... (v comes later)
-        for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
-            ++position.back();
+            FixedBitSet<size_> p; // potential additions
+            p.resize(graph.size());
+            p.set_all();
 
-            // bound, timeout or early exit?
-            if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort.load())
-                return;
+            std::vector<int> positions;
+            positions.reserve(graph.size());
+            positions.push_back(0);
 
-            auto v = p_order[n];
+            // go!
+            expand(c, p, positions);
 
-            // consider taking v
-            c.set(v);
-            ++c_popcount;
-
-            // filter p to contain vertices adjacent to v
-            FixedBitSet<size_> new_p = p;
-            graph.intersect_with_row(v, new_p);
-
-            if (new_p.empty()) {
-                // potential new best
-                if (c_popcount > result.size) {
-                    if (params.enumerate) {
-                        ++result.result_count;
-                        result.size = c_popcount - 1;
-                    }
-                    else
-                        result.size = c_popcount;
-
-                    result.members.clear();
-                    for (int i = 0 ; i < graph.size() ; ++i)
-                        if (c.test(i))
-                            result.members.insert(o[i]);
-
-                    print_incumbent(params, c_popcount, position);
-                }
-            }
-            else {
-                position.push_back(0);
-                expand<perm_, size_>(graph, o, c, new_p, result, params, position);
-                position.pop_back();
-            }
-
-            // now consider not taking v
-            c.unset(v);
-            p.unset(v);
-            --c_popcount;
+            // hack for enumerate
+            if (params.enumerate)
+                result.size = result.members.size();
         }
-    }
 
-    template <CCOPermutations perm_, unsigned size_>
-    auto cco(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
+        auto expand(
+                FixedBitSet<size_> & c,                          // current candidate clique
+                FixedBitSet<size_> & p,                          // potential additions
+                std::vector<int> & position
+                ) -> void
+        {
+            ++result.nodes;
+
+            auto c_popcount = c.popcount();
+
+            // get our coloured vertices
+            std::array<unsigned, size_ * bits_per_word> p_order, colours;
+            colour_class_order(SelectColourClassOrderOverload<perm_>(), p, p_order, colours);
+
+            // for each v in p... (v comes later)
+            for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
+                ++position.back();
+
+                // bound, timeout or early exit?
+                if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+                    return;
+
+                auto v = p_order[n];
+
+                // consider taking v
+                c.set(v);
+                ++c_popcount;
+
+                // filter p to contain vertices adjacent to v
+                FixedBitSet<size_> new_p = p;
+                graph.intersect_with_row(v, new_p);
+
+                if (new_p.empty()) {
+                    // potential new best
+                    if (c_popcount > result.size) {
+                        if (params.enumerate) {
+                            ++result.result_count;
+                            result.size = c_popcount - 1;
+                        }
+                        else
+                            result.size = c_popcount;
+
+                        result.members.clear();
+                        for (int i = 0 ; i < graph.size() ; ++i)
+                            if (c.test(i))
+                                result.members.insert(order[i]);
+
+                        print_incumbent(params, c_popcount, position);
+                    }
+                }
+                else {
+                    position.push_back(0);
+                    expand(c, new_p, position);
+                    position.pop_back();
+                }
+
+                // now consider not taking v
+                c.unset(v);
+                p.unset(v);
+                --c_popcount;
+            }
+        }
+    };
+
+    template <unsigned...>
+    struct GraphSizes;
+
+    struct NoMoreGraphSizes
     {
-        MaxCliqueResult result;
-        result.size = params.initial_bound;
+    };
 
-        std::vector<int> o(graph.size()); // vertex ordering
+    template <unsigned n_, unsigned... n_rest_>
+    struct GraphSizes<n_, n_rest_...>
+    {
+        enum { n = n_ };
 
-        FixedBitSet<size_> c; // current candidate clique
-        c.resize(graph.size());
+        using Rest = GraphSizes<n_rest_...>;
+    };
 
-        FixedBitSet<size_> p; // potential additions
-        p.resize(graph.size());
-        p.set_all();
+    template <unsigned n_>
+    struct GraphSizes<n_>
+    {
+        enum { n = n_ };
 
-        // populate our order with every vertex initially
-        std::iota(o.begin(), o.end(), 0);
-        params.order_function(graph, o);
+        using Rest = NoMoreGraphSizes;
+    };
 
-        // re-encode graph as a bit graph
-        FixedBitGraph<size_> bit_graph;
-        bit_graph.resize(graph.size());
-
-        for (int i = 0 ; i < graph.size() ; ++i)
-            for (int j = 0 ; j < graph.size() ; ++j)
-                if (graph.adjacent(o[i], o[j]))
-                    bit_graph.add_edge(i, j);
-
-        std::vector<int> positions;
-        positions.reserve(graph.size());
-        positions.push_back(0);
-
-        // go!
-        expand<perm_, size_>(bit_graph, o, c, p, result, params, positions);
-
-        // hack for enumerate
-        if (params.enumerate)
-            result.size = result.members.size();
-
-        return result;
+    template <template <unsigned> class Algorithm_, typename Result_, unsigned... sizes_, typename... Params_>
+    auto select_graph_size(const GraphSizes<sizes_...> &, const Graph & graph, const Params_ & ... params) -> Result_
+    {
+        if (graph.size() < GraphSizes<sizes_...>::n * bits_per_word) {
+            Algorithm_<GraphSizes<sizes_...>::n> algorithm{ graph, params... };
+            algorithm.run();
+            return algorithm.result;
+        }
+        else
+            return select_graph_size<Algorithm_, Result_>(typename GraphSizes<sizes_...>::Rest(), graph, params...);
     }
+
+    template <template <unsigned> class Algorithm_, typename Result_, typename... Params_>
+    auto select_graph_size(const NoMoreGraphSizes &, const Graph &, const Params_ & ...) -> Result_
+    {
+        throw GraphTooBig();
+    }
+
+    /* This is pretty horrible: in order to avoid dynamic allocation, select
+     * the appropriate specialisation for our graph's size. */
+    static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
+
+    using AllGraphSizes = GraphSizes<1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 256, 512, 1024>;
+
+    template <CCOPermutations perm_>
+    struct Apply
+    {
+        template <unsigned size_> using SelectCCO = CCO<perm_, size_>;
+    };
 }
 
 template <CCOPermutations perm_>
 auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
-    /* This is pretty horrible: in order to avoid dynamic allocation, select
-     * the appropriate specialisation for our graph's size. */
-    static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
-    if (graph.size() < bits_per_word)
-        return cco<perm_, 1>(graph, params);
-    else if (graph.size() < 2 * bits_per_word)
-        return cco<perm_, 2>(graph, params);
-    else if (graph.size() < 3 * bits_per_word)
-        return cco<perm_, 3>(graph, params);
-    else if (graph.size() < 4 * bits_per_word)
-        return cco<perm_, 4>(graph, params);
-    else if (graph.size() < 5 * bits_per_word)
-        return cco<perm_, 5>(graph, params);
-    else if (graph.size() < 6 * bits_per_word)
-        return cco<perm_, 6>(graph, params);
-    else if (graph.size() < 7 * bits_per_word)
-        return cco<perm_, 7>(graph, params);
-    else if (graph.size() < 8 * bits_per_word)
-        return cco<perm_, 8>(graph, params);
-    else if (graph.size() < 16 * bits_per_word)
-        return cco<perm_, 16>(graph, params);
-    else if (graph.size() < 32 * bits_per_word)
-        return cco<perm_, 32>(graph, params);
-    else if (graph.size() < 64 * bits_per_word)
-        return cco<perm_, 64>(graph, params);
-    else if (graph.size() < 128 * bits_per_word)
-        return cco<perm_, 128>(graph, params);
-    else if (graph.size() < 256 * bits_per_word)
-        return cco<perm_, 256>(graph, params);
-    else if (graph.size() < 512 * bits_per_word)
-        return cco<perm_, 512>(graph, params);
-    else if (graph.size() < 1024 * bits_per_word)
-        return cco<perm_, 1024>(graph, params);
-    else
-        throw GraphTooBig();
+    return select_graph_size<Apply<perm_>::template SelectCCO, MaxCliqueResult>(AllGraphSizes(), graph, params);
 }
 
 template auto parasols::cco_max_clique<CCOPermutations::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
