@@ -8,8 +8,7 @@
 #include <graph/complement.hh>
 #include <graph/is_clique.hh>
 #include <graph/is_club.hh>
-#include <graph/degree_sort.hh>
-#include <graph/min_width_sort.hh>
+#include <graph/orders.hh>
 
 #include <max_clique/algorithms.hh>
 
@@ -42,15 +41,6 @@ namespace
 
 auto main(int argc, char * argv[]) -> int
 {
-    using namespace std::placeholders;
-
-    auto orders = {
-        std::make_tuple( std::string{ "deg" },       std::bind(degree_sort, _1, _2, false) ),
-        std::make_tuple( std::string{ "ex" },        std::bind(exdegree_sort, _1, _2, false) ),
-        std::make_tuple( std::string{ "dynex" },     std::bind(dynexdegree_sort, _1, _2, false) ),
-        std::make_tuple( std::string{ "mw" },        std::bind(min_width_sort, _1, _2, false) )
-    };
-
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()

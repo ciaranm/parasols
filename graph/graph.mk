@@ -13,5 +13,6 @@ SOURCES := \
 	is_clique.cc \
 	is_club.cc \
 	is_vertex_colouring.cc \
-	file_formats.cc
+	file_formats.cc \
+	orders.cc
 
