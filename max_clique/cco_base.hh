@@ -127,7 +127,6 @@ namespace parasols
                 FixedBitSet<size_> & c,                          // current candidate clique
                 FixedBitSet<size_> & p,                          // potential additions
                 std::vector<int> & position,
-                std::vector<int> & start_at,
                 MoreArgs_ && ... more_args_
                 ) -> void
         {
@@ -137,11 +136,8 @@ namespace parasols
 
             int skip = 0;
             bool skip_was_nonzero = false;
-            if (start_at.size() > c_popcount) {
-                skip = start_at.at(c_popcount);
-                skip_was_nonzero = true;
-                --skip;
-            }
+            static_cast<ActualType_ *>(this)->initialise_skip(skip, skip_was_nonzero, c_popcount,
+                    std::forward<MoreArgs_>(more_args_)...);
 
             // get our coloured vertices
             std::array<unsigned, size_ * bits_per_word> p_order, colours;
@@ -176,7 +172,7 @@ namespace parasols
                     }
                     else {
                         position.push_back(0);
-                        static_cast<ActualType_ *>(this)->recurse(c, new_p, position, start_at, std::forward<MoreArgs_>(more_args_)...);
+                        static_cast<ActualType_ *>(this)->recurse(c, new_p, position, std::forward<MoreArgs_>(more_args_)...);
                         position.pop_back();
                     }
 

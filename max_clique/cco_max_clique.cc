@@ -39,10 +39,8 @@ namespace
             positions.reserve(graph.size());
             positions.push_back(0);
 
-            std::vector<int> start_at;
-
             // go!
-            expand(c, p, positions, start_at);
+            expand(c, p, positions);
 
             // hack for enumerate
             if (params.enumerate)
@@ -59,11 +57,10 @@ namespace
         auto recurse(
                 FixedBitSet<size_> & c,
                 FixedBitSet<size_> & p,
-                std::vector<int> & position,
-                std::vector<int> & start_at
+                std::vector<int> & position
                 ) -> void
         {
-            expand(c, p, position, start_at);
+            expand(c, p, position);
         }
 
         auto potential_new_best(
@@ -92,6 +89,13 @@ namespace
         auto get_best_anywhere_value() -> unsigned
         {
             return result.size;
+        }
+
+        auto initialise_skip(
+                int &,
+                bool &,
+                unsigned) -> void
+        {
         }
     };
 }

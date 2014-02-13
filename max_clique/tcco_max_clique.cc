@@ -68,7 +68,7 @@ namespace
                         std::vector<int> start_at;
 
                         // populate!
-                        expand(c, p, position, start_at, &queue, local_result);
+                        expand(c, p, position, &queue, local_result, start_at);
 
                         // merge results
                         queue.initial_producer_done();
@@ -103,7 +103,7 @@ namespace
                                 position.push_back(0);
 
                                 // do some work
-                                expand(c, p, position, args.skips.start_at, nullptr, local_result);
+                                expand(c, p, position, nullptr, local_result, args.skips.start_at);
                             }
 
                             auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
@@ -126,7 +126,8 @@ namespace
 
         auto incremement_nodes(
                 Queue<QueueItem<size_> > * const,
-                MaxCliqueResult & local_result) -> void
+                MaxCliqueResult & local_result,
+                std::vector<int> &) -> void
         {
             ++local_result.nodes;
         }
@@ -135,9 +136,9 @@ namespace
                 FixedBitSet<size_> & c,
                 FixedBitSet<size_> & p,
                 std::vector<int> & position,
-                std::vector<int> & start_at,
                 Queue<QueueItem<size_> > * const maybe_queue,
-                MaxCliqueResult & local_result
+                MaxCliqueResult & local_result,
+                std::vector<int> & start_at
                 ) -> void
         {
             if (maybe_queue) {
@@ -146,7 +147,7 @@ namespace
                 maybe_queue->enqueue(QueueItem<size_>{ std::move(start_at) });
             }
             else
-                expand(c, p, position, start_at, nullptr, local_result);
+                expand(c, p, position, nullptr, local_result, start_at);
         }
 
         auto potential_new_best(
@@ -154,7 +155,8 @@ namespace
                 const FixedBitSet<size_> & c,
                 std::vector<int> & position,
                 Queue<QueueItem<size_> > * const,
-                MaxCliqueResult & local_result
+                MaxCliqueResult & local_result,
+                std::vector<int> &
                 ) -> void
         {
             if (best_anywhere.update(c_popcount)) {
@@ -170,6 +172,21 @@ namespace
         auto get_best_anywhere_value() -> unsigned
         {
             return best_anywhere.get();
+        }
+
+        auto initialise_skip(
+                int & skip,
+                bool & skip_was_nonzero,
+                unsigned c_popcount,
+                Queue<QueueItem<size_> > * const,
+                MaxCliqueResult &,
+                std::vector<int> & start_at) -> void
+        {
+            if (start_at.size() > c_popcount) {
+                skip = start_at.at(c_popcount);
+                skip_was_nonzero = true;
+                --skip;
+            }
         }
     };
 }
