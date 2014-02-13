@@ -15,13 +15,15 @@ using namespace parasols;
 
 namespace
 {
+    struct Skips
+    {
+        std::vector<int> start_at;
+    };
+
     template <unsigned size_>
     struct QueueItem
     {
-        FixedBitSet<size_> c;
-        FixedBitSet<size_> p;
-        unsigned cn;
-        std::vector<int> position;
+        Skips skips;
     };
 
     template <CCOPermutations perm_, unsigned size_>
@@ -63,8 +65,10 @@ namespace
                         position.reserve(graph.size());
                         position.push_back(0);
 
+                        std::vector<int> start_at;
+
                         // populate!
-                        expand(c, p, position, &queue, local_result);
+                        expand(c, p, position, start_at, &queue, local_result);
 
                         // merge results
                         queue.initial_producer_done();
@@ -85,14 +89,21 @@ namespace
                                 if (! queue.dequeue_blocking(args))
                                     break;
 
-                                print_position(params, "dequeued", args.position);
+                                print_position(params, "dequeued", args.skips.start_at);
 
-                                // re-evaluate the bound against our new best
-                                if (args.cn <= best_anywhere.get())
-                                    continue;
+                                FixedBitSet<size_> c; // local candidate clique
+                                c.resize(graph.size());
+
+                                FixedBitSet<size_> p; // local potential additions
+                                p.resize(graph.size());
+                                p.set_all();
+
+                                std::vector<int> position;
+                                position.reserve(graph.size());
+                                position.push_back(0);
 
                                 // do some work
-                                expand(args.c, args.p, args.position, nullptr, local_result);
+                                expand(c, p, position, args.skips.start_at, nullptr, local_result);
                             }
 
                             auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
@@ -124,15 +135,18 @@ namespace
                 FixedBitSet<size_> & c,
                 FixedBitSet<size_> & p,
                 std::vector<int> & position,
-                unsigned cn,
+                std::vector<int> & start_at,
                 Queue<QueueItem<size_> > * const maybe_queue,
                 MaxCliqueResult & local_result
                 ) -> void
         {
-            if (maybe_queue)
-                maybe_queue->enqueue(QueueItem<size_>{ c, p, cn, position });
+            if (maybe_queue) {
+                auto start_at = position;
+                start_at.pop_back();
+                maybe_queue->enqueue(QueueItem<size_>{ std::move(start_at) });
+            }
             else
-                expand(c, p, position, nullptr, local_result);
+                expand(c, p, position, start_at, nullptr, local_result);
         }
 
         auto potential_new_best(

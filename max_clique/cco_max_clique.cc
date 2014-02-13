@@ -39,8 +39,10 @@ namespace
             positions.reserve(graph.size());
             positions.push_back(0);
 
+            std::vector<int> start_at;
+
             // go!
-            expand(c, p, positions);
+            expand(c, p, positions, start_at);
 
             // hack for enumerate
             if (params.enumerate)
@@ -58,10 +60,10 @@ namespace
                 FixedBitSet<size_> & c,
                 FixedBitSet<size_> & p,
                 std::vector<int> & position,
-                unsigned
+                std::vector<int> & start_at
                 ) -> void
         {
-            expand(c, p, position);
+            expand(c, p, position, start_at);
         }
 
         auto potential_new_best(

@@ -127,12 +127,21 @@ namespace parasols
                 FixedBitSet<size_> & c,                          // current candidate clique
                 FixedBitSet<size_> & p,                          // potential additions
                 std::vector<int> & position,
+                std::vector<int> & start_at,
                 MoreArgs_ && ... more_args_
                 ) -> void
         {
             static_cast<ActualType_ *>(this)->incremement_nodes(std::forward<MoreArgs_>(more_args_)...);
 
             auto c_popcount = c.popcount();
+
+            int skip = 0;
+            bool skip_was_nonzero = false;
+            if (start_at.size() > c_popcount) {
+                skip = start_at.at(c_popcount);
+                skip_was_nonzero = true;
+                --skip;
+            }
 
             // get our coloured vertices
             std::array<unsigned, size_ * bits_per_word> p_order, colours;
@@ -149,27 +158,36 @@ namespace parasols
 
                 auto v = p_order[n];
 
-                // consider taking v
-                c.set(v);
-                ++c_popcount;
-
-                // filter p to contain vertices adjacent to v
-                FixedBitSet<size_> new_p = p;
-                graph.intersect_with_row(v, new_p);
-
-                if (new_p.empty()) {
-                    static_cast<ActualType_ *>(this)->potential_new_best(c_popcount, c, position, std::forward<MoreArgs_>(more_args_)...);
+                if (skip > 0) {
+                    --skip;
+                    p.unset(v);
                 }
                 else {
-                    position.push_back(0);
-                    static_cast<ActualType_ *>(this)->recurse(c, new_p, position, c_popcount + colours[n], std::forward<MoreArgs_>(more_args_)...);
-                    position.pop_back();
-                }
+                    // consider taking v
+                    c.set(v);
+                    ++c_popcount;
 
-                // now consider not taking v
-                c.unset(v);
-                p.unset(v);
-                --c_popcount;
+                    // filter p to contain vertices adjacent to v
+                    FixedBitSet<size_> new_p = p;
+                    graph.intersect_with_row(v, new_p);
+
+                    if (new_p.empty()) {
+                        static_cast<ActualType_ *>(this)->potential_new_best(c_popcount, c, position, std::forward<MoreArgs_>(more_args_)...);
+                    }
+                    else {
+                        position.push_back(0);
+                        static_cast<ActualType_ *>(this)->recurse(c, new_p, position, start_at, std::forward<MoreArgs_>(more_args_)...);
+                        position.pop_back();
+                    }
+
+                    // now consider not taking v
+                    c.unset(v);
+                    p.unset(v);
+                    --c_popcount;
+
+                    if (skip_was_nonzero)
+                        return;
+                }
             }
         }
 
