@@ -12,14 +12,21 @@
 
 namespace parasols
 {
-    using GraphFileFormatFunction = std::function<Graph (const std::string &)>;
+    namespace detail
+    {
+        using GraphFileFormatFunction = std::function<Graph (const std::string &)>;
 
-    auto graph_file_formats = {
-        std::make_pair( std::string{ "dimacs" },  GraphFileFormatFunction{ std::bind(read_dimacs, std::placeholders::_1) } ),
-        std::make_pair( std::string{ "pairs0" },  GraphFileFormatFunction{ std::bind(read_pairs, std::placeholders::_1, false) } ),
-        std::make_pair( std::string{ "pairs1" },  GraphFileFormatFunction{ std::bind(read_pairs, std::placeholders::_1, true) } ),
-        std::make_pair( std::string{ "net" },     GraphFileFormatFunction{ std::bind(read_net, std::placeholders::_1) } )
-    };
+        using namespace std::placeholders;
+
+        auto graph_file_formats = {
+            std::make_pair( std::string{ "dimacs" },  GraphFileFormatFunction{ std::bind(read_dimacs, _1) } ),
+            std::make_pair( std::string{ "pairs0" },  GraphFileFormatFunction{ std::bind(read_pairs, _1, false) } ),
+            std::make_pair( std::string{ "pairs1" },  GraphFileFormatFunction{ std::bind(read_pairs, _1, true) } ),
+            std::make_pair( std::string{ "net" },     GraphFileFormatFunction{ std::bind(read_net, _1) } )
+        };
+    }
+
+    using detail::graph_file_formats;
 }
 
 #endif
