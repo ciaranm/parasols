@@ -19,13 +19,17 @@ namespace parasols
 
         std::make_pair( std::string{ "bmcsa" },     bmcsa_max_clique),
 
+        std::make_pair( std::string{ "tbmcsa" },    tbmcsa_max_clique ),
+
+        std::make_pair( std::string{ "dbmcsa" },    dbmcsa_max_clique ),
+
         std::make_pair( std::string{ "ccon" },      cco_max_clique<CCOPermutations::None>),
         std::make_pair( std::string{ "ccod" },      cco_max_clique<CCOPermutations::Defer1>),
         std::make_pair( std::string{ "ccos" },      cco_max_clique<CCOPermutations::Sort>),
 
-        std::make_pair( std::string{ "tbmcsa" },    tbmcsa_max_clique ),
-
-        std::make_pair( std::string{ "dbmcsa" },    dbmcsa_max_clique )
+        std::make_pair( std::string{ "tccon" },     tcco_max_clique<CCOPermutations::None>),
+        std::make_pair( std::string{ "tccod" },     tcco_max_clique<CCOPermutations::Defer1>),
+        std::make_pair( std::string{ "tccos" },     tcco_max_clique<CCOPermutations::Sort>)
     };
 }
 
