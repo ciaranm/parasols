@@ -8,6 +8,7 @@
 #include <max_clique/tbmcsa_max_clique.hh>
 #include <max_clique/dbmcsa_max_clique.hh>
 #include <max_clique/cco_max_clique.hh>
+#include <max_clique/tcco_max_clique.hh>
 
 #include <utility>
 #include <string>

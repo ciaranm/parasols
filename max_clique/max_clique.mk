@@ -2,7 +2,9 @@ TARGET := libmax_clique.a
 
 SOURCES := \
 	bmcsa_max_clique.cc \
+	cco_base.cc \
 	cco_max_clique.cc \
+	tcco_max_clique.cc \
 	colourise.cc \
 	max_clique_params.cc \
 	max_clique_result.cc \
