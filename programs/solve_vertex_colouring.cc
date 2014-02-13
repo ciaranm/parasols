@@ -22,8 +22,6 @@ namespace po = boost::program_options;
 
 auto main(int argc, char * argv[]) -> int
 {
-    using namespace std::placeholders;
-
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()
