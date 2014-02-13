@@ -3,9 +3,7 @@
 #include <solver/solver.hh>
 
 #include <graph/graph.hh>
-#include <graph/dimacs.hh>
-#include <graph/pairs.hh>
-#include <graph/net.hh>
+#include <graph/file_formats.hh>
 #include <graph/is_vertex_colouring.hh>
 
 #include <vertex_colour/algorithms.hh>
@@ -25,13 +23,6 @@ namespace po = boost::program_options;
 auto main(int argc, char * argv[]) -> int
 {
     using namespace std::placeholders;
-
-    auto formats = {
-        std::make_pair( std::string{ "dimacs" },  std::function<Graph (const std::string &)>{ std::bind(read_dimacs, _1) } ),
-        std::make_pair( std::string{ "pairs0" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, false) } ),
-        std::make_pair( std::string{ "pairs1" },  std::function<Graph (const std::string &)>{ std::bind(read_pairs, _1, true) } ),
-        std::make_pair( std::string{ "net" },     std::function<Graph (const std::string &)>{ std::bind(read_net, _1) } )
-    };
 
     try {
         po::options_description display_options{ "Program options" };
@@ -109,7 +100,7 @@ auto main(int argc, char * argv[]) -> int
                 params.initial_bound = options_vars["initial-bound"].as<int>();
 
             /* Turn a format name into a runnable function. */
-            auto format = formats.begin(), format_end = formats.end();
+            auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
             if (options_vars.count("format"))
                 for ( ; format != format_end ; ++format)
                     if (format->first == options_vars["format"].as<std::string>())
@@ -118,7 +109,7 @@ auto main(int argc, char * argv[]) -> int
             /* Unknown format? Show a message and exit. */
             if (format == format_end) {
                 std::cerr << "Unknown format " << options_vars["format"].as<std::string>() << ", choose from:";
-                for (auto a : formats)
+                for (auto a : graph_file_formats)
                     std::cerr << " " << a.first;
                 std::cerr << std::endl;
                 return EXIT_FAILURE;
