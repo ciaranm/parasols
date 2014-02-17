@@ -12,8 +12,8 @@ parasols::is_club(const Graph & graph, int k, const std::set<int> & members) -> 
     for (auto & d : distances)
         d.resize((graph.size()));
 
-    for (int i = 0 ; i < graph.size() ; ++i)
-        for (int j = 0 ; j < graph.size() ; ++j) {
+    for (int i : members)
+        for (int j : members) {
             if (i == j)
                 distances[i][j] = 0;
             else if (members.count(i) && members.count(j) && graph.adjacent(i, j))
@@ -23,9 +23,9 @@ parasols::is_club(const Graph & graph, int k, const std::set<int> & members) -> 
         }
 
     /* shorten */
-    for (int k = 0 ; k < graph.size() ; ++k)
-        for (int i = 0 ; i < graph.size() ; ++i)
-            for (int j = 0 ; j < graph.size() ; ++j)
+    for (int k : members)
+        for (int i : members)
+            for (int j : members)
                 if (distances[i][k] != std::numeric_limits<int>::max() &&
                         distances[k][j] != std::numeric_limits<int>::max()) {
                     int d = distances[i][k] + distances[k][j];
