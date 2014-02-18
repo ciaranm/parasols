@@ -15,6 +15,7 @@ auto main(int argc, char * argv[]) -> int
         po::options_description display_options{ "Program options" };
         display_options.add_options()
             ("help",                                  "Display help information")
+            ("format",      po::value<std::string>(), "Specify the format of the output")
             ;
 
         po::options_description all_options{ "All options" };
@@ -62,11 +63,25 @@ auto main(int argc, char * argv[]) -> int
         rand.seed(s);
         std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-        std::cout << "p edge " << n << " 0" << std::endl;
+        std::function<void (int, int)> output_function;
+
+        if (! options_vars.count("format") || options_vars["format"].as<std::string>() == "dimacs") {
+            std::cout << "p edge " << n << " 0" << std::endl;
+            output_function = [] (int e, int f) { std::cout << "e " << e << " " << f << std::endl; };
+        }
+        else if (options_vars["format"].as<std::string>() == "pairs0") {
+            std::cout << n << " 0" << std::endl;
+            output_function = [] (int e, int f) { std::cout << e - 1 << " " << f - 1 << std::endl; };
+        }
+        else {
+            std::cout << "Unknown format (try 'dimacs' or 'pairs0')" << std::endl;
+            return EXIT_FAILURE;
+        }
+
         for (int e = 1 ; e <= n ; ++e) {
             for (int f = e + 1 ; f <= n ; ++f) {
                 if (dist(rand) <= p)
-                    std::cout << "e " << e << " " << f << std::endl;
+                    output_function(e, f);
             }
         }
 
