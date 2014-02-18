@@ -15,8 +15,8 @@ namespace parasols
      *
      * This version supports positions.
      */
-    auto print_incumbent(const MaxKClubParams & params, unsigned size,
-            const std::vector<int> & positions) -> void;
+    auto print_incumbent(const MaxKClubParams & params, unsigned size, unsigned old_best,
+            bool feasible, const std::vector<int> & positions) -> void;
 }
 
 #endif

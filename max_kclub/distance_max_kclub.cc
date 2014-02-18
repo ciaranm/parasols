@@ -147,12 +147,17 @@ namespace
             c.push_back(v);
 
             // club?
-            if (c.size() > result.size && is_club(graph, params.k, std::set<int>{ c.begin(), c.end() })) {
-                result.size = c.size();
-                result.members.clear();
-                for (auto & i : c)
-                    result.members.insert(o[i]);
-                print_incumbent(params, result.size, position);
+            if (c.size() > result.size) {
+                if (is_club(graph, params.k, std::set<int>{ c.begin(), c.end() })) {
+                    unsigned old_size = result.size;
+                    result.size = c.size();
+                    result.members.clear();
+                    for (auto & i : c)
+                        result.members.insert(o[i]);
+                    print_incumbent(params, result.size, old_size, true, position);
+                }
+                else
+                    print_incumbent(params, c.size(), result.size, false, position);
             }
 
             if (! p.empty()) {
