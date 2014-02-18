@@ -17,13 +17,12 @@ namespace
     {
         ++result.nodes;
 
-        auto o = p;
-        while (! o.empty()) {
-            if (c.size() + o.size() <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+        while (! p.empty()) {
+            if (c.size() + p.size() <= result.size || result.size >= params.stop_after_finding || params.abort.load())
                 return;
 
-            auto v = o.back();
-            o.pop_back();
+            auto v = p.back();
+            p.pop_back();
 
             // consider v in c
             c.push_back(v);
@@ -34,8 +33,8 @@ namespace
                 result.size = c.size();
             }
 
-            if (! o.empty()) {
-                auto new_p = o;
+            if (! p.empty()) {
+                auto new_p = p;
                 expand(graph, c, new_p, result, params);
             }
 
