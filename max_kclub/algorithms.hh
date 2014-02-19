@@ -5,6 +5,7 @@
 
 #include <max_kclub/naive_max_kclub.hh>
 #include <max_kclub/distance_max_kclub.hh>
+#include <max_kclub/cco_max_kclub.hh>
 
 #include <utility>
 #include <string>
@@ -13,7 +14,8 @@ namespace parasols
 {
     auto max_kclub_algorithms = {
         std::make_pair( std::string{ "naive" },     naive_max_kclub),
-        std::make_pair( std::string{ "distance" },  distance_max_kclub)
+        std::make_pair( std::string{ "distance" },  distance_max_kclub),
+        std::make_pair( std::string{ "cco" },       cco_max_kclub)
     };
 }
 
