@@ -7,6 +7,8 @@
 #include <threads/queue.hh>
 #include <threads/atomic_incumbent.hh>
 
+#include <graph/template_voodoo.hh>
+
 #include <algorithm>
 #include <thread>
 #include <mutex>

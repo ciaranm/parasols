@@ -374,52 +374,6 @@ namespace parasols
         }
     };
 
-    template <unsigned...>
-    struct GraphSizes;
-
-    struct NoMoreGraphSizes
-    {
-    };
-
-    template <unsigned n_, unsigned... n_rest_>
-    struct GraphSizes<n_, n_rest_...>
-    {
-        enum { n = n_ };
-
-        using Rest = GraphSizes<n_rest_...>;
-    };
-
-    template <unsigned n_>
-    struct GraphSizes<n_>
-    {
-        enum { n = n_ };
-
-        using Rest = NoMoreGraphSizes;
-    };
-
-    template <template <unsigned> class Algorithm_, typename Result_, unsigned... sizes_, typename... Params_>
-    auto select_graph_size(const GraphSizes<sizes_...> &, const Graph & graph, const Params_ & ... params) -> Result_
-    {
-        if (graph.size() < GraphSizes<sizes_...>::n * bits_per_word) {
-            Algorithm_<GraphSizes<sizes_...>::n> algorithm{ graph, params... };
-            return algorithm.run();
-        }
-        else
-            return select_graph_size<Algorithm_, Result_>(typename GraphSizes<sizes_...>::Rest(), graph, params...);
-    }
-
-    template <template <unsigned> class Algorithm_, typename Result_, typename... Params_>
-    auto select_graph_size(const NoMoreGraphSizes &, const Graph &, const Params_ & ...) -> Result_
-    {
-        throw GraphTooBig();
-    }
-
-    /* This is pretty horrible: in order to avoid dynamic allocation, select
-     * the appropriate specialisation for our graph's size. */
-    static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
-
-    using AllGraphSizes = GraphSizes<1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 256, 512, 1024>;
-
     template <template <CCOPermutations, unsigned> class WhichCCO_, CCOPermutations perm_>
     struct ApplyPerm
     {

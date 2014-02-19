@@ -4,6 +4,8 @@
 #include <max_clique/cco_base.hh>
 #include <max_clique/print_incumbent.hh>
 
+#include <graph/template_voodoo.hh>
+
 #include <algorithm>
 #include <thread>
 #include <mutex>

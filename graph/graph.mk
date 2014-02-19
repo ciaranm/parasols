@@ -14,5 +14,6 @@ SOURCES := \
 	is_club.cc \
 	is_vertex_colouring.cc \
 	file_formats.cc \
-	orders.cc
+	orders.cc \
+	template_voodoo.cc
 
