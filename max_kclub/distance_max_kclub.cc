@@ -2,7 +2,10 @@
 
 #include <max_kclub/distance_max_kclub.hh>
 #include <max_kclub/print_incumbent.hh>
+#include <max_kclub/kneighbours.hh>
+
 #include <graph/is_club.hh>
+
 #include <algorithm>
 #include <limits>
 
@@ -10,87 +13,9 @@ using namespace parasols;
 
 namespace
 {
-    struct VertexDistance
-    {
-        int distance;
-        int next;
-    };
-
-    struct VertexInformation
-    {
-        std::vector<int> firsts;
-        std::vector<VertexDistance> distances;
-    };
-
-    struct Distances
-    {
-        std::vector<VertexInformation> vertices;
-
-        Distances(const Graph & graph, const MaxKClubParams & params) :
-            vertices(graph.size())
-        {
-            for (auto & d : vertices) {
-                d.firsts.resize(params.k + 1);
-                for (auto & f : d.firsts)
-                    f = -1;
-
-                d.distances.resize(graph.size());
-            }
-
-            /* build up distance 1 lists */
-            for (int i = 0 ; i < graph.size() ; ++i) {
-                int prev = -1;
-                for (int j = 0 ; j < graph.size() ; ++j) {
-                    if (i == j) {
-                        vertices[i].firsts[0] = i;
-                        vertices[i].distances[j].distance = 0;
-                        vertices[i].distances[j].next = -1;
-                    }
-                    else if (graph.adjacent(i, j)) {
-                        if (-1 == vertices[i].firsts[1]) {
-                            vertices[i].firsts[1] = j;
-                            vertices[i].distances[j].distance = 1;
-                            vertices[i].distances[j].next = -1;
-                            prev = j;
-                        }
-                        else {
-                            vertices[i].distances[prev].next = j;
-                            vertices[i].distances[j].distance = 1;
-                            vertices[i].distances[j].next = -1;
-                            prev = j;
-                        }
-                    }
-                    else {
-                        vertices[i].distances[j].distance = -1;
-                        vertices[i].distances[j].next = -1;
-                    }
-                }
-            }
-
-            /* build up distance k lists */
-            for (unsigned k = 2 ; k <= params.k ; ++k) {
-                for (int i = 0 ; i < graph.size() ; ++i) {
-                    int prev = -1;
-                    for (int a = vertices[i].firsts[k - 1] ; a != -1 ; a = vertices[i].distances[a].next) {
-                        for (int j = vertices[a].firsts[1] ; j != -1 ; j = vertices[a].distances[j].next) {
-                            if (vertices[i].distances[j].distance == -1) {
-                                vertices[i].distances[j].distance = k;
-                                if (-1 == prev)
-                                    vertices[i].firsts[k] = j;
-                                else
-                                    vertices[i].distances[prev].next = j;
-                                prev = j;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    };
-
     auto bound(
             const Graph & graph,
-            const Distances & distances,
+            const KNeighbours & kneighbours,
             std::vector<int> & p) -> int
     {
         std::vector<std::vector<int> > colour_classes((graph.size()));
@@ -101,7 +26,7 @@ namespace
             for (int c = 0 ; c < graph.size() && ! coloured ; ++c) {
                 bool conflicts = false;
                 for (auto & w : colour_classes[c]) {
-                    if (-1 != distances.vertices[v].distances[w].distance) {
+                    if (-1 != kneighbours.vertices[v].distances[w].distance) {
                         conflicts = true;
                         break;
                     }
@@ -124,7 +49,7 @@ namespace
 
     auto expand(
             const Graph & graph,
-            const Distances & distances,
+            const KNeighbours & kneighbours,
             std::vector<int> & c,                    // current candidate clique
             std::vector<int> & p,                    // potential additions
             std::vector<int> & o,
@@ -137,7 +62,7 @@ namespace
         while (! p.empty()) {
             ++position.back();
 
-            if (c.size() + bound(graph, distances, p) <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+            if (c.size() + bound(graph, kneighbours, p) <= result.size || result.size >= params.stop_after_finding || params.abort.load())
                 return;
 
             auto v = p.back();
@@ -164,13 +89,13 @@ namespace
                 std::vector<int> new_p;
                 new_p.reserve(p.size());
                 for (auto & w : p) {
-                    if (distances.vertices[v].distances[w].distance > 0)
+                    if (kneighbours.vertices[v].distances[w].distance > 0)
                         new_p.push_back(w);
                 }
 
                 if (! new_p.empty()) {
                     position.push_back(0);
-                    expand(graph, distances, c, new_p, o, position, result, params);
+                    expand(graph, kneighbours, c, new_p, o, position, result, params);
                     position.pop_back();
                 }
             }
@@ -210,8 +135,8 @@ auto parasols::distance_max_kclub(const Graph & graph, const MaxKClubParams & pa
             if (graph.adjacent(o[i], o[j]))
                 bit_graph.add_edge(i, j);
 
-    Distances distances(bit_graph, params);
-    expand(bit_graph, distances, c, p, o, position, result, params);
+    KNeighbours kneighbours(bit_graph, params);
+    expand(bit_graph, kneighbours, c, p, o, position, result, params);
 
     return result;
 }
