@@ -86,15 +86,22 @@ namespace
             }
 
             if (! p.empty()) {
-                std::vector<int> new_p;
+                std::vector<int> new_p, c_and_new_p_b;
                 new_p.reserve(p.size());
+                c_and_new_p_b.resize(graph.size());
                 for (auto & w : p) {
-                    if (kneighbours.vertices[v].distances[w].distance > 0)
+                    if (kneighbours.vertices[v].distances[w].distance > 0) {
                         new_p.push_back(w);
+                        c_and_new_p_b[w] = 1;
+                    }
                 }
+
+                for (auto & w : c)
+                    c_and_new_p_b[w] = 1;
 
                 if (! new_p.empty()) {
                     position.push_back(0);
+                    KNeighbours kneighbours(graph, params, &c_and_new_p_b);
                     expand(graph, kneighbours, c, new_p, o, position, result, params);
                     position.pop_back();
                 }
