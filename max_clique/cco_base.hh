@@ -130,14 +130,13 @@ namespace parasols
                 MoreArgs_ && ... more_args_
                 ) -> void
         {
-            static_cast<ActualType_ *>(this)->incremement_nodes(std::forward<MoreArgs_>(more_args_)...);
+            static_cast<ActualType_ *>(this)->increment_nodes(std::forward<MoreArgs_>(more_args_)...);
 
             auto c_popcount = c.popcount();
 
             int skip = 0;
-            bool skip_was_nonzero = false;
-            static_cast<ActualType_ *>(this)->initialise_skip(skip, skip_was_nonzero, c_popcount,
-                    std::forward<MoreArgs_>(more_args_)...);
+            bool keep_going = true;
+            static_cast<ActualType_ *>(this)->get_skip(c_popcount, std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
 
             // get our coloured vertices
             std::array<unsigned, size_ * bits_per_word> p_order, colours;
@@ -172,7 +171,7 @@ namespace parasols
                     }
                     else {
                         position.push_back(0);
-                        static_cast<ActualType_ *>(this)->recurse(c, new_p, position, std::forward<MoreArgs_>(more_args_)...);
+                        keep_going = static_cast<ActualType_ *>(this)->recurse(c, new_p, position, std::forward<MoreArgs_>(more_args_)...) && keep_going;
                         position.pop_back();
                     }
 
@@ -181,8 +180,8 @@ namespace parasols
                     p.unset(v);
                     --c_popcount;
 
-                    if (skip_was_nonzero)
-                        return;
+                    if (! keep_going)
+                        break;
                 }
             }
         }

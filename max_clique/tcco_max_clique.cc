@@ -12,20 +12,112 @@
 #include <algorithm>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 using namespace parasols;
 
 namespace
 {
-    struct Skips
+    const constexpr int number_of_depths = 4;
+    const constexpr int number_of_steal_points = number_of_depths - 1;
+
+    struct OopsThreadBug
     {
-        std::vector<int> start_at;
     };
 
-    template <unsigned size_>
+    struct Subproblem
+    {
+        std::vector<int> offsets;
+    };
+
     struct QueueItem
     {
-        Skips skips;
+        Subproblem subproblem;
+    };
+
+    struct StealPoint
+    {
+        std::mutex mutex;
+        std::condition_variable cv;
+
+        bool is_finished;
+
+        bool has_data;
+        std::vector<int> data;
+
+        bool was_stolen;
+
+        StealPoint() :
+            is_finished(false),
+            has_data(false),
+            was_stolen(false)
+        {
+            mutex.lock();
+        }
+
+        ~StealPoint()
+        {
+            if (! is_finished)
+                throw OopsThreadBug{};
+        }
+
+        void publish(std::vector<int> & s)
+        {
+            if (is_finished)
+                return;
+
+            data = s;
+            has_data = true;
+            cv.notify_all();
+            mutex.unlock();
+        }
+
+        bool steal(std::vector<int> & s) __attribute__((noinline))
+        {
+            std::unique_lock<std::mutex> guard(mutex);
+
+            while ((! has_data) && (! is_finished))
+                cv.wait(guard);
+
+            if (! is_finished && has_data) {
+                s = data;
+                was_stolen = true;
+                return true;
+            }
+            else
+                return false;
+        }
+
+        bool unpublish_and_keep_going()
+        {
+            if (is_finished)
+                return true;
+
+            mutex.lock();
+            has_data = false;
+            return ! was_stolen;
+        }
+
+        void finished()
+        {
+            if (is_finished || mutex.try_lock())
+                throw OopsThreadBug{};
+
+            is_finished = true;
+            has_data = false;
+            cv.notify_all();
+            mutex.unlock();
+        }
+    };
+
+    struct alignas(16) StealPoints
+    {
+        std::vector<StealPoint> points;
+
+        StealPoints() :
+            points{ number_of_steal_points }
+        {
+        }
     };
 
     template <CCOPermutations perm_, unsigned size_>
@@ -48,35 +140,19 @@ namespace
             global_result.size = params.initial_bound;
             std::mutex global_result_mutex;
 
-            Queue<QueueItem<size_> > queue{ params.n_threads, false }; // work queue
+            /* work queues */
+            std::vector<std::unique_ptr<Queue<QueueItem> > > queues;
+            for (unsigned depth = 0 ; depth < number_of_depths ; ++depth)
+                queues.push_back(std::unique_ptr<Queue<QueueItem> >{ new Queue<QueueItem>{ params.n_threads, false } });
 
-            std::list<std::thread> threads; // populating thread, and workers
+            /* initial job */
+            queues[0]->enqueue(QueueItem{ Subproblem{ std::vector<int>{} } });
+            if (queues[0]->want_producer())
+                queues[0]->initial_producer_done();
 
-            /* populate */
-            threads.push_back(std::thread([&] {
-                        MaxCliqueResult local_result; // local result
-
-                        FixedBitSet<size_> c; // local candidate clique
-                        c.resize(graph.size());
-
-                        FixedBitSet<size_> p; // local potential additions
-                        p.resize(graph.size());
-                        p.set_all();
-
-                        std::vector<int> position;
-                        position.reserve(graph.size());
-                        position.push_back(0);
-
-                        Skips skips;
-
-                        // populate!
-                        expand(c, p, position, &queue, local_result, &skips);
-
-                        // merge results
-                        queue.initial_producer_done();
-                        std::unique_lock<std::mutex> guard(global_result_mutex);
-                        global_result.merge(local_result);
-            }));
+            /* threads and steal points */
+            std::list<std::thread> threads;
+            std::vector<StealPoints> thread_steal_points(params.n_threads);
 
             /* workers */
             for (unsigned i = 0 ; i < params.n_threads ; ++i) {
@@ -85,27 +161,53 @@ namespace
 
                             MaxCliqueResult local_result; // local result
 
-                            while (true) {
-                                // get some work to do
-                                QueueItem<size_> args;
-                                if (! queue.dequeue_blocking(args))
-                                    break;
+                            for (unsigned depth = 0 ; depth < number_of_depths ; ++depth) {
+                                if (queues[depth]->want_producer()) {
+                                    /* steal */
+                                    for (unsigned j = 0 ; j < params.n_threads ; ++j) {
+                                        if (j == i)
+                                            continue;
 
-                                print_position(params, "dequeued", args.skips.start_at);
+                                        std::vector<int> stole;
+                                        if (thread_steal_points.at(j).points.at(depth - 1).steal(stole)) {
+                                            print_position(params, "stole after", stole);
+                                            stole.pop_back();
+                                            for (auto & s : stole)
+                                                --s;
+                                            while (++stole.back() < graph.size())
+                                                queues[depth]->enqueue(QueueItem{ Subproblem{ stole } });
+                                        }
+                                        else
+                                            print_position(params, "did not steal", stole);
+                                    }
+                                    queues[depth]->initial_producer_done();
+                                }
 
-                                FixedBitSet<size_> c; // local candidate clique
-                                c.resize(graph.size());
+                                while (true) {
+                                    // get some work to do
+                                    QueueItem args;
+                                    if (! queues[depth]->dequeue_blocking(args))
+                                        break;
 
-                                FixedBitSet<size_> p; // local potential additions
-                                p.resize(graph.size());
-                                p.set_all();
+                                    print_position(params, "dequeued", args.subproblem.offsets);
 
-                                std::vector<int> position;
-                                position.reserve(graph.size());
-                                position.push_back(0);
+                                    FixedBitSet<size_> c; // local candidate clique
+                                    c.resize(graph.size());
 
-                                // do some work
-                                expand(c, p, position, nullptr, local_result, &args.skips);
+                                    FixedBitSet<size_> p; // local potential additions
+                                    p.resize(graph.size());
+                                    p.set_all();
+
+                                    std::vector<int> position;
+                                    position.reserve(graph.size());
+                                    position.push_back(0);
+
+                                    // do some work
+                                    expand(c, p, position, local_result, &args.subproblem, &thread_steal_points.at(i));
+                                }
+
+                                if (depth < number_of_steal_points)
+                                    thread_steal_points.at(i).points.at(depth).finished();
                             }
 
                             auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
@@ -126,10 +228,11 @@ namespace
             return global_result;
         }
 
-        auto incremement_nodes(
-                Queue<QueueItem<size_> > * const,
+        auto increment_nodes(
                 MaxCliqueResult & local_result,
-                Skips * const) -> void
+                Subproblem * const,
+                StealPoints * const
+                ) -> void
         {
             ++local_result.nodes;
         }
@@ -138,27 +241,33 @@ namespace
                 FixedBitSet<size_> & c,
                 FixedBitSet<size_> & p,
                 std::vector<int> & position,
-                Queue<QueueItem<size_> > * const maybe_queue,
                 MaxCliqueResult & local_result,
-                Skips * const skips
-                ) -> void
+                Subproblem * const subproblem,
+                StealPoints * const steal_points
+                ) -> bool
         {
-            if (maybe_queue) {
-                auto start_at = position;
-                start_at.pop_back();
-                maybe_queue->enqueue(QueueItem<size_>{ std::move(start_at) });
-            }
+            unsigned c_popcount = c.popcount();
+
+            if (steal_points && c_popcount < number_of_steal_points)
+                steal_points->points.at(c_popcount - 1).publish(position);
+
+            expand(c, p, position, local_result,
+                subproblem && c_popcount < subproblem->offsets.size() ? subproblem : nullptr,
+                steal_points && c_popcount < number_of_steal_points ? steal_points : nullptr);
+
+            if (steal_points && c_popcount < number_of_steal_points)
+                return steal_points->points.at(c_popcount - 1).unpublish_and_keep_going();
             else
-                expand(c, p, position, nullptr, local_result, skips);
+                return true;
         }
 
         auto potential_new_best(
                 unsigned c_popcount,
                 const FixedBitSet<size_> & c,
                 std::vector<int> & position,
-                Queue<QueueItem<size_> > * const,
                 MaxCliqueResult & local_result,
-                Skips * const
+                Subproblem * const,
+                StealPoints * const
                 ) -> void
         {
             if (best_anywhere.update(c_popcount)) {
@@ -176,18 +285,18 @@ namespace
             return best_anywhere.get();
         }
 
-        auto initialise_skip(
-                int & skip,
-                bool & skip_was_nonzero,
+        auto get_skip(
                 unsigned c_popcount,
-                Queue<QueueItem<size_> > * const,
                 MaxCliqueResult &,
-                Skips * const skips) -> void
+                Subproblem * const subproblem,
+                StealPoints * const,
+                int & skip,
+                bool & keep_going
+                ) -> void
         {
-            if (skips && skips->start_at.size() > c_popcount) {
-                skip = skips->start_at.at(c_popcount);
-                skip_was_nonzero = true;
-                --skip;
+            if (subproblem && c_popcount < subproblem->offsets.size()) {
+                skip = subproblem->offsets.at(c_popcount);
+                keep_going = false;
             }
         }
     };

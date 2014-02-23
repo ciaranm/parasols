@@ -51,7 +51,7 @@ namespace
             return result;
         }
 
-        auto incremement_nodes() -> void
+        auto increment_nodes() -> void
         {
             ++result.nodes;
         }
@@ -60,9 +60,10 @@ namespace
                 FixedBitSet<size_> & c,
                 FixedBitSet<size_> & p,
                 std::vector<int> & position
-                ) -> void
+                ) -> bool
         {
             expand(c, p, position);
+            return true;
         }
 
         auto potential_new_best(
@@ -93,10 +94,7 @@ namespace
             return result.size;
         }
 
-        auto initialise_skip(
-                int &,
-                bool &,
-                unsigned) -> void
+        auto get_skip(unsigned, int &, bool &) -> void
         {
         }
     };
