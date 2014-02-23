@@ -24,7 +24,8 @@ std::mt19937 rnd;
 void table(
         int size,
         int samples,
-        const std::vector<std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> > & algorithms)
+        const std::vector<std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> > & algorithms,
+        bool find_prove)
 {
     using namespace std::placeholders;
 
@@ -67,7 +68,7 @@ void table(
                     omega = result.size;
                 }
 
-                {
+                if (find_prove) {
                     MaxCliqueParams params;
                     params.order_function = std::bind(degree_sort, _1, _2, false);
                     params.n_threads = std::thread::hardware_concurrency();
@@ -85,7 +86,7 @@ void table(
                     find_nodes_average.at(a) += double(result.nodes) / double(samples);
                 }
 
-                {
+                if (find_prove) {
                     MaxCliqueParams params;
                     params.order_function = std::bind(degree_sort, _1, _2, false);
                     params.n_threads = std::thread::hardware_concurrency();
@@ -110,13 +111,18 @@ void table(
             if (0 == a)
                 std::cout << " " << omega_average.at(a);
 
-            std::cout
-                << " " << time_average.at(a)
-                << " " << find_time_average.at(a)
-                << " " << prove_time_average.at(a)
-                << " " << nodes_average.at(a)
-                << " " << find_nodes_average.at(a)
-                << " " << prove_nodes_average.at(a);
+            if (find_prove)
+                std::cout
+                    << " " << time_average.at(a)
+                    << " " << find_time_average.at(a)
+                    << " " << prove_time_average.at(a)
+                    << " " << nodes_average.at(a)
+                    << " " << find_nodes_average.at(a)
+                    << " " << prove_nodes_average.at(a);
+            else
+                std::cout
+                    << " " << time_average.at(a)
+                    << " " << nodes_average.at(a);
         }
         std::cout << std::endl;
     }
@@ -127,7 +133,8 @@ auto main(int argc, char * argv[]) -> int
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()
-            ("help",                                  "Display help information")
+            ("help",                 "Display help information")
+            ("find-prove",           "Include find / prove measurements")
             ;
 
         po::options_description all_options{ "All options" };
@@ -189,7 +196,7 @@ auto main(int argc, char * argv[]) -> int
             selected_algorithms.push_back(std::get<1>(*algorithm));
         }
 
-        table(size, samples, selected_algorithms);
+        table(size, samples, selected_algorithms, options_vars.count("find-prove"));
 
         return EXIT_SUCCESS;
     }
