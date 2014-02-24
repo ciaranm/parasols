@@ -4,6 +4,7 @@
 #define PARASOLS_GUARD_MAX_CLIQUE_TCCO_MAX_CLIQUE_HH 1
 
 #include <graph/graph.hh>
+#include <cco/cco.hh>
 #include <max_clique/max_clique_params.hh>
 #include <max_clique/max_clique_result.hh>
 

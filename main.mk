@@ -1,5 +1,6 @@
 SUBMAKEFILES := \
 	graph/graph.mk \
+	cco/cco.mk \
 	max_biclique/max_biclique.mk \
 	max_clique/max_clique.mk \
 	max_kclub/max_kclub.mk \

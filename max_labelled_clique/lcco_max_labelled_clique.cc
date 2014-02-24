@@ -3,6 +3,7 @@
 #include <max_labelled_clique/lcco_max_labelled_clique.hh>
 #include <max_labelled_clique/print_incumbent.hh>
 
+#include <cco/cco_mixin.hh>
 #include <graph/bit_graph.hh>
 #include <graph/template_voodoo.hh>
 
@@ -12,9 +13,12 @@ namespace
 {
     using LabelSet = FixedBitSet<2>;
 
-    template <unsigned size_>
-    struct LCCO
+    template <CCOPermutations perm_, unsigned size_>
+    struct LCCO :
+        CCOMixin<size_, LCCO<perm_, size_> >
     {
+        using CCOMixin<size_, LCCO<perm_, size_> >::colour_class_order;
+
         MaxLabelledCliqueResult result;
         FixedBitGraph<size_> graph;
         const MaxLabelledCliqueParams & params;
@@ -51,7 +55,7 @@ namespace
 
             // get our coloured vertices
             std::array<unsigned, size_ * bits_per_word> p_order, colours;
-            colour_class_order(p, p_order, colours);
+            colour_class_order(SelectColourClassOrderOverload<perm_>(), p, p_order, colours);
 
             // for each v in p... (v comes later)
             for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
@@ -96,40 +100,6 @@ namespace
                 c.unset(v);
                 p.unset(v);
                 --c_popcount;
-            }
-        }
-
-        auto colour_class_order(
-                const FixedBitSet<size_> & p,
-                std::array<unsigned, size_ * bits_per_word> & p_order,
-                std::array<unsigned, size_ * bits_per_word> & p_bounds) -> void
-        {
-            FixedBitSet<size_> p_left = p; // not coloured yet
-            unsigned colour = 0;           // current colour
-            unsigned i = 0;                // position in p_bounds
-
-            // while we've things left to colour
-            while (! p_left.empty()) {
-                // next colour
-                ++colour;
-                // things that can still be given this colour
-                FixedBitSet<size_> q = p_left;
-
-                // while we can still give something this colour
-                while (! q.empty()) {
-                    // first thing we can colour
-                    int v = q.first_set_bit();
-                    p_left.unset(v);
-                    q.unset(v);
-
-                    // can't give anything adjacent to this the same colour
-                    graph.intersect_with_row_complement(v, q);
-
-                    // record in result
-                    p_bounds[i] = colour;
-                    p_order[i] = v;
-                    ++i;
-                }
             }
         }
 
@@ -182,8 +152,13 @@ namespace
     };
 }
 
+template <CCOPermutations perm_>
 auto parasols::lcco_max_labelled_clique(const Graph & graph, const MaxLabelledCliqueParams & params) -> MaxLabelledCliqueResult
 {
-    return select_graph_size<LCCO, MaxLabelledCliqueResult>(AllGraphSizes(), graph, params);
+    return select_graph_size<ApplyPerm<LCCO, perm_>::template Type, MaxLabelledCliqueResult>(AllGraphSizes(), graph, params);
 }
+
+template auto parasols::lcco_max_labelled_clique<CCOPermutations::None>(const Graph &, const MaxLabelledCliqueParams &) -> MaxLabelledCliqueResult;
+template auto parasols::lcco_max_labelled_clique<CCOPermutations::Defer1>(const Graph &, const MaxLabelledCliqueParams &) -> MaxLabelledCliqueResult;
+template auto parasols::lcco_max_labelled_clique<CCOPermutations::Sort>(const Graph &, const MaxLabelledCliqueParams &) -> MaxLabelledCliqueResult;
 

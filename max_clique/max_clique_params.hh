@@ -72,16 +72,6 @@ namespace parasols
         /// Initial vertex ordering.
         MaxCliqueOrderFunction order_function;
     };
-
-    /**
-     * Used by CCO variants to control permutations.
-     */
-    enum class CCOPermutations
-    {
-        None,
-        Defer1,
-        Sort
-    };
 }
 
 #endif

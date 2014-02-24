@@ -11,7 +11,9 @@
 namespace parasols
 {
     auto max_labelled_clique_algorithms = {
-        std::make_pair( std::string{ "lcco" },     lcco_max_labelled_clique)
+        std::make_pair( std::string{ "lccon" },     lcco_max_labelled_clique<CCOPermutations::None>),
+        std::make_pair( std::string{ "lccod" },     lcco_max_labelled_clique<CCOPermutations::Defer1>),
+        std::make_pair( std::string{ "lccos" },     lcco_max_labelled_clique<CCOPermutations::Sort>)
     };
 }
 
