@@ -3,6 +3,7 @@ SUBMAKEFILES := \
 	max_biclique/max_biclique.mk \
 	max_clique/max_clique.mk \
 	max_kclub/max_kclub.mk \
+	max_labelled_clique/max_labelled_clique.mk \
 	programs/create_random_bipartite_graph.mk \
 	programs/create_random_graph.mk \
 	programs/max_biclique_speedup_graph.mk \
@@ -11,6 +12,7 @@ SUBMAKEFILES := \
 	programs/solve_max_biclique.mk \
 	programs/solve_max_clique.mk \
 	programs/solve_max_kclub.mk \
+	programs/solve_max_labelled_clique.mk \
 	programs/solve_vertex_colouring.mk \
 	programs/test_max_clique.mk \
 	solver/solver.mk \
