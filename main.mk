@@ -5,6 +5,7 @@ SUBMAKEFILES := \
 	max_clique/max_clique.mk \
 	max_kclub/max_kclub.mk \
 	max_labelled_clique/max_labelled_clique.mk \
+	programs/about_graph.mk \
 	programs/create_random_bipartite_graph.mk \
 	programs/create_random_graph.mk \
 	programs/max_biclique_speedup_graph.mk \
