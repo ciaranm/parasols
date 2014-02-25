@@ -129,6 +129,11 @@ auto main(int argc, char * argv[]) -> int
             params.order_function = order_function;
             params.budget = options_vars["budget"].as<int>();
 
+            if (options_vars.count("threads"))
+                params.n_threads = options_vars["threads"].as<int>();
+            else
+                params.n_threads = std::thread::hardware_concurrency();
+
             if (options_vars.count("stop-after-finding"))
                 params.stop_after_finding = options_vars["stop-after-finding"].as<int>();
 

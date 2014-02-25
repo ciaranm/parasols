@@ -4,3 +4,13 @@
 
 using namespace parasols;
 
+auto MaxLabelledCliqueResult::merge(const MaxLabelledCliqueResult & other) -> void
+{
+    nodes += other.nodes;
+    if (other.size > size || (other.size == size && other.cost < cost)) {
+        size = other.size;
+        cost = other.cost;
+        members = std::move(other.members);
+    }
+}
+

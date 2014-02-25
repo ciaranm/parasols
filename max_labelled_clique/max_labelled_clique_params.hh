@@ -34,6 +34,9 @@ namespace parasols
         /// If true, print every time we find a better incumbent.
         bool print_incumbents = false;
 
+        /// Number of threads to use, where appropriate.
+        unsigned n_threads = 1;
+
         /// If this is set to true, we should abort due to a time limit.
         std::atomic<bool> abort;
 

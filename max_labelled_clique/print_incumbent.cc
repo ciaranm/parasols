@@ -25,3 +25,20 @@ auto parasols::print_incumbent(
     }
 }
 
+auto parasols::print_position(
+        const MaxLabelledCliqueParams & params,
+        const std::string & message,
+        const std::vector<int> & positions) -> void
+{
+    if (params.print_incumbents) {
+        std::stringstream w;
+        for (auto & p : positions)
+            w << " " << p;
+
+        std::cout
+            << lock_output()
+            << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
+            << " " << message << " at" << w.str() << std::endl;
+    }
+}
+
