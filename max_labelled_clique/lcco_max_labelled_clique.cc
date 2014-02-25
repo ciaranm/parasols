@@ -84,15 +84,13 @@ namespace
 
                 unsigned new_u_popcount = new_u.popcount();
 
-                if (new_u_popcount <= params.budget) {
+                if (new_u_popcount <= (pass_2 ? result.cost - 1 : params.budget)) {
                     potential_new_best(c_popcount, c, new_u_popcount, position);
 
-                    if ((! pass_2) || (new_u_popcount < result.cost)) {
-                        if (! new_p.empty()) {
-                            position.push_back(0);
-                            expand(c, new_p, new_u, position);
-                            position.pop_back();
-                        }
+                    if (! new_p.empty()) {
+                        position.push_back(0);
+                        expand(c, new_p, new_u, position);
+                        position.pop_back();
                     }
                 }
 
