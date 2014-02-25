@@ -29,6 +29,8 @@ namespace
             result.size = params.initial_bound;
 
             for (unsigned pass = 1 ; pass <= 2 ; ++pass) {
+                auto start_time = std::chrono::steady_clock::now(); // local start time
+
                 FixedBitSet<size_> c; // current candidate clique
                 c.resize(graph.size());
 
@@ -44,6 +46,9 @@ namespace
 
                 // go!
                 expand(pass == 2, c, p, u, positions);
+
+                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                result.times.push_back(overall_time);
             }
 
             return result;
