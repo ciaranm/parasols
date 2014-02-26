@@ -31,8 +31,8 @@ namespace
             for (unsigned pass = 1 ; pass <= 2 ; ++pass) {
                 auto start_time = std::chrono::steady_clock::now(); // local start time
 
-                FixedBitSet<size_> c; // current candidate clique
-                c.resize(graph.size());
+                std::vector<unsigned> c;
+                c.reserve(graph.size());
 
                 FixedBitSet<size_> p; // potential additions
                 p.resize(graph.size());
@@ -56,7 +56,7 @@ namespace
 
         auto potential_new_best(
                 unsigned c_popcount,
-                const FixedBitSet<size_> & c,
+                const std::vector<unsigned> & c,
                 unsigned cost,
                 std::vector<int> & position) -> void
         {
@@ -65,18 +65,14 @@ namespace
                 result.size = c_popcount;
                 result.cost = cost;
 
-                result.members.clear();
-                for (int i = 0 ; i < graph.size() ; ++i)
-                    if (c.test(i))
-                        result.members.insert(order[i]);
-
+                result.members = std::set<int>{ c.begin(), c.end() };
                 print_incumbent(params, c_popcount, cost, position);
             }
         }
 
         auto recurse(
                 bool pass_2,
-                FixedBitSet<size_> & c,
+                std::vector<unsigned> & c,
                 FixedBitSet<size_> & p,
                 LabelSet & u,
                 std::vector<int> & position

@@ -44,7 +44,7 @@ namespace parasols
         template <typename... MoreArgs_>
         auto expand(
                 bool pass_2,
-                FixedBitSet<size_> & c,                          // current candidate clique
+                std::vector<unsigned> & c,                       // current candidate clique
                 FixedBitSet<size_> & p,                          // potential additions
                 LabelSet & u,
                 std::vector<int> & position,
@@ -53,7 +53,7 @@ namespace parasols
         {
             static_cast<ActualType_ *>(this)->increment_nodes(std::forward<MoreArgs_>(more_args_)...);
 
-            auto c_popcount = c.popcount();
+            auto c_popcount = c.size();
 
             int skip = 0;
             bool keep_going = true;
@@ -82,7 +82,7 @@ namespace parasols
                 }
                 else {
                     // consider taking v
-                    c.set(v);
+                    c.push_back(v);
                     ++c_popcount;
 
                     // filter p to contain vertices adjacent to v
@@ -91,8 +91,8 @@ namespace parasols
 
                     // used new label?
                     LabelSet new_u = u;
-                    for (int i = 0 ; i < graph.size() ; ++i)
-                        if (c.test(i) && graph.adjacent(v, i))
+                    for (auto & i : c)
+                        if (graph.adjacent(v, i))
                             new_u.set(params.labels.at(v).at(i));
 
                     unsigned new_u_popcount = new_u.popcount();
@@ -109,7 +109,7 @@ namespace parasols
                     }
 
                     // now consider not taking v
-                    c.unset(v);
+                    c.pop_back();
                     p.unset(v);
                     --c_popcount;
 
