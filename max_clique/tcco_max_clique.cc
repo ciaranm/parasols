@@ -158,6 +158,7 @@ namespace
             for (unsigned i = 0 ; i < params.n_threads ; ++i) {
                 threads.push_back(std::thread([&, i] {
                             auto start_time = std::chrono::steady_clock::now(); // local start time
+                            auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
                             MaxCliqueResult local_result; // local result
 
@@ -204,13 +205,14 @@ namespace
 
                                     // do some work
                                     expand(c, p, position, local_result, &args.subproblem, &thread_steal_points.at(i));
+
+                                    // record the last time we finished doing useful stuff
+                                    overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
                                 }
 
                                 if (depth < number_of_steal_points)
                                     thread_steal_points.at(i).points.at(depth).finished();
                             }
-
-                            auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
 
                             // merge results
                             {
