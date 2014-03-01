@@ -19,7 +19,7 @@ using namespace parasols;
 
 namespace
 {
-    const constexpr int number_of_depths = 3;
+    const constexpr int number_of_depths = 5;
     const constexpr int number_of_steal_points = number_of_depths - 1;
 
     struct OopsThreadBug
