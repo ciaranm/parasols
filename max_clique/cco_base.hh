@@ -41,7 +41,7 @@ namespace parasols
 
         template <typename... MoreArgs_>
         auto expand(
-                FixedBitSet<size_> & c,                          // current candidate clique
+                std::vector<unsigned> & c,                       // current candidate clique
                 FixedBitSet<size_> & p,                          // potential additions
                 std::vector<int> & position,
                 MoreArgs_ && ... more_args_
@@ -49,11 +49,9 @@ namespace parasols
         {
             static_cast<ActualType_ *>(this)->increment_nodes(std::forward<MoreArgs_>(more_args_)...);
 
-            auto c_popcount = c.popcount();
-
             int skip = 0;
             bool keep_going = true;
-            static_cast<ActualType_ *>(this)->get_skip(c_popcount, std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
+            static_cast<ActualType_ *>(this)->get_skip(c.size(), std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
 
             // get our coloured vertices
             std::array<unsigned, size_ * bits_per_word> p_order, colours;
@@ -65,7 +63,7 @@ namespace parasols
 
                 // bound, timeout or early exit?
                 unsigned best_anywhere_value = static_cast<ActualType_ *>(this)->get_best_anywhere_value();
-                if (c_popcount + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort.load())
+                if (c.size() + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort.load())
                     return;
 
                 auto v = p_order[n];
@@ -76,15 +74,14 @@ namespace parasols
                 }
                 else {
                     // consider taking v
-                    c.set(v);
-                    ++c_popcount;
+                    c.push_back(v);
 
                     // filter p to contain vertices adjacent to v
                     FixedBitSet<size_> new_p = p;
                     graph.intersect_with_row(v, new_p);
 
                     if (new_p.empty()) {
-                        static_cast<ActualType_ *>(this)->potential_new_best(c_popcount, c, position, std::forward<MoreArgs_>(more_args_)...);
+                        static_cast<ActualType_ *>(this)->potential_new_best(c, position, std::forward<MoreArgs_>(more_args_)...);
                     }
                     else {
                         position.push_back(0);
@@ -93,9 +90,8 @@ namespace parasols
                     }
 
                     // now consider not taking v
-                    c.unset(v);
+                    c.pop_back();
                     p.unset(v);
-                    --c_popcount;
 
                     if (! keep_going)
                         break;

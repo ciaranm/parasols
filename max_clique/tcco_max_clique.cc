@@ -192,8 +192,8 @@ namespace
 
                                     print_position(params, "dequeued", args.subproblem.offsets);
 
-                                    FixedBitSet<size_> c; // local candidate clique
-                                    c.resize(graph.size());
+                                    std::vector<unsigned> c;
+                                    c.reserve(graph.size());
 
                                     FixedBitSet<size_> p; // local potential additions
                                     p.resize(graph.size());
@@ -240,7 +240,7 @@ namespace
         }
 
         auto recurse(
-                FixedBitSet<size_> & c,
+                std::vector<unsigned> & c,
                 FixedBitSet<size_> & p,
                 std::vector<int> & position,
                 MaxCliqueResult & local_result,
@@ -248,36 +248,32 @@ namespace
                 StealPoints * const steal_points
                 ) -> bool
         {
-            unsigned c_popcount = c.popcount();
-
-            if (steal_points && c_popcount < number_of_steal_points)
-                steal_points->points.at(c_popcount - 1).publish(position);
+            if (steal_points && c.size() < number_of_steal_points)
+                steal_points->points.at(c.size() - 1).publish(position);
 
             expand(c, p, position, local_result,
-                subproblem && c_popcount < subproblem->offsets.size() ? subproblem : nullptr,
-                steal_points && c_popcount < number_of_steal_points ? steal_points : nullptr);
+                subproblem && c.size() < subproblem->offsets.size() ? subproblem : nullptr,
+                steal_points && c.size() < number_of_steal_points ? steal_points : nullptr);
 
-            if (steal_points && c_popcount < number_of_steal_points)
-                return steal_points->points.at(c_popcount - 1).unpublish_and_keep_going();
+            if (steal_points && c.size() < number_of_steal_points)
+                return steal_points->points.at(c.size() - 1).unpublish_and_keep_going();
             else
                 return true;
         }
 
         auto potential_new_best(
-                unsigned c_popcount,
-                const FixedBitSet<size_> & c,
-                std::vector<int> & position,
+                const std::vector<unsigned> & c,
+                const std::vector<int> & position,
                 MaxCliqueResult & local_result,
                 Subproblem * const,
                 StealPoints * const
                 ) -> void
         {
-            if (best_anywhere.update(c_popcount)) {
-                local_result.size = c_popcount;
+            if (best_anywhere.update(c.size())) {
+                local_result.size = c.size();
                 local_result.members.clear();
-                for (int i = 0 ; i < graph.size() ; ++i)
-                    if (c.test(i))
-                        local_result.members.insert(order[i]);
+                for (auto & v : c)
+                    local_result.members.insert(order[v]);
                 print_incumbent(params, local_result.size, position);
             }
         }

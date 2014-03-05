@@ -30,8 +30,8 @@ namespace
         {
             result.size = params.initial_bound;
 
-            FixedBitSet<size_> c; // current candidate clique
-            c.resize(graph.size());
+            std::vector<unsigned> c;
+            c.reserve(graph.size());
 
             FixedBitSet<size_> p; // potential additions
             p.resize(graph.size());
@@ -57,7 +57,7 @@ namespace
         }
 
         auto recurse(
-                FixedBitSet<size_> & c,
+                std::vector<unsigned> & c,                       // current candidate clique
                 FixedBitSet<size_> & p,
                 std::vector<int> & position
                 ) -> bool
@@ -67,25 +67,23 @@ namespace
         }
 
         auto potential_new_best(
-                unsigned c_popcount,
-                const FixedBitSet<size_> & c,
-                std::vector<int> & position) -> void
+                const std::vector<unsigned> & c,
+                const std::vector<int> & position) -> void
         {
             // potential new best
-            if (c_popcount > result.size) {
+            if (c.size() > result.size) {
                 if (params.enumerate) {
                     ++result.result_count;
-                    result.size = c_popcount - 1;
+                    result.size = c.size() - 1;
                 }
                 else
-                    result.size = c_popcount;
+                    result.size = c.size();
 
                 result.members.clear();
-                for (int i = 0 ; i < graph.size() ; ++i)
-                    if (c.test(i))
-                        result.members.insert(order[i]);
+                for (auto & v : c)
+                    result.members.insert(order[v]);
 
-                print_incumbent(params, c_popcount, position);
+                print_incumbent(params, c.size(), position);
             }
         }
 
