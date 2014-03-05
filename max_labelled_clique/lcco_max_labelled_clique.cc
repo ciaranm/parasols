@@ -65,7 +65,10 @@ namespace
                 result.size = c_popcount;
                 result.cost = cost;
 
-                result.members = std::set<int>{ c.begin(), c.end() };
+                result.members.clear();
+                for (auto & v : c)
+                    result.members.insert(order[v]);
+
                 print_incumbent(params, c_popcount, cost, position);
             }
         }
