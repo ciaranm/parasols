@@ -73,3 +73,9 @@ auto parasols::dynexdegree_sort(const Graph & graph, std::vector<int> & p, bool 
     }
 }
 
+auto parasols::none_sort(const Graph &, std::vector<int> & p, bool reverse) -> void
+{
+    if (reverse)
+        std::reverse(p.begin(), p.end());
+}
+

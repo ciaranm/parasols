@@ -19,7 +19,8 @@ namespace parasols
             std::make_pair( std::string{ "deg" },     std::bind(degree_sort, _1, _2, false) ),
             std::make_pair( std::string{ "ex" },      std::bind(exdegree_sort, _1, _2, false) ),
             std::make_pair( std::string{ "dynex" },   std::bind(dynexdegree_sort, _1, _2, false) ),
-            std::make_pair( std::string{ "mw" },      std::bind(min_width_sort, _1, _2, false) )
+            std::make_pair( std::string{ "mw" },      std::bind(min_width_sort, _1, _2, false) ),
+            std::make_pair( std::string{ "none" },    std::bind(none_sort, _1, _2, false) )
         };
     }
 
