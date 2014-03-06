@@ -3,6 +3,7 @@ SUBMAKEFILES := \
 	cco/cco.mk \
 	max_biclique/max_biclique.mk \
 	max_clique/max_clique.mk \
+	max_common_subgraph/max_common_subgraph.mk \
 	max_kclub/max_kclub.mk \
 	max_labelled_clique/max_labelled_clique.mk \
 	programs/about_graph.mk \
@@ -13,6 +14,7 @@ SUBMAKEFILES := \
 	programs/max_clique_speedup_graph.mk \
 	programs/solve_max_biclique.mk \
 	programs/solve_max_clique.mk \
+	programs/solve_max_common_subgraph.mk \
 	programs/solve_max_kclub.mk \
 	programs/solve_max_labelled_clique.mk \
 	programs/solve_vertex_colouring.mk \
