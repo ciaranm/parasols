@@ -15,6 +15,11 @@
 
 using namespace parasols;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::time_point;
+
 namespace
 {
     template <unsigned size_>
@@ -61,7 +66,7 @@ namespace
             const std::vector<int> & o,                      // vertex ordering
             Queue<QueueItem<size_> > * const maybe_queue,    // not null if we're populating: enqueue here
             Queue<QueueItem<size_> > * const donation_queue, // not null if we're donating: donate here
-            std::chrono::time_point<std::chrono::steady_clock> & last_donation_time,
+            time_point<steady_clock> & last_donation_time,
             FixedBitSet<size_> & c,                          // current candidate clique
             FixedBitSet<size_> & p,                          // potential additions
             MaxCliqueResult & result,
@@ -163,7 +168,7 @@ namespace
                     position.reserve(graph.size());
                     position.push_back(0);
 
-                    auto last_donation_time = std::chrono::steady_clock::now();
+                    auto last_donation_time = steady_clock::now();
 
                     // populate!
                     expand<size_>(graph, o, &queue, nullptr, last_donation_time, tc, tp, result, params, best_anywhere, position);
@@ -177,8 +182,8 @@ namespace
         /* workers */
         for (unsigned i = 0 ; i < params.n_threads ; ++i) {
             threads.push_back(std::thread([&, i] {
-                        auto start_time = std::chrono::steady_clock::now(); // local start time
-                        auto last_donation_time = std::chrono::steady_clock::now();
+                        auto start_time = steady_clock::now(); // local start time
+                        auto last_donation_time = steady_clock::now();
 
                         MaxCliqueResult tr; // local result
 
@@ -197,7 +202,7 @@ namespace
                                     args.c, args.p, tr, params, best_anywhere, args.position);
                         }
 
-                        auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                        auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
 
                         // merge results
                         {

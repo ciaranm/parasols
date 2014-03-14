@@ -7,6 +7,10 @@
 
 using namespace parasols;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 auto parasols::print_incumbent(
         const MaxLabelledCliqueParams & params,
         unsigned size,
@@ -20,7 +24,7 @@ auto parasols::print_incumbent(
 
         std::cout
             << lock_output()
-            << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
+            << "-- " << duration_cast<milliseconds>(steady_clock::now() - params.start_time).count()
             << " found " << size << " / " << cost << " at" << w.str() << std::endl;
     }
 }
@@ -37,7 +41,7 @@ auto parasols::print_position(
 
         std::cout
             << lock_output()
-            << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
+            << "-- " << duration_cast<milliseconds>(steady_clock::now() - params.start_time).count()
             << " " << message << " at" << w.str() << std::endl;
     }
 }

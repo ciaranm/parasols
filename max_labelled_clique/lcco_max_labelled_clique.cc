@@ -10,6 +10,10 @@
 
 using namespace parasols;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 namespace
 {
     template <CCOPermutations perm_, unsigned size_>
@@ -29,7 +33,7 @@ namespace
             result.size = params.initial_bound;
 
             for (unsigned pass = 1 ; pass <= 2 ; ++pass) {
-                auto start_time = std::chrono::steady_clock::now(); // local start time
+                auto start_time = steady_clock::now(); // local start time
 
                 std::vector<unsigned> c;
                 c.reserve(graph.size());
@@ -47,7 +51,7 @@ namespace
                 // go!
                 expand(pass == 2, c, p, u, positions);
 
-                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
                 result.times.push_back(overall_time);
             }
 

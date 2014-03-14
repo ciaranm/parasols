@@ -19,6 +19,10 @@
 using namespace parasols;
 namespace po = boost::program_options;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 std::mt19937 rnd;
 
 bool compare(int size, int samples,
@@ -45,7 +49,7 @@ bool compare(int size, int samples,
             params1.order_function = std::bind(degree_sort, _1, _2, false);
             params1.original_graph = &graph;
             params1.abort.store(false);
-            params1.start_time = std::chrono::steady_clock::now();
+            params1.start_time = steady_clock::now();
             params1.n_threads = std::thread::hardware_concurrency();
             MaxCliqueResult result1 = algorithm1(graph, params1);
 
@@ -53,7 +57,7 @@ bool compare(int size, int samples,
             params2.order_function = std::bind(degree_sort, _1, _2, false);
             params2.original_graph = &graph;
             params2.abort.store(false);
-            params2.start_time = std::chrono::steady_clock::now();
+            params2.start_time = steady_clock::now();
             params2.n_threads = std::thread::hardware_concurrency();
             MaxCliqueResult result2 = algorithm2(graph, params2);
 

@@ -8,12 +8,16 @@
 
 using namespace parasols;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 auto parasols::print_incumbent(const MaxBicliqueParams & params, unsigned size) -> void
 {
     if (params.print_incumbents)
         std::cout
             << lock_output()
-            << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
+            << "-- " << duration_cast<milliseconds>(steady_clock::now() - params.start_time).count()
             << " found " << size << std::endl;
 }
 
@@ -29,7 +33,7 @@ auto parasols::print_incumbent(
 
         std::cout
             << lock_output()
-            << "-- " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time).count()
+            << "-- " << duration_cast<milliseconds>(steady_clock::now() - params.start_time).count()
             << " found " << size << " at" << w.str() << std::endl;
     }
 }

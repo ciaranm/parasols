@@ -19,6 +19,10 @@
 using namespace parasols;
 namespace po = boost::program_options;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 std::mt19937 rnd;
 
 void table(
@@ -56,11 +60,11 @@ void table(
                     params.original_graph = &graph;
                     params.abort.store(false);
 
-                    params.start_time = std::chrono::steady_clock::now();
+                    params.start_time = steady_clock::now();
 
                     MaxCliqueResult result = algorithms.at(a)(graph, params);
 
-                    auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+                    auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
 
                     omega_average.at(a) += double(result.size) / double(samples);
                     time_average.at(a) += double(overall_time.count()) / double(samples);
@@ -76,11 +80,11 @@ void table(
                     params.abort.store(false);
                     params.stop_after_finding = omega;
 
-                    params.start_time = std::chrono::steady_clock::now();
+                    params.start_time = steady_clock::now();
 
                     MaxCliqueResult result = algorithms.at(a)(graph, params);
 
-                    auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+                    auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
 
                     find_time_average.at(a) += double(overall_time.count()) / double(samples);
                     find_nodes_average.at(a) += double(result.nodes) / double(samples);
@@ -94,11 +98,11 @@ void table(
                     params.abort.store(false);
                     params.initial_bound = omega;
 
-                    params.start_time = std::chrono::steady_clock::now();
+                    params.start_time = steady_clock::now();
 
                     MaxCliqueResult result = algorithms.at(a)(graph, params);
 
-                    auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+                    auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
 
                     prove_time_average.at(a) += double(overall_time.count()) / double(samples);
                     prove_nodes_average.at(a) += double(result.nodes) / double(samples);

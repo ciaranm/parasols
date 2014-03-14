@@ -15,6 +15,10 @@
 
 using namespace parasols;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 namespace
 {
     template <unsigned size_>
@@ -229,7 +233,7 @@ namespace
         /* workers */
         for (unsigned i = 0 ; i < params.n_threads ; ++i) {
             threads.push_back(std::thread([&, i] {
-                        auto start_time = std::chrono::steady_clock::now(); // local start time
+                        auto start_time = steady_clock::now(); // local start time
 
                         MaxCliqueResult tr; // local result
 
@@ -304,7 +308,7 @@ namespace
                             next_steal_points = nullptr;
                         }
 
-                        auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                        auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
 
                         // merge results
                         {

@@ -21,6 +21,10 @@
 using namespace parasols;
 namespace po = boost::program_options;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 auto main(int argc, char * argv[]) -> int
 {
     try {
@@ -161,7 +165,7 @@ auto main(int argc, char * argv[]) -> int
                     options_vars.count("timeout") ? options_vars["timeout"].as<int>() : 0);
 
             /* Stop the clock. */
-            auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+            auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
 
             /* Display the results. */
             std::cout << result.size << " " << result.nodes;

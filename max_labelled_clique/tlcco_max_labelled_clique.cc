@@ -17,6 +17,10 @@
 
 using namespace parasols;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 namespace
 {
     const constexpr int number_of_depths = 5;
@@ -166,8 +170,8 @@ namespace
                 /* workers */
                 for (unsigned i = 0 ; i < params.n_threads ; ++i) {
                     threads.push_back(std::thread([&, i] {
-                                auto start_time = std::chrono::steady_clock::now(); // local start time
-                                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                                auto start_time = steady_clock::now(); // local start time
+                                auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
 
                                 MaxLabelledCliqueResult local_result; // local result
 
@@ -218,7 +222,7 @@ namespace
                                         expand(pass == 2, c, p, u, position, local_result, &args.subproblem, &thread_steal_points.at(i));
 
                                         // record the last time we finished doing useful stuff
-                                        overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time);
+                                        overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
                                     }
 
                                     if (depth < number_of_steal_points)

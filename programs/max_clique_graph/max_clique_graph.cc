@@ -19,6 +19,10 @@
 using namespace parasols;
 namespace po = boost::program_options;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 std::mt19937 rnd;
 
 void table(int size, int samples, const std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> & algorithm)
@@ -49,11 +53,11 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
                 params.original_graph = &graph;
                 params.abort.store(false);
 
-                params.start_time = std::chrono::steady_clock::now();
+                params.start_time = steady_clock::now();
 
                 MaxCliqueResult result = algorithm(graph, params);
 
-                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+                auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
 
                 omega_average += double(result.size) / double(samples);
                 nodes_average += double(result.nodes) / double(samples);
@@ -68,11 +72,11 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
                 params.abort.store(false);
                 params.stop_after_finding = omega;
 
-                params.start_time = std::chrono::steady_clock::now();
+                params.start_time = steady_clock::now();
 
                 MaxCliqueResult result = algorithm(graph, params);
 
-                auto overall_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - params.start_time);
+                auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
 
                 find_omega_average += double(result.size) / double(samples);
                 find_nodes_average += double(result.nodes) / double(samples);
