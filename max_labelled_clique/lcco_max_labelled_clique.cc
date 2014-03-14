@@ -16,15 +16,15 @@ using std::chrono::milliseconds;
 
 namespace
 {
-    template <CCOPermutations perm_, unsigned size_>
+    template <CCOPermutations perm_, unsigned size_, typename VertexType_>
     struct LCCO :
-        LCCOBase<perm_, size_, LCCO<perm_, size_> >
+        LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >
     {
-        using LCCOBase<perm_, size_, LCCO<perm_, size_> >::LCCOBase;
-        using LCCOBase<perm_, size_, LCCO<perm_, size_> >::params;
-        using LCCOBase<perm_, size_, LCCO<perm_, size_> >::graph;
-        using LCCOBase<perm_, size_, LCCO<perm_, size_> >::order;
-        using LCCOBase<perm_, size_, LCCO<perm_, size_> >::expand;
+        using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::LCCOBase;
+        using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::params;
+        using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::graph;
+        using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::order;
+        using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::expand;
 
         MaxLabelledCliqueResult result;
 
@@ -35,7 +35,7 @@ namespace
             for (unsigned pass = 1 ; pass <= 2 ; ++pass) {
                 auto start_time = steady_clock::now(); // local start time
 
-                std::vector<unsigned> c;
+                std::vector<VertexType_> c;
                 c.reserve(graph.size());
 
                 FixedBitSet<size_> p; // potential additions
@@ -60,7 +60,7 @@ namespace
 
         auto potential_new_best(
                 unsigned c_popcount,
-                const std::vector<unsigned> & c,
+                const std::vector<VertexType_> & c,
                 unsigned cost,
                 std::vector<int> & position) -> void
         {
@@ -79,7 +79,7 @@ namespace
 
         auto recurse(
                 bool pass_2,
-                std::vector<unsigned> & c,
+                std::vector<VertexType_> & c,
                 FixedBitSet<size_> & p,
                 LabelSet & u,
                 std::vector<int> & position

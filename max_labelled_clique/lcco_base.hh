@@ -14,11 +14,11 @@ namespace parasols
 {
     using LabelSet = FixedBitSet<2>;
 
-    template <CCOPermutations perm_, unsigned size_, typename ActualType_>
+    template <CCOPermutations perm_, unsigned size_, typename VertexType_, typename ActualType_>
     struct LCCOBase :
-        CCOMixin<size_, LCCOBase<perm_, size_, ActualType_> >
+        CCOMixin<size_, VertexType_, LCCOBase<perm_, size_, VertexType_, ActualType_> >
     {
-        using CCOMixin<size_, LCCOBase<perm_, size_, ActualType_> >::colour_class_order;
+        using CCOMixin<size_, VertexType_, LCCOBase<perm_, size_, VertexType_, ActualType_> >::colour_class_order;
 
         FixedBitGraph<size_> graph;
         const MaxLabelledCliqueParams & params;
@@ -44,7 +44,7 @@ namespace parasols
         template <typename... MoreArgs_>
         auto expand(
                 bool pass_2,
-                std::vector<unsigned> & c,                       // current candidate clique
+                std::vector<VertexType_> & c,                    // current candidate clique
                 FixedBitSet<size_> & p,                          // potential additions
                 LabelSet & u,
                 std::vector<int> & position,
@@ -60,7 +60,7 @@ namespace parasols
             static_cast<ActualType_ *>(this)->get_skip(c_popcount, std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
 
             // get our coloured vertices
-            std::array<unsigned, size_ * bits_per_word> p_order, colours;
+            std::array<VertexType_, size_ * bits_per_word> p_order, colours;
             colour_class_order(SelectColourClassOrderOverload<perm_>(), p, p_order, colours);
 
             // for each v in p... (v comes later)

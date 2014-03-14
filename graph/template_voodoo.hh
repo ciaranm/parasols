@@ -6,6 +6,8 @@
 #include <graph/graph.hh>
 #include <graph/bit_graph.hh>
 
+#include <type_traits>
+
 namespace parasols
 {
     template <unsigned...>
@@ -31,18 +33,26 @@ namespace parasols
         using Rest = NoMoreGraphSizes;
     };
 
-    template <template <unsigned> class Algorithm_, typename Result_, unsigned... sizes_, typename... Params_>
+    template <unsigned n_>
+    struct IndexSizes
+    {
+        using Type = typename std::conditional<n_ * bits_per_word <= 1ul << (8 * sizeof(unsigned char)), unsigned char,
+              typename std::conditional<n_ * bits_per_word <= 1ul << (8 * sizeof(unsigned short)), unsigned short,
+                std::false_type>::type>::type;
+    };
+
+    template <template <unsigned, typename> class Algorithm_, typename Result_, unsigned... sizes_, typename... Params_>
     auto select_graph_size(const GraphSizes<sizes_...> &, const Graph & graph, const Params_ & ... params) -> Result_
     {
         if (graph.size() < GraphSizes<sizes_...>::n * bits_per_word) {
-            Algorithm_<GraphSizes<sizes_...>::n> algorithm{ graph, params... };
+            Algorithm_<GraphSizes<sizes_...>::n, typename IndexSizes<GraphSizes<sizes_...>::n>::Type> algorithm{ graph, params... };
             return algorithm.run();
         }
         else
             return select_graph_size<Algorithm_, Result_>(typename GraphSizes<sizes_...>::Rest(), graph, params...);
     }
 
-    template <template <unsigned> class Algorithm_, typename Result_, typename... Params_>
+    template <template <unsigned, typename> class Algorithm_, typename Result_, typename... Params_>
     auto select_graph_size(const NoMoreGraphSizes &, const Graph &, const Params_ & ...) -> Result_
     {
         throw GraphTooBig();

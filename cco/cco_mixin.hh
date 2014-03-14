@@ -23,18 +23,18 @@ namespace parasols
     {
     };
 
-    template <unsigned size_, typename ActualType_>
+    template <unsigned size_, typename VertexType_, typename ActualType_>
     struct CCOMixin
     {
         auto colour_class_order(
                 const SelectColourClassOrderOverload<CCOPermutations::None> &,
                 const FixedBitSet<size_> & p,
-                std::array<unsigned, size_ * bits_per_word> & p_order,
-                std::array<unsigned, size_ * bits_per_word> & p_bounds) -> void
+                std::array<VertexType_, size_ * bits_per_word> & p_order,
+                std::array<VertexType_, size_ * bits_per_word> & p_bounds) -> void
         {
             FixedBitSet<size_> p_left = p; // not coloured yet
-            unsigned colour = 0;           // current colour
-            unsigned i = 0;                // position in p_bounds
+            VertexType_ colour = 0;        // current colour
+            VertexType_ i = 0;             // position in p_bounds
 
 #ifdef DISTRIBUTION_INSTRUMENTATION
             std::vector<std::pair<double, double> > colour_class_sizes;
@@ -82,15 +82,15 @@ namespace parasols
         auto colour_class_order(
                 const SelectColourClassOrderOverload<CCOPermutations::Defer1> &,
                 const FixedBitSet<size_> & p,
-                std::array<unsigned, size_ * bits_per_word> & p_order,
-                std::array<unsigned, size_ * bits_per_word> & p_bounds) -> void
+                std::array<VertexType_, size_ * bits_per_word> & p_order,
+                std::array<VertexType_, size_ * bits_per_word> & p_bounds) -> void
         {
             FixedBitSet<size_> p_left = p; // not coloured yet
-            unsigned colour = 0;           // current colour
-            unsigned i = 0;                // position in p_bounds
+            VertexType_ colour = 0;        // current colour
+            VertexType_ i = 0;             // position in p_bounds
 
-            unsigned d = 0;                // number deferred
-            std::array<unsigned, size_ * bits_per_word> defer;
+            VertexType_ d = 0;             // number deferred
+            std::array<VertexType_, size_ * bits_per_word> defer;
 
 #ifdef DISTRIBUTION_INSTRUMENTATION
             std::vector<std::pair<double, double> > colour_class_sizes;
@@ -133,7 +133,7 @@ namespace parasols
                 }
             }
 
-            for (unsigned n = 0 ; n < d ; ++n) {
+            for (VertexType_ n = 0 ; n < d ; ++n) {
                 ++colour;
                 p_order[i] = defer[n];
                 p_bounds[i] = colour;
@@ -152,16 +152,16 @@ namespace parasols
         auto colour_class_order(
                 const SelectColourClassOrderOverload<CCOPermutations::Sort> &,
                 const FixedBitSet<size_> & p,
-                std::array<unsigned, size_ * bits_per_word> & p_order,
-                std::array<unsigned, size_ * bits_per_word> & p_bounds) -> void
+                std::array<VertexType_, size_ * bits_per_word> & p_order,
+                std::array<VertexType_, size_ * bits_per_word> & p_bounds) -> void
         {
             FixedBitSet<size_> p_left = p; // not coloured yet
-            unsigned colour = 0;           // current colour
-            unsigned i = 0;                // position in p_bounds
+            VertexType_ colour = 0;        // current colour
+            VertexType_ i = 0;             // position in p_bounds
 
-            // this is sloooooow. is it worth making it fast, or is d1 nearly as
+            // this is sloooooow. is it worth making it fast, or is d nearly as
             // good anyway?
-            std::list<std::vector<unsigned> > colour_classes;
+            std::list<std::vector<VertexType_> > colour_classes;
 
             // while we've things left to colour
             while (! p_left.empty()) {
@@ -187,7 +187,7 @@ namespace parasols
             }
 
             // this is stable
-            colour_classes.sort([] (const std::vector<unsigned> & a, const std::vector<unsigned> & b) -> bool {
+            colour_classes.sort([] (const std::vector<VertexType_> & a, const std::vector<VertexType_> & b) -> bool {
                     return a.size() > b.size();
                     });
 
@@ -213,10 +213,10 @@ namespace parasols
         }
     };
 
-    template <template <CCOPermutations, unsigned> class WhichCCO_, CCOPermutations perm_>
+    template <template <CCOPermutations, unsigned, typename VertexType_> class WhichCCO_, CCOPermutations perm_>
     struct ApplyPerm
     {
-        template <unsigned size_> using Type = WhichCCO_<perm_, size_>;
+        template <unsigned size_, typename VertexType_> using Type = WhichCCO_<perm_, size_, VertexType_>;
     };
 }
 

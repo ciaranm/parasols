@@ -12,11 +12,11 @@
 
 namespace parasols
 {
-    template <CCOPermutations perm_, unsigned size_, typename ActualType_>
+    template <CCOPermutations perm_, unsigned size_, typename VertexType_, typename ActualType_>
     struct CCOBase :
-        CCOMixin<size_, CCOBase<perm_, size_, ActualType_> >
+        CCOMixin<size_, VertexType_, CCOBase<perm_, size_, VertexType_, ActualType_> >
     {
-        using CCOMixin<size_, CCOBase<perm_, size_, ActualType_> >::colour_class_order;
+        using CCOMixin<size_, VertexType_, CCOBase<perm_, size_, VertexType_, ActualType_> >::colour_class_order;
 
         FixedBitGraph<size_> graph;
         const MaxCliqueParams & params;
@@ -54,7 +54,7 @@ namespace parasols
             static_cast<ActualType_ *>(this)->get_skip(c.size(), std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
 
             // get our coloured vertices
-            std::array<unsigned, size_ * bits_per_word> p_order, colours;
+            std::array<VertexType_, size_ * bits_per_word> p_order, colours;
             colour_class_order(SelectColourClassOrderOverload<perm_>(), p, p_order, colours);
 
             // for each v in p... (v comes later)

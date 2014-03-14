@@ -15,7 +15,7 @@ using namespace parasols;
 
 namespace
 {
-    template <unsigned size_>
+    template <unsigned size_, typename VertexType_>
     struct CCO
     {
         const Graph & orig_graph;
@@ -54,7 +54,7 @@ namespace
             auto c_popcount = c.popcount();
 
             // get our coloured vertices
-            std::array<unsigned, size_ * bits_per_word> p_order, colours;
+            std::array<VertexType_, size_ * bits_per_word> p_order, colours;
             colour_class_order(p, p_order, colours);
 
             // for each v in p... (v comes later)
@@ -92,12 +92,12 @@ namespace
 
         auto colour_class_order(
                 const FixedBitSet<size_> & p,
-                std::array<unsigned, size_ * bits_per_word> & p_order,
-                std::array<unsigned, size_ * bits_per_word> & p_bounds) -> void
+                std::array<VertexType_, size_ * bits_per_word> & p_order,
+                std::array<VertexType_, size_ * bits_per_word> & p_bounds) -> void
         {
             FixedBitSet<size_> p_left = p; // not coloured yet
-            unsigned colour = 0;           // current colour
-            unsigned i = 0;                // position in p_bounds
+            VertexType_ colour = 0;        // current colour
+            VertexType_ i = 0;             // position in p_bounds
 
             // while we've things left to colour
             while (! p_left.empty()) {

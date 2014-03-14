@@ -14,15 +14,15 @@ using namespace parasols;
 
 namespace
 {
-    template <CCOPermutations perm_, unsigned size_>
-    struct CCO : CCOBase<perm_, size_, CCO<perm_, size_> >
+    template <CCOPermutations perm_, unsigned size_, typename VertexType_>
+    struct CCO : CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >
     {
-        using CCOBase<perm_, size_, CCO<perm_, size_> >::CCOBase;
+        using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::CCOBase;
 
-        using CCOBase<perm_, size_, CCO<perm_, size_> >::graph;
-        using CCOBase<perm_, size_, CCO<perm_, size_> >::params;
-        using CCOBase<perm_, size_, CCO<perm_, size_> >::expand;
-        using CCOBase<perm_, size_, CCO<perm_, size_> >::order;
+        using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::graph;
+        using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::params;
+        using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::expand;
+        using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::order;
 
         MaxCliqueResult result;
 
