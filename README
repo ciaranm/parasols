@@ -10,12 +10,14 @@ This is for ``work in progress'' code and experimentation. If you'd like to use
 this code in a real project, you'll need to rip it out. In other words, this
 isn't a nice friendly library.
 
-You will need a C++11 compiler, such as GCC 4.7, to compile this. You will also
+You will need a C++11 compiler, such as GCC 4.8, to compile this. You will also
 need Boost.
 
 We use boilermake for compilation:
 
     https://github.com/dmoulding/boilermake
+
+You should just be able to type 'make' in the top level directory to compile.
 
 By default, compiled programs go in "build/$HOSTNAME/". You can override this,
 for example, by doing:
@@ -34,8 +36,14 @@ To run, do:
     solve_max_clique algorithm order filename.clq
 
 where filename.clq is in the DIMACS format, algorithm is one of "naive bmcsa
-ccon ccod ccos tbmcsa dbmcsa", and order is one of "deg ex dynex mw". There are
-various options, use 'solve_max_clique --help' to list them.
+ccon ccod ccos tccon tccod tccos tbmcsa dbmcsa", and order is one of "deg ex
+dynex mw". There are various options, use 'solve_max_clique --help' to list
+them.
+
+If you are just looking for decent results, rather than experimenting, a good
+choice of parameters is:
+
+    solve_max_clique tccod dynex filename.clq
 
 The output is as follows:
 
