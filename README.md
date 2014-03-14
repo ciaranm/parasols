@@ -99,5 +99,5 @@ To avoid writing to a temp file, bash lets you do this:
 
     solve_max_biclique naive <(create_random_bipartite_graph 20 20 0.5 1)
 
-.. vim: set ft=plain spell spelllang=en ft=text :
+.. vim: set ft=markdown spell spelllang=en :
 
