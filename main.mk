@@ -1,27 +1,27 @@
 SUBMAKEFILES := \
-	graph/graph.mk \
-	cco/cco.mk \
-	max_biclique/max_biclique.mk \
-	max_clique/max_clique.mk \
-	max_common_subgraph/max_common_subgraph.mk \
-	max_kclub/max_kclub.mk \
-	max_labelled_clique/max_labelled_clique.mk \
-	programs/about_graph.mk \
-	programs/create_random_bipartite_graph.mk \
-	programs/create_random_graph.mk \
-	programs/max_biclique_speedup_graph.mk \
-	programs/max_clique_graph.mk \
-	programs/max_clique_speedup_graph.mk \
-	programs/solve_max_biclique.mk \
-	programs/solve_max_clique.mk \
-	programs/solve_max_common_subgraph.mk \
-	programs/solve_max_kclub.mk \
-	programs/solve_max_labelled_clique.mk \
-	programs/solve_vertex_colouring.mk \
-	programs/test_max_clique.mk \
-	solver/solver.mk \
-	threads/threads.mk \
-	vertex_colour/vertex_colour.mk
+	graph/subdir.mk \
+	cco/subdir.mk \
+	max_biclique/subdir.mk \
+	max_clique/subdir.mk \
+	max_common_subgraph/subdir.mk \
+	max_kclub/subdir.mk \
+	max_labelled_clique/subdir.mk \
+	programs/about_graph/subdir.mk \
+	programs/create_random_bipartite_graph/subdir.mk \
+	programs/create_random_graph/subdir.mk \
+	programs/max_biclique_speedup_graph/subdir.mk \
+	programs/max_clique_graph/subdir.mk \
+	programs/max_clique_speedup_graph/subdir.mk \
+	programs/solve_max_biclique/subdir.mk \
+	programs/solve_max_clique/subdir.mk \
+	programs/solve_max_common_subgraph/subdir.mk \
+	programs/solve_max_kclub/subdir.mk \
+	programs/solve_max_labelled_clique/subdir.mk \
+	programs/solve_vertex_colouring/subdir.mk \
+	programs/test_max_clique/subdir.mk \
+	solver/subdir.mk \
+	threads/subdir.mk \
+	vertex_colour/subdir.mk
 
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
