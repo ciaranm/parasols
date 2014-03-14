@@ -16,11 +16,16 @@ namespace parasols
         using namespace std::placeholders;
 
         auto orders = {
-            std::make_pair( std::string{ "deg" },     std::bind(degree_sort, _1, _2, false) ),
-            std::make_pair( std::string{ "ex" },      std::bind(exdegree_sort, _1, _2, false) ),
-            std::make_pair( std::string{ "dynex" },   std::bind(dynexdegree_sort, _1, _2, false) ),
-            std::make_pair( std::string{ "mw" },      std::bind(min_width_sort, _1, _2, false) ),
-            std::make_pair( std::string{ "none" },    std::bind(none_sort, _1, _2, false) )
+            std::make_pair( std::string{ "deg" },      std::bind(degree_sort, _1, _2, false) ),
+            std::make_pair( std::string{ "revdeg" },   std::bind(degree_sort, _1, _2, true) ),
+            std::make_pair( std::string{ "ex" },       std::bind(exdegree_sort, _1, _2, false) ),
+            std::make_pair( std::string{ "revex" },    std::bind(exdegree_sort, _1, _2, true) ),
+            std::make_pair( std::string{ "dynex" },    std::bind(dynexdegree_sort, _1, _2, false) ),
+            std::make_pair( std::string{ "revdynex" }, std::bind(dynexdegree_sort, _1, _2, true) ),
+            std::make_pair( std::string{ "mw" },       std::bind(min_width_sort, _1, _2, false) ),
+            std::make_pair( std::string{ "revmw" },    std::bind(min_width_sort, _1, _2, true) ),
+            std::make_pair( std::string{ "none" },     std::bind(none_sort, _1, _2, false) ),
+            std::make_pair( std::string{ "rev" },      std::bind(none_sort, _1, _2, true) )
         };
     }
 
