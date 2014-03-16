@@ -8,7 +8,9 @@ solutions if your data is sparse.
 
 This is for ``work in progress'' code and experimentation. If you'd like to use
 this code in a real project, you'll need to rip it out. In other words, this
-isn't a nice friendly library.
+isn't a nice friendly library. The code contains many awful things for allowing
+experimental work, and some utterly horrific template voodoo for getting an
+extra 10% performance.
 
 You will need a C++11 compiler, such as GCC 4.8, to compile this. You will also
 need Boost.
@@ -35,15 +37,44 @@ To run, do:
 
     solve_max_clique algorithm order filename.clq
 
-where filename.clq is in the DIMACS format, algorithm is one of "naive bmcsa
-ccon ccod ccos tccon tccod tccos tbmcsa dbmcsa", and order is one of "deg ex
-dynex mw". There are various options, use 'solve_max_clique --help' to list
-them.
+where filename.clq is in the DIMACS format, algorithm is one of:
+
+    naive:       Very dumb.
+    ccon:        Bitset encoded version of Prosser's MCSa variant
+    ccod:        Like ccon, with size 1 colour classes deferred
+    ccos:        Like ccon, with sorted colour classes (slow)
+    tccon:       Like ccon, threaded
+    tccod:       Like ccod, threaded (probably the best choice)
+    tccos:       Like ccos, threaded
+    bmcsa:       Older bitset encoded version of Prosser's MCSa variant
+    tbmcsa:      Older threaded bmcsa
+    dbmcsa:      Another older threaded bmcsa
+
+and order is one of:
+
+    deg:         Degree (Prosser's 1)
+    ex:          Exdegree (Prosser's 2)
+    dynex:       Dynamic exdegree (Tomita's MCS ordering? Probably best)
+    mw:          Minimum width (Prosser's 3. Better when all degrees are equal.)
+    none:        No ordering (typically bad, except on trivial graphs)
+    rev:         Reverse ordering (equally bad)
+    revdeg:      Reverse deg (terrible)
+    revex:       Reverse ex (terrible)
+    revdynex:    Reverse dynex (terrible)
+    revmw:       Reverse mw (terrible)
+
+There are various options, use 'solve_max_clique --help' to list them.
 
 If you are just looking for decent results, rather than experimenting, a good
 choice of parameters is:
 
     solve_max_clique tccod dynex filename.clq
+
+Note that we do most of our memory allocation on the stack. If you're dealing
+with large graphs and you get segfaults, you probably need to increase the
+stack size. Depending upon your shell, you could try something like this:
+
+    ulimit -s 128000
 
 The output is as follows:
 
