@@ -38,7 +38,7 @@ namespace parasols
         unsigned n_threads = 1;
 
         /// If this is set to true, we should abort due to a time limit.
-        std::atomic<bool> abort;
+        std::atomic<bool> * abort;
 
         /// The start time of the algorithm.
         std::chrono::time_point<std::chrono::steady_clock> start_time;

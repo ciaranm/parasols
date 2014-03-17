@@ -39,7 +39,7 @@ namespace
     {
         ++nodes;
 
-        if (params.abort.load())
+        if (params.abort->load())
             return;
 
         if (vertex == graph.size()) {

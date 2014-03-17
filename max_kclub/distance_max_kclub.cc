@@ -62,7 +62,7 @@ namespace
         while (! p.empty()) {
             ++position.back();
 
-            if (c.size() + bound(graph, kneighbours, p) <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+            if (c.size() + bound(graph, kneighbours, p) <= result.size || result.size >= params.stop_after_finding || params.abort->load())
                 return;
 
             auto v = p.back();

@@ -86,7 +86,9 @@ void table(
                     {
                         MaxBicliqueParams params;
                         params.n_threads = 2;
-                        params.abort.store(false);
+                        std::atomic<bool> abort;
+                        abort.store(false);
+                        params.abort = &abort;
                         params.stop_after_finding = omega;
                         params.break_ab_symmetry = symmetry;
                         params.order_function = std::bind(degree_sort, _1, _2, false);
@@ -104,7 +106,9 @@ void table(
                     {
                         MaxBicliqueParams params;
                         params.n_threads = 2;
-                        params.abort.store(false);
+                        std::atomic<bool> abort;
+                        abort.store(false);
+                        params.abort = &abort;
                         params.initial_bound = omega;
                         params.break_ab_symmetry = symmetry;
                         params.order_function = std::bind(degree_sort, _1, _2, false);

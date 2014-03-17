@@ -51,7 +51,9 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
                 MaxCliqueParams params;
                 params.order_function = std::bind(degree_sort, _1, _2, false);
                 params.original_graph = &graph;
-                params.abort.store(false);
+                std::atomic<bool> abort;
+                abort.store(false);
+                params.abort = &abort;
 
                 params.start_time = steady_clock::now();
 
@@ -69,7 +71,9 @@ void table(int size, int samples, const std::function<MaxCliqueResult (const Gra
                 MaxCliqueParams params;
                 params.order_function = std::bind(degree_sort, _1, _2, false);
                 params.original_graph = &graph;
-                params.abort.store(false);
+                std::atomic<bool> abort;
+                abort.store(false);
+                params.abort = &abort;
                 params.stop_after_finding = omega;
 
                 params.start_time = steady_clock::now();

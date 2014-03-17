@@ -18,7 +18,7 @@ namespace
         ++result.nodes;
 
         while (! p.empty()) {
-            if (c.size() + p.size() <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+            if (c.size() + p.size() <= result.size || result.size >= params.stop_after_finding || params.abort->load())
                 return;
 
             auto v = p.back();

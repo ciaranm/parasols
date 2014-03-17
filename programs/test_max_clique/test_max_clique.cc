@@ -48,7 +48,9 @@ bool compare(int size, int samples,
             MaxCliqueParams params1;
             params1.order_function = std::bind(degree_sort, _1, _2, false);
             params1.original_graph = &graph;
-            params1.abort.store(false);
+            std::atomic<bool> abort1;
+            abort1.store(false);
+            params1.abort = &abort1;
             params1.start_time = steady_clock::now();
             params1.n_threads = std::thread::hardware_concurrency();
             MaxCliqueResult result1 = algorithm1(graph, params1);
@@ -56,7 +58,9 @@ bool compare(int size, int samples,
             MaxCliqueParams params2;
             params2.order_function = std::bind(degree_sort, _1, _2, false);
             params2.original_graph = &graph;
-            params2.abort.store(false);
+            std::atomic<bool> abort2;
+            abort2.store(false);
+            params2.abort = &abort2;
             params2.start_time = steady_clock::now();
             params2.n_threads = std::thread::hardware_concurrency();
             MaxCliqueResult result2 = algorithm2(graph, params2);

@@ -63,7 +63,7 @@ namespace parasols
 
                 // bound, timeout or early exit?
                 unsigned best_anywhere_value = static_cast<ActualType_ *>(this)->get_best_anywhere_value();
-                if (c.size() + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort.load())
+                if (c.size() + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort->load())
                     return;
 
                 auto v = p_order[n];

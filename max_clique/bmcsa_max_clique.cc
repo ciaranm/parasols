@@ -36,7 +36,7 @@ namespace
             ++position.back();
 
             // bound, timeout or early exit?
-            if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+            if (c_popcount + colours[n] <= result.size || result.size >= params.stop_after_finding || params.abort->load())
                 return;
 
             auto v = p_order[n];

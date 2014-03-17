@@ -33,7 +33,7 @@ namespace
         // for each v in pa...
         while (! pa.empty()) {
             // timeout or early exit?
-            if (result.size >= params.stop_after_finding || params.abort.load())
+            if (result.size >= params.stop_after_finding || params.abort->load())
                 return;
 
             // bound

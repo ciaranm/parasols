@@ -112,7 +112,7 @@ namespace
             ++position.back();
 
             // bound, timeout or early exit?
-            if (bound(c_popcount, colours[n], params, best_anywhere) || params.abort.load())
+            if (bound(c_popcount, colours[n], params, best_anywhere) || params.abort->load())
                 return;
 
             auto v = p_order[n];

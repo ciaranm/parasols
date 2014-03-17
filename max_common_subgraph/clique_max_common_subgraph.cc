@@ -35,8 +35,7 @@ auto parasols::clique_max_common_subgraph(
     clique_params.print_incumbents = params.print_incumbents;
     clique_params.start_time = params.start_time;
     clique_params.order_function = params.order_function;
-    clique_params.abort.store(false);
-    // abort?
+    clique_params.abort = params.abort;
 
     auto clique_result = params.max_clique_algorithm(modular_product(graphs.first, graphs.second), clique_params);
 

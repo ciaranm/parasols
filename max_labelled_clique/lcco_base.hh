@@ -71,7 +71,7 @@ namespace parasols
                 unsigned best_anywhere_value = static_cast<ActualType_ *>(this)->get_best_anywhere_value();
                 if (pass_2 && best_anywhere_value > 0)
                     --best_anywhere_value;
-                if (c_popcount + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort.load())
+                if (c_popcount + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort->load())
                     return;
 
                 auto v = p_order[n];

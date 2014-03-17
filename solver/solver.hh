@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <functional>
+#include <atomic>
 
 namespace parasols
 {
@@ -23,7 +24,9 @@ namespace parasols
             std::thread timeout_thread;
             std::mutex timeout_mutex;
             std::condition_variable timeout_cv;
-            params.abort.store(false);
+            std::atomic<bool> abort;
+            abort.store(false);
+            params.abort = &abort;
             if (0 != timeout) {
                 timeout_thread = std::thread([&] {
                         auto abort_time = std::chrono::steady_clock::now() + std::chrono::seconds(timeout);
@@ -31,7 +34,7 @@ namespace parasols
                             /* Sleep until either we've reached the time limit,
                              * or we've finished all the work. */
                             std::unique_lock<std::mutex> guard(timeout_mutex);
-                            while (! params.abort.load()) {
+                            while (! abort.load()) {
                                 if (std::cv_status::timeout == timeout_cv.wait_until(guard, abort_time)) {
                                     /* We've woken up, and it's due to a timeout. */
                                     aborted = true;
@@ -39,7 +42,7 @@ namespace parasols
                                 }
                             }
                         }
-                        params.abort.store(true);
+                        abort.store(true);
                         });
             }
 
@@ -51,7 +54,7 @@ namespace parasols
             if (timeout_thread.joinable()) {
                 {
                     std::unique_lock<std::mutex> guard(timeout_mutex);
-                    params.abort.store(true);
+                    abort.store(true);
                     timeout_cv.notify_all();
                 }
                 timeout_thread.join();

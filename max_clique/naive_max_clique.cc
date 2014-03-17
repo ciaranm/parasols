@@ -26,7 +26,7 @@ namespace
         for (auto v : p | boost::adaptors::reversed) {
 
             // bound, timeout or early exit?
-            if (c.size() + p.size() <= result.size || result.size >= params.stop_after_finding || params.abort.load())
+            if (c.size() + p.size() <= result.size || result.size >= params.stop_after_finding || params.abort->load())
                 return;
 
             // consider taking v
