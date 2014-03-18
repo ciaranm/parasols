@@ -25,10 +25,6 @@ namespace
     const constexpr int number_of_depths = 5;
     const constexpr int number_of_steal_points = number_of_depths - 1;
 
-    struct OopsThreadBug
-    {
-    };
-
     struct Subproblem
     {
         std::vector<int> offsets;
@@ -57,12 +53,6 @@ namespace
             was_stolen(false)
         {
             mutex.lock();
-        }
-
-        ~StealPoint()
-        {
-            if (! is_finished)
-                throw OopsThreadBug{};
         }
 
         void publish(std::vector<int> & s)
@@ -104,9 +94,6 @@ namespace
 
         void finished()
         {
-            if (is_finished || mutex.try_lock())
-                throw OopsThreadBug{};
-
             is_finished = true;
             has_data = false;
             cv.notify_all();
