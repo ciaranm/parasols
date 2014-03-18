@@ -47,6 +47,8 @@ namespace parasols
                 std::vector<VertexType_> & c,                    // current candidate clique
                 FixedBitSet<size_> & p,                          // potential additions
                 LabelSet & u,
+                const std::array<VertexType_, size_ * bits_per_word> & p_order,
+                const std::array<VertexType_, size_ * bits_per_word> & colours,
                 std::vector<int> & position,
                 MoreArgs_ && ... more_args_
                 ) -> void
@@ -58,10 +60,6 @@ namespace parasols
             int skip = 0;
             bool keep_going = true;
             static_cast<ActualType_ *>(this)->get_skip(c_popcount, std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
-
-            // get our coloured vertices
-            std::array<VertexType_, size_ * bits_per_word> p_order, colours;
-            colour_class_order(SelectColourClassOrderOverload<perm_>(), p, p_order, colours);
 
             // for each v in p... (v comes later)
             for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
@@ -102,8 +100,12 @@ namespace parasols
 
                         if (! new_p.empty()) {
                             position.push_back(0);
+                            std::array<VertexType_, size_ * bits_per_word> new_p_order;
+                            std::array<VertexType_, size_ * bits_per_word> new_colours;
+                            colour_class_order(SelectColourClassOrderOverload<perm_>(), new_p, new_p_order, new_colours);
                             keep_going = static_cast<ActualType_ *>(this)->recurse(
-                                    pass_2, c, new_p, new_u, position, std::forward<MoreArgs_>(more_args_)...) && keep_going;
+                                    pass_2, c, new_p, new_u, new_p_order, new_colours, position,
+                                    std::forward<MoreArgs_>(more_args_)...) && keep_going;
                             position.pop_back();
                         }
                     }

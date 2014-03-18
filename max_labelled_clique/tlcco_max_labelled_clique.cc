@@ -134,6 +134,7 @@ namespace
         using LCCOBase<perm_, size_, VertexType_, TLCCO<perm_, size_, VertexType_> >::graph;
         using LCCOBase<perm_, size_, VertexType_, TLCCO<perm_, size_, VertexType_> >::order;
         using LCCOBase<perm_, size_, VertexType_, TLCCO<perm_, size_, VertexType_> >::expand;
+        using LCCOBase<perm_, size_, VertexType_, TLCCO<perm_, size_, VertexType_> >::colour_class_order;
 
         AtomicIncumbent best_anywhere_bits; // global incumbent
 
@@ -166,6 +167,16 @@ namespace
                 /* threads and steal points */
                 std::list<std::thread> threads;
                 std::vector<StealPoints> thread_steal_points(params.n_threads);
+
+                // initial colouring
+                std::array<VertexType_, size_ * bits_per_word> initial_p_order;
+                std::array<VertexType_, size_ * bits_per_word> initial_colours;
+                {
+                    FixedBitSet<size_> initial_p;
+                    initial_p.resize(graph.size());
+                    initial_p.set_all();
+                    colour_class_order(SelectColourClassOrderOverload<perm_>(), initial_p, initial_p_order, initial_colours);
+                }
 
                 /* workers */
                 for (unsigned i = 0 ; i < params.n_threads ; ++i) {
@@ -219,7 +230,8 @@ namespace
                                         LabelSet u;
 
                                         // do some work
-                                        expand(pass == 2, c, p, u, position, local_result, &args.subproblem, &thread_steal_points.at(i));
+                                        expand(pass == 2, c, p, u, initial_p_order, initial_colours, position, local_result,
+                                                &args.subproblem, &thread_steal_points.at(i));
 
                                         // record the last time we finished doing useful stuff
                                         overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
@@ -274,6 +286,8 @@ namespace
                 std::vector<VertexType_> & c,
                 FixedBitSet<size_> & p,
                 LabelSet & u,
+                const std::array<VertexType_, size_ * bits_per_word> & p_order,
+                const std::array<VertexType_, size_ * bits_per_word> & colours,
                 std::vector<int> & position,
                 MaxLabelledCliqueResult & local_result,
                 Subproblem * const subproblem,
@@ -285,7 +299,7 @@ namespace
             if (steal_points && c_popcount < number_of_steal_points)
                 steal_points->points.at(c_popcount - 1).publish(position);
 
-            expand(pass_2, c, p, u, position, local_result,
+            expand(pass_2, c, p, u, p_order, colours, position, local_result,
                 subproblem && c_popcount < subproblem->offsets.size() ? subproblem : nullptr,
                 steal_points && c_popcount < number_of_steal_points ? steal_points : nullptr);
 

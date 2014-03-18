@@ -25,6 +25,7 @@ namespace
         using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::graph;
         using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::order;
         using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::expand;
+        using LCCOBase<perm_, size_, VertexType_, LCCO<perm_, size_, VertexType_> >::colour_class_order;
 
         MaxLabelledCliqueResult result;
 
@@ -48,8 +49,12 @@ namespace
 
                 LabelSet u;
 
+                std::array<VertexType_, size_ * bits_per_word> initial_p_order;
+                std::array<VertexType_, size_ * bits_per_word> initial_colours;
+                colour_class_order(SelectColourClassOrderOverload<perm_>(), p, initial_p_order, initial_colours);
+
                 // go!
-                expand(pass == 2, c, p, u, positions);
+                expand(pass == 2, c, p, u, initial_p_order, initial_colours, positions);
 
                 auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
                 result.times.push_back(overall_time);
@@ -82,10 +87,12 @@ namespace
                 std::vector<VertexType_> & c,
                 FixedBitSet<size_> & p,
                 LabelSet & u,
+                const std::array<VertexType_, size_ * bits_per_word> & p_order,
+                const std::array<VertexType_, size_ * bits_per_word> & colours,
                 std::vector<int> & position
                 ) -> bool
         {
-            expand(pass_2, c, p, u, position);
+            expand(pass_2, c, p, u, p_order, colours, position);
             return true;
         }
 

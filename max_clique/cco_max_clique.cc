@@ -23,6 +23,7 @@ namespace
         using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::params;
         using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::expand;
         using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::order;
+        using CCOBase<perm_, size_, VertexType_, CCO<perm_, size_, VertexType_> >::colour_class_order;
 
         MaxCliqueResult result;
 
@@ -41,8 +42,13 @@ namespace
             positions.reserve(graph.size());
             positions.push_back(0);
 
+            // initial colouring
+            std::array<VertexType_, size_ * bits_per_word> initial_p_order;
+            std::array<VertexType_, size_ * bits_per_word> initial_colours;
+            colour_class_order(SelectColourClassOrderOverload<perm_>(), p, initial_p_order, initial_colours);
+
             // go!
-            expand(c, p, positions);
+            expand(c, p, initial_p_order, initial_colours, positions);
 
             // hack for enumerate
             if (params.enumerate)
@@ -59,10 +65,12 @@ namespace
         auto recurse(
                 std::vector<unsigned> & c,                       // current candidate clique
                 FixedBitSet<size_> & p,
+                const std::array<VertexType_, size_ * bits_per_word> & p_order,
+                const std::array<VertexType_, size_ * bits_per_word> & colours,
                 std::vector<int> & position
                 ) -> bool
         {
-            expand(c, p, position);
+            expand(c, p, p_order, colours, position);
             return true;
         }
 

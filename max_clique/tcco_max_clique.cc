@@ -133,6 +133,7 @@ namespace
         using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::params;
         using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::expand;
         using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::order;
+        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::colour_class_order;
 
         AtomicIncumbent best_anywhere; // global incumbent
 
@@ -157,6 +158,16 @@ namespace
             /* threads and steal points */
             std::list<std::thread> threads;
             std::vector<StealPoints> thread_steal_points(params.n_threads);
+
+            // initial colouring
+            std::array<VertexType_, size_ * bits_per_word> initial_p_order;
+            std::array<VertexType_, size_ * bits_per_word> initial_colours;
+            {
+                FixedBitSet<size_> initial_p;
+                initial_p.resize(graph.size());
+                initial_p.set_all();
+                colour_class_order(SelectColourClassOrderOverload<perm_>(), initial_p, initial_p_order, initial_colours);
+            }
 
             /* workers */
             for (unsigned i = 0 ; i < params.n_threads ; ++i) {
@@ -208,7 +219,8 @@ namespace
                                     position.push_back(0);
 
                                     // do some work
-                                    expand(c, p, position, local_result, &args.subproblem, &thread_steal_points.at(i));
+                                    expand(c, p, initial_p_order, initial_colours, position, local_result,
+                                            &args.subproblem, &thread_steal_points.at(i));
 
                                     // record the last time we finished doing useful stuff
                                     overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
@@ -246,6 +258,8 @@ namespace
         auto recurse(
                 std::vector<unsigned> & c,
                 FixedBitSet<size_> & p,
+                const std::array<VertexType_, size_ * bits_per_word> & initial_p_order,
+                const std::array<VertexType_, size_ * bits_per_word> & initial_colours,
                 std::vector<int> & position,
                 MaxCliqueResult & local_result,
                 Subproblem * const subproblem,
@@ -255,7 +269,7 @@ namespace
             if (steal_points && c.size() < number_of_steal_points)
                 steal_points->points.at(c.size() - 1).publish(position);
 
-            expand(c, p, position, local_result,
+            expand(c, p, initial_p_order, initial_colours, position, local_result,
                 subproblem && c.size() < subproblem->offsets.size() ? subproblem : nullptr,
                 steal_points && c.size() < number_of_steal_points ? steal_points : nullptr);
 
