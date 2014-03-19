@@ -15,5 +15,6 @@ SOURCES := \
 	is_vertex_colouring.cc \
 	file_formats.cc \
 	orders.cc \
-	template_voodoo.cc
+	template_voodoo.cc \
+	product.cc
 

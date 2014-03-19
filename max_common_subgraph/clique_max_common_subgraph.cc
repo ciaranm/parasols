@@ -1,28 +1,9 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <max_common_subgraph/clique_max_common_subgraph.hh>
+#include <graph/product.hh>
 
 using namespace parasols;
-
-namespace
-{
-    Graph modular_product(const Graph & g1, const Graph & g2)
-    {
-        Graph result(g1.size() * g2.size(), false);
-
-        for (int v1 = 0 ; v1 < g1.size() ; ++v1)
-            for (int v2 = 0 ; v2 < g2.size() ; ++v2)
-                for (int w1 = 0 ; w1 < g1.size() ; ++w1)
-                    for (int w2 = 0 ; w2 < g2.size() ; ++w2) {
-                        unsigned p1 = v2 * g1.size() + v1;
-                        unsigned p2 = w2 * g1.size() + w1;
-                        if (p1 != p2 && v1 != w1 && v2 != w2 && (g1.adjacent(v1, w1) == g2.adjacent(v2, w2))) {
-                            result.add_edge(p1, p2);
-                        }
-                    }
-        return result;
-    }
-}
 
 auto parasols::clique_max_common_subgraph(
         const std::pair<Graph, Graph> & graphs,
@@ -45,7 +26,7 @@ auto parasols::clique_max_common_subgraph(
     result.times = clique_result.times;
 
     for (auto & v : clique_result.members)
-        result.isomorphism.emplace(v % graphs.first.size(), v / graphs.first.size());
+        result.isomorphism.emplace(unproduct(graphs.first, graphs.second, v));
 
     return result;
 }
