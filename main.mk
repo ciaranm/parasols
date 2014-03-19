@@ -9,6 +9,7 @@ SUBMAKEFILES := \
 	programs/about_graph/subdir.mk \
 	programs/create_random_bipartite_graph/subdir.mk \
 	programs/create_random_graph/subdir.mk \
+	programs/create_graph_product/subdir.mk \
 	programs/max_biclique_speedup_graph/subdir.mk \
 	programs/max_clique_graph/subdir.mk \
 	programs/max_clique_speedup_graph/subdir.mk \
