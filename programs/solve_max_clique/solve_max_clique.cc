@@ -35,8 +35,14 @@ namespace
     {
         return run_this_wrapped<MaxCliqueResult, MaxCliqueParams, Graph>(
                 [func] (const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult {
-                    if (params.power > 1)
-                        return func(power(graph, params.power), params);
+                    if (params.power > 1) {
+                        auto power_start_time = steady_clock::now();
+                        auto power_graph = power(graph, params.power);
+                        auto power_time = duration_cast<milliseconds>(steady_clock::now() - power_start_time);
+                        auto result = func(power_graph, params);
+                        result.times.insert(next(result.times.begin()), power_time);
+                        return result;
+                    }
                     else
                         return func(graph, params);
                 });
