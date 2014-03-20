@@ -1,41 +1,23 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <graph/is_club.hh>
+#include <graph/kneighbours.hh>
 #include <limits>
 
 using namespace parasols;
 
 auto
-parasols::is_club(const Graph & graph, int k, const std::set<int> & members) -> bool
+parasols::is_club(const Graph & graph, int k, const std::vector<int> & members) -> bool
 {
-    std::vector<std::vector<int> > distances((graph.size()));
-    for (auto & d : distances)
-        d.resize((graph.size()));
+    std::vector<int> restrict_to((graph.size()));
+    for (auto & m : members)
+        restrict_to[m] = 1;
 
-    for (int i : members)
-        for (int j : members) {
-            if (i == j)
-                distances[i][j] = 0;
-            else if (members.count(i) && members.count(j) && graph.adjacent(i, j))
-                distances[i][j] = 1;
-            else
-                distances[i][j] = std::numeric_limits<int>::max();
-        }
-
-    /* shorten */
-    for (int k : members)
-        for (int i : members)
-            for (int j : members)
-                if (distances[i][k] != std::numeric_limits<int>::max() &&
-                        distances[k][j] != std::numeric_limits<int>::max()) {
-                    int d = distances[i][k] + distances[k][j];
-                    if (distances[i][j] > d)
-                        distances[i][j] = d;
-                }
+    KNeighbours distances(graph, k, &restrict_to);
 
     for (auto & i : members)
         for (auto & j : members)
-            if (distances[i][j] > k)
+            if (i != j && distances.vertices[i].distances[j].distance <= 0)
                 return false;
 
     return true;

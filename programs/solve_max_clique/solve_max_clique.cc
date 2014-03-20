@@ -233,7 +233,7 @@ auto main(int argc, char * argv[]) -> int
                 std::cout << graph.vertex_name(v) << " ";
 
             if (options_vars.count("check-club")) {
-                if (is_club(graph, params.power, result.members))
+                if (is_club(graph, params.power, std::vector<int>{ result.members.begin(), result.members.end() }))
                     std::cout << "(club)" << std::endl;
                 else
                     std::cout << "(not club)" << std::endl;

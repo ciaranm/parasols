@@ -1,14 +1,14 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <max_kclub/kneighbours.hh>
+#include <graph/kneighbours.hh>
 
 using namespace parasols;
 
-KNeighbours::KNeighbours(const Graph & graph, const MaxKClubParams & params, const std::vector<int> * maybe_restrict) :
+KNeighbours::KNeighbours(const Graph & graph, const int nk, const std::vector<int> * maybe_restrict) :
     vertices(graph.size())
 {
     for (auto & d : vertices) {
-        d.firsts.resize(params.k + 1);
+        d.firsts.resize(nk + 1);
         for (auto & f : d.firsts)
             f = -1;
 
@@ -52,7 +52,7 @@ KNeighbours::KNeighbours(const Graph & graph, const MaxKClubParams & params, con
     }
 
     /* build up distance k lists */
-    for (unsigned k = 2 ; k <= params.k ; ++k) {
+    for (unsigned k = 2 ; k <= nk ; ++k) {
         for (int i = 0 ; i < graph.size() ; ++i) {
             if (maybe_restrict && ! maybe_restrict->at(i))
                 continue;

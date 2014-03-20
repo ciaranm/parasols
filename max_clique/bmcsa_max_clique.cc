@@ -64,7 +64,8 @@ namespace
                             result.members.insert(o[i]);
 
                     if (params.check_clubs) {
-                        bool club = is_club(*params.original_graph, params.power, result.members);
+                        bool club = is_club(*params.original_graph, params.power,
+                                std::vector<int>{ result.members.begin(), result.members.end() });
                         if (params.enumerate && club)
                             ++result.result_club_count;
                         print_incumbent(params, c_popcount, position, club);

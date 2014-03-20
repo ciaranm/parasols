@@ -2,8 +2,8 @@
 
 #include <max_kclub/distance_max_kclub.hh>
 #include <max_kclub/print_incumbent.hh>
-#include <max_kclub/kneighbours.hh>
 
+#include <graph/kneighbours.hh>
 #include <graph/is_club.hh>
 
 #include <algorithm>
@@ -73,7 +73,7 @@ namespace
 
             // club?
             if (c.size() > result.size) {
-                if (is_club(graph, params.k, std::set<int>{ c.begin(), c.end() })) {
+                if (is_club(graph, params.k, c)) {
                     unsigned old_size = result.size;
                     result.size = c.size();
                     result.members.clear();
@@ -101,7 +101,7 @@ namespace
 
                 if (! new_p.empty()) {
                     position.push_back(0);
-                    KNeighbours kneighbours(graph, params, &c_and_new_p_b);
+                    KNeighbours kneighbours(graph, params.k, &c_and_new_p_b);
                     expand(graph, kneighbours, c, new_p, o, position, result, params);
                     position.pop_back();
                 }
@@ -142,7 +142,7 @@ auto parasols::distance_max_kclub(const Graph & graph, const MaxKClubParams & pa
             if (graph.adjacent(o[i], o[j]))
                 bit_graph.add_edge(i, j);
 
-    KNeighbours kneighbours(bit_graph, params);
+    KNeighbours kneighbours(bit_graph, params.k);
     expand(bit_graph, kneighbours, c, p, o, position, result, params);
 
     return result;

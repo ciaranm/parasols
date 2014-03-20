@@ -4,11 +4,11 @@
 #define PARASOLS_GUARD_GRAPH_IS_CLUB_HH 1
 
 #include <graph/graph.hh>
-#include <set>
+#include <vector>
 
 namespace parasols
 {
-    auto is_club(const Graph & graph, int k, const std::set<int> & members) -> bool;
+    auto is_club(const Graph & graph, int k, const std::vector<int> & members) -> bool;
 }
 
 #endif

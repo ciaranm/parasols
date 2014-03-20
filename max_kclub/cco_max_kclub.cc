@@ -2,8 +2,8 @@
 
 #include <max_kclub/cco_max_kclub.hh>
 #include <max_kclub/print_incumbent.hh>
-#include <max_kclub/kneighbours.hh>
 
+#include <graph/kneighbours.hh>
 #include <graph/bit_graph.hh>
 #include <graph/template_voodoo.hh>
 
@@ -34,7 +34,7 @@ namespace
             params.order_function(g, order);
 
             // re-encode to get g^k as a bit graph
-            KNeighbours kneighbours(g, params);
+            KNeighbours kneighbours(g, params.k);
 
             graph.resize(g.size());
             for (int i = 0 ; i < g.size() ; ++i)
@@ -158,7 +158,7 @@ namespace
                     if (c.test(i))
                         restrict_to[order[i]] = 1;
 
-                KNeighbours kneighbours(orig_graph, params, &restrict_to);
+                KNeighbours kneighbours(orig_graph, params.k, &restrict_to);
 
                 bool is_complete = true;
                 for (int i = 0 ; i < graph.size() && is_complete ; ++i)

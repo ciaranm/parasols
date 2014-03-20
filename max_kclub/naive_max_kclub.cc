@@ -28,7 +28,7 @@ namespace
             c.push_back(v);
 
             // club?
-            if (c.size() > result.size && is_club(graph, params.k, std::set<int>{ c.begin(), c.end() })) {
+            if (c.size() > result.size && is_club(graph, params.k, c)) {
                 result.members = std::set<int>{ c.begin(), c.end() };
                 result.size = c.size();
             }

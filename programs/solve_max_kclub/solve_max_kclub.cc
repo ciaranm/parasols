@@ -190,7 +190,7 @@ auto main(int argc, char * argv[]) -> int
 
             /* verify */
             if (options_vars.count("verify")) {
-                if (! is_club(graph, params.k, result.members)) {
+                if (! is_club(graph, params.k, std::vector<int>{ result.members.begin(), result.members.end() })) {
                     std::cerr << "Oops! not a club" << std::endl;
                     return EXIT_FAILURE;
                 }

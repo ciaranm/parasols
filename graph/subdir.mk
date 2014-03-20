@@ -16,5 +16,6 @@ SOURCES := \
 	file_formats.cc \
 	orders.cc \
 	template_voodoo.cc \
-	product.cc
+	product.cc \
+	kneighbours.cc
 
