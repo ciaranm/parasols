@@ -40,7 +40,7 @@ namespace
                         auto power_graph = power(graph, params.power);
                         auto power_time = duration_cast<milliseconds>(steady_clock::now() - power_start_time);
                         auto result = func(power_graph, params);
-                        result.times.insert(next(result.times.begin()), power_time);
+                        result.times.insert(result.times.begin(), power_time);
                         return result;
                     }
                     else
