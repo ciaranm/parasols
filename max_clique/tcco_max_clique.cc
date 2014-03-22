@@ -111,16 +111,16 @@ namespace
         }
     };
 
-    template <CCOPermutations perm_, unsigned size_, typename VertexType_>
-    struct TCCO : CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >
+    template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
+    struct TCCO : CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >
     {
-        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::CCOBase;
+        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::CCOBase;
 
-        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::graph;
-        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::params;
-        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::expand;
-        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::order;
-        using CCOBase<perm_, size_, VertexType_, TCCO<perm_, size_, VertexType_> >::colour_class_order;
+        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::graph;
+        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::params;
+        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::expand;
+        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::order;
+        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::colour_class_order;
 
         AtomicIncumbent best_anywhere; // global incumbent
 
@@ -305,13 +305,18 @@ namespace
     };
 }
 
-template <CCOPermutations perm_>
+template <CCOPermutations perm_, CCOInference inference_>
 auto parasols::tcco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
-    return select_graph_size<ApplyPerm<TCCO, perm_>::template Type, MaxCliqueResult>(AllGraphSizes(), graph, params);
+    return select_graph_size<ApplyPermInference<TCCO, perm_, inference_>::template Type, MaxCliqueResult>(
+            AllGraphSizes(), graph, params);
 }
 
-template auto parasols::tcco_max_clique<CCOPermutations::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Defer1>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Sort>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

@@ -12,15 +12,78 @@
 
 namespace parasols
 {
-    template <CCOPermutations perm_, unsigned size_, typename VertexType_, typename ActualType_>
-    struct CCOBase :
-        CCOMixin<size_, VertexType_, CCOBase<perm_, size_, VertexType_, ActualType_> >
+    enum class CCOInference
     {
-        using CCOMixin<size_, VertexType_, CCOBase<perm_, size_, VertexType_, ActualType_> >::colour_class_order;
+        None,
+        GlobalDomination
+    };
+
+    template <template <CCOPermutations, CCOInference, unsigned, typename VertexType_> class WhichCCO_,
+             CCOPermutations perm_, CCOInference inference_>
+    struct ApplyPermInference
+    {
+        template <unsigned size_, typename VertexType_> using Type = WhichCCO_<perm_, inference_, size_, VertexType_>;
+    };
+
+    template <CCOInference inference_, unsigned size_, typename VertexType_>
+    struct CCOInferer;
+
+    template <unsigned size_, typename VertexType_>
+    struct CCOInferer<CCOInference::None, size_, VertexType_>
+    {
+        void preprocess(FixedBitGraph<size_> &)
+        {
+        }
+
+        void propagate_no(VertexType_, FixedBitSet<size_> &)
+        {
+        }
+    };
+
+    template <unsigned size_, typename VertexType_>
+    struct CCOInferer<CCOInference::GlobalDomination, size_, VertexType_>
+    {
+        std::vector<FixedBitSet<size_> > unsets;
+
+        void preprocess(FixedBitGraph<size_> & graph)
+        {
+            unsets.resize(graph.size());
+            for (int i = 0 ; i < graph.size() ; ++i)
+                unsets[i].resize(graph.size());
+
+            for (int i = 0 ; i < graph.size() ; ++i) {
+                for (int j = 0 ; j < graph.size() ; ++j) {
+                    if (i == j)
+                        continue;
+
+                    FixedBitSet<size_> ni = graph.neighbourhood(i);
+                    FixedBitSet<size_> nj = graph.neighbourhood(j);
+
+                    FixedBitSet<size_> nij = ni;
+                    nij.intersect_with_complement(nj);
+                    nij.unset(j);
+                    if (nij.empty())
+                        unsets[j].set(i);
+                }
+            }
+        }
+
+        void propagate_no(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            p.intersect_with_complement(unsets[v]);
+        }
+    };
+
+    template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_, typename ActualType_>
+    struct CCOBase :
+        CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_> >
+    {
+        using CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_> >::colour_class_order;
 
         FixedBitGraph<size_> graph;
         const MaxCliqueParams & params;
         std::vector<int> order;
+        CCOInferer<inference_, size_, VertexType_> inferer;
 
         CCOBase(const Graph & g, const MaxCliqueParams & p) :
             params(p),
@@ -37,6 +100,8 @@ namespace parasols
                 for (int j = 0 ; j < g.size() ; ++j)
                     if (g.adjacent(order[i], order[j]))
                         graph.add_edge(i, j);
+
+            inferer.preprocess(graph);
         }
 
         template <typename... MoreArgs_>
@@ -69,10 +134,12 @@ namespace parasols
                 if (skip > 0) {
                     --skip;
                     p.unset(v);
+                    inferer.propagate_no(v, p);
                 }
                 else {
                     // consider taking v
                     c.push_back(v);
+                    inferer.propagate_no(v, p);
 
                     // filter p to contain vertices adjacent to v
                     FixedBitSet<size_> new_p = p;
@@ -94,6 +161,7 @@ namespace parasols
                     // now consider not taking v
                     c.pop_back();
                     p.unset(v);
+                    inferer.propagate_no(v, p);
 
                     if (! keep_going)
                         break;
