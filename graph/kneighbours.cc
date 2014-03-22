@@ -52,7 +52,7 @@ KNeighbours::KNeighbours(const Graph & graph, const int nk, const std::vector<in
     }
 
     /* build up distance k lists */
-    for (unsigned k = 2 ; k <= nk ; ++k) {
+    for (int k = 2 ; k <= nk ; ++k) {
         for (int i = 0 ; i < graph.size() ; ++i) {
             if (maybe_restrict && ! maybe_restrict->at(i))
                 continue;
