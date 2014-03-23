@@ -139,7 +139,6 @@ namespace parasols
                 else {
                     // consider taking v
                     c.push_back(v);
-                    inferer.propagate_no(v, p);
 
                     // filter p to contain vertices adjacent to v
                     FixedBitSet<size_> new_p = p;
