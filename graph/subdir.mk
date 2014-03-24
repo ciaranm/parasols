@@ -7,6 +7,7 @@ SOURCES := \
 	dimacs.cc \
 	pairs.cc \
 	net.cc \
+	metis.cc \
 	graph.cc \
 	power.cc \
 	complement.cc \

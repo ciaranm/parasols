@@ -6,6 +6,7 @@
 #include <graph/pairs.hh>
 #include <graph/net.hh>
 #include <graph/dimacs.hh>
+#include <graph/metis.hh>
 
 #include <utility>
 #include <functional>
@@ -22,7 +23,8 @@ namespace parasols
             std::make_pair( std::string{ "dimacs" },  GraphFileFormatFunction{ std::bind(read_dimacs, _1) } ),
             std::make_pair( std::string{ "pairs0" },  GraphFileFormatFunction{ std::bind(read_pairs, _1, false) } ),
             std::make_pair( std::string{ "pairs1" },  GraphFileFormatFunction{ std::bind(read_pairs, _1, true) } ),
-            std::make_pair( std::string{ "net" },     GraphFileFormatFunction{ std::bind(read_net, _1) } )
+            std::make_pair( std::string{ "net" },     GraphFileFormatFunction{ std::bind(read_net, _1) } ),
+            std::make_pair( std::string{ "metis" },   GraphFileFormatFunction{ std::bind(read_metis, _1) } )
         };
     }
 
