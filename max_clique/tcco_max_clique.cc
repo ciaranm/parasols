@@ -316,7 +316,3 @@ template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::Non
 template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
-template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-

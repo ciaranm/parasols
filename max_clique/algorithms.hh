@@ -32,13 +32,13 @@ namespace parasols
         std::make_pair( std::string{ "ccodgd" },    cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>),
         std::make_pair( std::string{ "ccosgd" },    cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>),
 
+        std::make_pair( std::string{ "ccongds" },   cco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination>),
+        std::make_pair( std::string{ "ccodgds" },   cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>),
+        std::make_pair( std::string{ "ccosgds" },   cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>),
+
         std::make_pair( std::string{ "tccon" },     tcco_max_clique<CCOPermutations::None, CCOInference::None>),
         std::make_pair( std::string{ "tccod" },     tcco_max_clique<CCOPermutations::Defer1, CCOInference::None>),
-        std::make_pair( std::string{ "tccos" },     tcco_max_clique<CCOPermutations::Sort, CCOInference::None>),
-
-        std::make_pair( std::string{ "tccongd" },   tcco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination>),
-        std::make_pair( std::string{ "tccodgd" },   tcco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>),
-        std::make_pair( std::string{ "tccosgd" },   tcco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>)
+        std::make_pair( std::string{ "tccos" },     tcco_max_clique<CCOPermutations::Sort, CCOInference::None>)
     };
 }
 

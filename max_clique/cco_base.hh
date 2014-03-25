@@ -15,7 +15,8 @@ namespace parasols
     enum class CCOInference
     {
         None,
-        GlobalDomination
+        GlobalDomination,         // just remove from p
+        GlobalDominationSkip      // remove from p, skip
     };
 
     template <template <CCOPermutations, CCOInference, unsigned, typename VertexType_> class WhichCCO_,
@@ -37,6 +38,50 @@ namespace parasols
 
         void propagate_no(VertexType_, FixedBitSet<size_> &)
         {
+        }
+
+        auto skip(VertexType_, FixedBitSet<size_> &) -> bool
+        {
+            return false;
+        }
+    };
+
+    template <unsigned size_, typename VertexType_>
+    struct CCOInferer<CCOInference::GlobalDominationSkip, size_, VertexType_>
+    {
+        std::vector<FixedBitSet<size_> > unsets;
+
+        void preprocess(FixedBitGraph<size_> & graph)
+        {
+            unsets.resize(graph.size());
+            for (int i = 0 ; i < graph.size() ; ++i)
+                unsets[i].resize(graph.size());
+
+            for (int i = 0 ; i < graph.size() ; ++i) {
+                for (int j = 0 ; j < graph.size() ; ++j) {
+                    if (i == j)
+                        continue;
+
+                    FixedBitSet<size_> ni = graph.neighbourhood(i);
+                    FixedBitSet<size_> nj = graph.neighbourhood(j);
+
+                    FixedBitSet<size_> nij = ni;
+                    nij.intersect_with_complement(nj);
+                    nij.unset(j);
+                    if (nij.empty())
+                        unsets[j].set(i);
+                }
+            }
+        }
+
+        void propagate_no(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            p.intersect_with_complement(unsets[v]);
+        }
+
+        auto skip(VertexType_, FixedBitSet<size_> &) -> bool
+        {
+            return false;
         }
     };
 
@@ -71,6 +116,11 @@ namespace parasols
         void propagate_no(VertexType_ v, FixedBitSet<size_> & p)
         {
             p.intersect_with_complement(unsets[v]);
+        }
+
+        auto skip(VertexType_ v, FixedBitSet<size_> & p) -> bool
+        {
+            return ! p.test(v);
         }
     };
 
@@ -131,7 +181,7 @@ namespace parasols
 
                 auto v = p_order[n];
 
-                if (skip > 0) {
+                if (skip > 0 || inferer.skip(v, p)) {
                     --skip;
                     p.unset(v);
                     inferer.propagate_no(v, p);
