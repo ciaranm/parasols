@@ -16,7 +16,8 @@ namespace parasols
     {
         None,
         GlobalDomination,         // just remove from p
-        GlobalDominationSkip      // remove from p, skip
+        GlobalDominationSkip,     // remove from p, skip
+        LazyGlobalDomination      // remove from p, skip, lazy
     };
 
     template <template <CCOPermutations, CCOInference, unsigned, typename VertexType_> class WhichCCO_,
@@ -36,7 +37,15 @@ namespace parasols
         {
         }
 
-        void propagate_no(VertexType_, FixedBitSet<size_> &)
+        void propagate_no_skip(VertexType_, FixedBitSet<size_> &)
+        {
+        }
+
+        void propagate_no_immediate(VertexType_, FixedBitSet<size_> &)
+        {
+        }
+
+        void propagate_no_lazy(VertexType_, FixedBitSet<size_> &)
         {
         }
 
@@ -74,9 +83,18 @@ namespace parasols
             }
         }
 
-        void propagate_no(VertexType_ v, FixedBitSet<size_> & p)
+        void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
         {
             p.intersect_with_complement(unsets[v]);
+        }
+
+        void propagate_no_immediate(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            p.intersect_with_complement(unsets[v]);
+        }
+
+        void propagate_no_lazy(VertexType_, FixedBitSet<size_> &)
+        {
         }
 
         auto skip(VertexType_, FixedBitSet<size_> &) -> bool
@@ -113,9 +131,73 @@ namespace parasols
             }
         }
 
-        void propagate_no(VertexType_ v, FixedBitSet<size_> & p)
+        void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
         {
             p.intersect_with_complement(unsets[v]);
+        }
+
+        void propagate_no_immediate(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            p.intersect_with_complement(unsets[v]);
+        }
+
+        void propagate_no_lazy(VertexType_, FixedBitSet<size_> &)
+        {
+        }
+
+        auto skip(VertexType_ v, FixedBitSet<size_> & p) -> bool
+        {
+            return ! p.test(v);
+        }
+    };
+
+    template <unsigned size_, typename VertexType_>
+    struct CCOInferer<CCOInference::LazyGlobalDomination, size_, VertexType_>
+    {
+        const FixedBitGraph<size_> * graph;
+        std::vector<std::pair<bool, FixedBitSet<size_> > > unsets;
+
+        void preprocess(FixedBitGraph<size_> & g)
+        {
+            graph = &g;
+            unsets.resize(g.size());
+        }
+
+        void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            really_propagate_no(v, p);
+        }
+
+        void propagate_no_immediate(VertexType_, FixedBitSet<size_> &)
+        {
+        }
+
+        void propagate_no_lazy(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            really_propagate_no(v, p);
+        }
+
+        void really_propagate_no(VertexType_ v, FixedBitSet<size_> & p)
+        {
+            if (! unsets[v].first) {
+                unsets[v].first = true;
+                unsets[v].second.resize(graph->size());
+
+                FixedBitSet<size_> nv = graph->neighbourhood(v);
+
+                for (int i = 0 ; i < graph->size() ; ++i) {
+                    if (i == v)
+                        continue;
+
+                    FixedBitSet<size_> niv = graph->neighbourhood(i);
+                    niv.intersect_with_complement(nv);
+                    niv.unset(v);
+                    if (niv.empty())
+                        unsets[v].second.set(i);
+                }
+            }
+
+            p.intersect_with_complement(unsets[v].second);
         }
 
         auto skip(VertexType_ v, FixedBitSet<size_> & p) -> bool
@@ -170,6 +252,8 @@ namespace parasols
             bool keep_going = true;
             static_cast<ActualType_ *>(this)->get_skip(c.size(), std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
 
+            int previous_v = -1;
+
             // for each v in p... (v comes later)
             for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
                 ++position.back();
@@ -179,12 +263,16 @@ namespace parasols
                 if (c.size() + colours[n] <= best_anywhere_value || best_anywhere_value >= params.stop_after_finding || params.abort->load())
                     return;
 
+                if (-1 != previous_v)
+                    inferer.propagate_no_lazy(previous_v, p);
+
                 auto v = p_order[n];
+                previous_v = v;
 
                 if (skip > 0 || inferer.skip(v, p)) {
                     --skip;
                     p.unset(v);
-                    inferer.propagate_no(v, p);
+                    inferer.propagate_no_skip(v, p);
                 }
                 else {
                     // consider taking v
@@ -210,7 +298,7 @@ namespace parasols
                     // now consider not taking v
                     c.pop_back();
                     p.unset(v);
-                    inferer.propagate_no(v, p);
+                    inferer.propagate_no_immediate(v, p);
 
                     if (! keep_going)
                         break;
