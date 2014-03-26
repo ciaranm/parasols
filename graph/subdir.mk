@@ -18,5 +18,6 @@ SOURCES := \
 	orders.cc \
 	template_voodoo.cc \
 	product.cc \
-	kneighbours.cc
+	kneighbours.cc \
+	add_dominated_vertices.cc
 

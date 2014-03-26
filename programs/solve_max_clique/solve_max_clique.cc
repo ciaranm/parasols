@@ -9,6 +9,7 @@
 #include <graph/is_clique.hh>
 #include <graph/is_club.hh>
 #include <graph/orders.hh>
+#include <graph/add_dominated_vertices.hh>
 
 #include <max_clique/algorithms.hh>
 
@@ -30,21 +31,34 @@ using std::chrono::milliseconds;
 
 namespace
 {
-    auto run_with_power(MaxCliqueResult func(const Graph &, const MaxCliqueParams &)) ->
-        std::function<MaxCliqueResult (const Graph &, MaxCliqueParams &, bool &, int)>
+    auto run_with_modifications(MaxCliqueResult func(const Graph &, const MaxCliqueParams &),
+                unsigned dominated_vertices,
+                double dominated_edge_p,
+                double dominated_join_p,
+                unsigned dominated_seed
+            ) ->
+        std::function<MaxCliqueResult (
+                const Graph &,
+                MaxCliqueParams &,
+                bool &,
+                int)>
     {
         return run_this_wrapped<MaxCliqueResult, MaxCliqueParams, Graph>(
-                [func] (const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult {
+                [=] (const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult {
+                    const Graph & modified_graph = 0 == dominated_vertices ?
+                        graph :
+                        add_dominated_vertices(graph, dominated_vertices, dominated_edge_p, dominated_join_p, dominated_seed);
+
                     if (params.power > 1) {
                         auto power_start_time = steady_clock::now();
-                        auto power_graph = power(graph, params.power);
+                        auto power_graph = power(modified_graph, params.power);
                         auto power_time = duration_cast<milliseconds>(steady_clock::now() - power_start_time);
                         auto result = func(power_graph, params);
                         result.times.insert(result.times.begin(), power_time);
                         return result;
                     }
                     else
-                        return func(graph, params);
+                        return func(modified_graph, params);
                 });
     }
 }
@@ -65,6 +79,10 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(), "Abort after this many seconds")
             ("complement",                           "Take the complement of the graph (to solve independent set)")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
+            ("add-dominated",      po::value<int>(), "Add this many dominated vertices to the input graph")
+            ("dominated-edges",    po::value<double>(), "When adding dominated vertices, keep edges with this probability")
+            ("join-dominated",     po::value<double>(), "When adding dominated vertices, join dominated vertices with this probability")
+            ("dominated-seed",     po::value<int>(), "Seed for adding dominated vertices")
             ("verify",                               "Verify that we have found a valid result (for sanity checking changes)")
             ("check-club",                           "Check whether our s-clique is also an s-club")
             ("format",             po::value<std::string>(), "Specify the format of the input")
@@ -183,6 +201,19 @@ auto main(int argc, char * argv[]) -> int
             if (options_vars.count("power"))
                 params.power = options_vars["power"].as<int>();
 
+            unsigned dominated_vertices = 0;
+            double dominated_edge_p = 1.0;
+            double dominated_join_p = 0.0;
+            unsigned dominated_seed = 0;
+            if (options_vars.count("add-dominated"))
+                dominated_vertices = options_vars["add-dominated"].as<int>();
+            if (options_vars.count("dominated-edges"))
+                dominated_edge_p = options_vars["dominated-edges"].as<double>();
+            if (options_vars.count("join-dominated"))
+                dominated_join_p = options_vars["join-dominated"].as<double>();
+            if (options_vars.count("dominated-seed"))
+                dominated_seed = options_vars["dominated-seed"].as<int>();
+
             /* Turn a format name into a runnable function. */
             auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
             if (options_vars.count("format"))
@@ -211,11 +242,12 @@ auto main(int argc, char * argv[]) -> int
 
             /* Do the actual run. */
             bool aborted = false;
-            auto result = run_with_power(std::get<1>(*algorithm))(
-                    graph,
-                    params,
-                    aborted,
-                    options_vars.count("timeout") ? options_vars["timeout"].as<int>() : 0);
+            auto result = run_with_modifications(std::get<1>(*algorithm),
+                    dominated_vertices, dominated_edge_p, dominated_join_p, dominated_seed)(
+                        graph,
+                        params,
+                        aborted,
+                        options_vars.count("timeout") ? options_vars["timeout"].as<int>() : 0);
 
             /* Stop the clock. */
             auto overall_time = duration_cast<milliseconds>(steady_clock::now() - params.start_time);
