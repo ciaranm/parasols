@@ -25,7 +25,7 @@ auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Gra
 
     std::string line;
 
-    static const boost::regex double_header{ R"((\d+)\s+(\d+)\s*)" };
+    static const boost::regex double_header{ R"((\d+)\s+(\d+)\s*(\d+)?)" };
     unsigned size;
 
     if (! std::getline(infile, line))
