@@ -53,14 +53,19 @@ KNeighbours::KNeighbours(const Graph & graph, const int nk, const std::vector<in
 
     /* build up distance k lists */
     for (int k = 2 ; k <= nk ; ++k) {
+        // for each vertex i...
         for (int i = 0 ; i < graph.size() ; ++i) {
             if (maybe_restrict && ! maybe_restrict->at(i))
                 continue;
 
             int prev = -1;
+            // for each vertex a at distance k - 1 from i...
             for (int a = vertices[i].firsts[k - 1] ; a != -1 ; a = vertices[i].distances[a].next) {
+                // for each vertex j at distance 1 from a...
                 for (int j = vertices[a].firsts[1] ; j != -1 ; j = vertices[a].distances[j].next) {
+                    // are i and j currently infinitely far apart?
                     if (vertices[i].distances[j].distance == -1) {
+                        // distance from i to j is now k, via a.
                         vertices[i].distances[j].distance = k;
                         if (-1 == prev)
                             vertices[i].firsts[k] = j;
