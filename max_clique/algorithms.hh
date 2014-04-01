@@ -32,9 +32,9 @@ namespace parasols
         std::make_pair( std::string{ "ccodgd" },    cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>),
         std::make_pair( std::string{ "ccosgd" },    cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>),
 
-        std::make_pair( std::string{ "ccongds" },   cco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination>),
-        std::make_pair( std::string{ "ccodgds" },   cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>),
-        std::make_pair( std::string{ "ccosgds" },   cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>),
+        std::make_pair( std::string{ "ccongds" },   cco_max_clique<CCOPermutations::None, CCOInference::GlobalDominationSkip>),
+        std::make_pair( std::string{ "ccodgds" },   cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDominationSkip>),
+        std::make_pair( std::string{ "ccosgds" },   cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDominationSkip>),
 
         std::make_pair( std::string{ "cconlgd" },   cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination>),
         std::make_pair( std::string{ "ccodlgd" },   cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination>),
