@@ -121,10 +121,6 @@ template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::Glob
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
-template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::GlobalDominationSkip>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDominationSkip>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDominationSkip>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::LazyGlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
