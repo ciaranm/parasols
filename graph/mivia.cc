@@ -2,7 +2,6 @@
 
 #include <graph/mivia.hh>
 #include <graph/graph.hh>
-#include <boost/regex.hpp>
 #include <fstream>
 
 using namespace parasols;
