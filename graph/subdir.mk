@@ -8,6 +8,7 @@ SOURCES := \
 	pairs.cc \
 	net.cc \
 	metis.cc \
+	mivia.cc \
 	graph.cc \
 	power.cc \
 	complement.cc \
