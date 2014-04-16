@@ -30,6 +30,9 @@ namespace parasols
      */
     struct MaxCommonSubgraphParams
     {
+        /// If true, only find a subgraph isomorphism
+        bool subgraph_isomorphism = false;
+
         /// Override the initial size of the incumbent.
         unsigned initial_bound = 0;
 

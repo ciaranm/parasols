@@ -31,6 +31,7 @@ auto main(int argc, char * argv[]) -> int
         po::options_description display_options{ "Program options" };
         display_options.add_options()
             ("help",                                 "Display help information")
+            ("subgraph-isomorphism",                 "Only find a subgraph isomorphism")
             ("threads",            po::value<int>(), "Number of threads to use (where relevant)")
             ("stop-after-finding", po::value<int>(), "Stop after finding a common subgraph of this size")
             ("initial-bound",      po::value<int>(), "Specify an initial bound")
@@ -148,6 +149,9 @@ auto main(int argc, char * argv[]) -> int
 
         if (options_vars.count("print-incumbents"))
             params.print_incumbents = true;
+
+        if (options_vars.count("subgraph-isomorphism"))
+            params.subgraph_isomorphism = true;
 
         /* Turn a format name into a runnable function. */
         auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
