@@ -42,18 +42,19 @@ namespace parasols
     };
 
     template <template <unsigned, typename> class Algorithm_, typename Result_, unsigned... sizes_, typename... Params_>
-    auto select_graph_size(const GraphSizes<sizes_...> &, const Graph & graph, const Params_ & ... params) -> Result_
+    auto select_graph_size(const GraphSizes<sizes_...> &, const Graph & graph, Params_ && ... params) -> Result_
     {
         if (graph.size() < GraphSizes<sizes_...>::n * bits_per_word) {
-            Algorithm_<GraphSizes<sizes_...>::n, typename IndexSizes<GraphSizes<sizes_...>::n>::Type> algorithm{ graph, params... };
+            Algorithm_<GraphSizes<sizes_...>::n, typename IndexSizes<GraphSizes<sizes_...>::n>::Type> algorithm{
+                graph, std::forward<Params_>(params)... };
             return algorithm.run();
         }
         else
-            return select_graph_size<Algorithm_, Result_>(typename GraphSizes<sizes_...>::Rest(), graph, params...);
+            return select_graph_size<Algorithm_, Result_>(typename GraphSizes<sizes_...>::Rest(), graph, std::forward<Params_>(params)...);
     }
 
     template <template <unsigned, typename> class Algorithm_, typename Result_, typename... Params_>
-    auto select_graph_size(const NoMoreGraphSizes &, const Graph &, const Params_ & ...) -> Result_
+    auto select_graph_size(const NoMoreGraphSizes &, const Graph &, Params_ && ...) -> Result_
     {
         throw GraphTooBig();
     }

@@ -12,6 +12,9 @@ isn't a nice friendly library. The code contains many awful things for allowing
 experimental work, and some utterly horrific template voodoo for getting an
 extra 10% performance.
 
+Compiling
+=========
+
 You will need a C++11 compiler, such as GCC 4.8, to compile this. You will also
 need Boost.
 
@@ -19,14 +22,24 @@ We use boilermake for compilation:
 
     https://github.com/dmoulding/boilermake
 
-You should just be able to type 'make' in the top level directory to compile.
+To compile, run make in the top level directory:
+
+    make
+
+If you don't need MPI support (for distributed systems; the threaded algorithms
+do not use MPI), you can disable it:
+
+    make DISABLE_MPI=1
 
 By default, compiled programs go in "build/$HOSTNAME/". You can override this,
 for example, by doing:
 
     make TARGET_DIR=./
 
-The solvers are as follows:
+The Solvers
+===========
+
+The solvers are as follows.
 
 solve_max_clique
 ----------------
@@ -138,6 +151,11 @@ The output is:
     witness_a
     witness_b
     runtimes
+
+Helper Programs
+===============
+
+There are also some helper programs.
 
 create_random_graph
 -------------------

@@ -26,12 +26,20 @@ SUBMAKEFILES := \
 	threads/subdir.mk \
 	vertex_colour/subdir.mk
 
+ifndef DISABLE_MPI
+
+SUBMAKEFILES += \
+	max_clique/subdir_mpi.mk \
+	programs/mpi_solve_max_clique/subdir_mpi.mk
+
+endif
+
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
 
 boost_ldlibs := $(shell if test -f `$(CXX) $$CXXFLAGS $$LDFLAGS --print-file-name=libboost_thread-mt.so` ; \
-    then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
-    else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi )
+	then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
+	else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi )
 
 boost_mpi_ldlibs := -lboost_mpi -lboost_serialization
 
