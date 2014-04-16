@@ -32,7 +32,7 @@ auto main(int argc, char * argv[]) -> int
         display_options.add_options()
             ("help",                                 "Display help information")
             ("threads",            po::value<int>(), "Number of threads to use (where relevant)")
-            ("stop-after-finding", po::value<int>(), "Stop after finding a labelled clique of this size")
+            ("stop-after-finding", po::value<int>(), "Stop after finding a common subgraph of this size")
             ("initial-bound",      po::value<int>(), "Specify an initial bound")
             ("print-incumbents",                     "Print new incumbents as they are found")
             ("timeout",            po::value<int>(), "Abort after this many seconds")
