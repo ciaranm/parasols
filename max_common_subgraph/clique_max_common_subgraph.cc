@@ -18,7 +18,16 @@ auto parasols::clique_max_common_subgraph(
     clique_params.order_function = params.order_function;
     clique_params.abort = params.abort;
 
-    auto clique_result = params.max_clique_algorithm(modular_product(graphs.first, graphs.second), clique_params);
+    if (params.subgraph_isomorphism) {
+        clique_params.stop_after_finding = graphs.first.size();
+        clique_params.initial_bound = graphs.first.size() - 1;
+    }
+
+    Graph product = params.subgraph_isomorphism ?
+        subgraph_modular_product(graphs.first, graphs.second) :
+        modular_product(graphs.first, graphs.second);
+
+    auto clique_result = params.max_clique_algorithm(product, clique_params);
 
     MaxCommonSubgraphResult result;
     result.size = clique_result.size;
