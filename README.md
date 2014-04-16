@@ -104,13 +104,14 @@ use, budget is the budget, and seed is a seed for the random label allocation.
 solve_max_common_subgraph
 -------------------------
 
-This solves the maximum common subgraph problem. If --subgraph-isomorphism is
-specified, this instead solves the subgraph isomorphism problem (and the first
-graph should be the small graph).
+This solves the maximum (vertex) common (induced, not necessarily connected)
+subgraph problem. If --subgraph-isomorphism is specified, this instead solves
+the subgraph isomorphism problem (and the first graph should be the small
+graph).
 
 To run, do:
 
-    solve_max_common_subgraph algorithm clique-algorithm order file1.clq file2.clq
+    solve_max_common_subgraph algorithm clique-algorithm order 1.clq 2.clq
 
 where algorithm is 'c', and clique-algorithm and order are clique algorithms
 and orders, as above. The output is:
