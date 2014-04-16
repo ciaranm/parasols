@@ -86,6 +86,39 @@ Where the first runtime is the overall time (excluding reading in the graph) in
 steady-clock ms, and any additional values are per-thread runtimes. If a
 timeout is specified, the first line will also say 'aborted'.
 
+solve_max_labelled_clique
+-------------------------
+
+This solves the maximum labelled clique problem.
+
+Currently only randomly assigned labels are supported (because there are no
+datasets with fixed labels; the algorithm does not have this limitation). To
+run, do:
+
+    solve_max_labelled_clique algorithm order labels budget seed filename.clq
+
+where order is as above, algorithm is one of lccon, lccod, lccos, tlccon,
+tlccod, tlccos, with meanings as for clique, labels is the number of labels to
+use, budget is the budget, and seed is a seed for the random label allocation.
+
+solve_max_common_subgraph
+-------------------------
+
+This solves the maximum common subgraph problem. If --subgraph-isomorphism is
+specified, this instead solves the subgraph isomorphism problem (and the first
+graph should be the small graph).
+
+To run, do:
+
+    solve_max_common_subgraph algorithm clique-algorithm order file1.clq file2.clq
+
+where algorithm is 'c', and clique-algorithm and order are clique algorithms
+and orders, as above. The output is:
+
+    size number_of_search_nodes
+    (first1, second1) (first2, second2) (first3, second3) etc
+    runtimes
+
 solve_max_biclique
 ------------------
 
