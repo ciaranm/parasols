@@ -90,6 +90,14 @@ namespace
 
         auto run_slave() -> MaxCliqueResult
         {
+            // initial colouring, just once
+            FixedBitSet<size_> initial_p;
+            initial_p.resize(graph.size());
+            initial_p.set_all();
+            std::array<VertexType_, size_ * bits_per_word> initial_p_order;
+            std::array<VertexType_, size_ * bits_per_word> initial_colours;
+            colour_class_order(SelectColourClassOrderOverload<perm_>(), initial_p, initial_p_order, initial_colours);
+
             while (true)
             {
                 /* ask for something to do */
@@ -118,11 +126,6 @@ namespace
                 std::vector<int> positions;
                 positions.reserve(graph.size());
                 positions.push_back(0);
-
-                // initial colouring
-                std::array<VertexType_, size_ * bits_per_word> initial_p_order;
-                std::array<VertexType_, size_ * bits_per_word> initial_colours;
-                colour_class_order(SelectColourClassOrderOverload<perm_>(), p, initial_p_order, initial_colours);
 
                 // go!
                 expand(c, p, initial_p_order, initial_colours, positions, subproblem);
