@@ -37,9 +37,7 @@ endif
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
 
-boost_ldlibs := $(shell if test -f `$(CXX) $$CXXFLAGS $$LDFLAGS --print-file-name=libboost_thread-mt.so` ; \
-	then echo -lboost_regex-mt -lboost_thread-mt -lboost_system-mt -lboost_program_options-mt ; \
-	else echo -lboost_regex -lboost_thread -lboost_system -lboost_program_options ; fi )
+boost_ldlibs := -lboost_regex -lboost_thread -lboost_system -lboost_program_options
 
 boost_mpi_ldlibs := -lboost_mpi -lboost_serialization
 
