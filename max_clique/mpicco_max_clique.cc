@@ -212,7 +212,7 @@ namespace
                 auto current_time = steady_clock::now(); // local start time
                 for (int h = 1, h_end = world.size() ; h != h_end ; ++h)
                     if (! finished[h])
-                        if (duration_cast<milliseconds>(current_time - last_heard_from[h]) > milliseconds(10000)) {
+                        if (duration_cast<milliseconds>(current_time - last_heard_from[h]) > milliseconds(120000)) {
                             std::cerr << "!!! haven't heard from " << h << std::endl;
                             last_heard_from[h] = current_time;
                         }
