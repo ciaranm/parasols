@@ -191,7 +191,8 @@ namespace
                     /* just an incumbent update */
                     unsigned local_incumbent;
                     world.recv(status.source(), Tag::MyIncumbent, local_incumbent);
-                    std::cerr << "[" << result.size << "] got incumbent " << local_incumbent << " from " << status.source() << std::endl;
+                    if (local_incumbent > result.size)
+                        std::cerr << "[" << result.size << "] got incumbent " << local_incumbent << " from " << status.source() << std::endl;
                     result.size = std::max(result.size, local_incumbent);
                     world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                 }
