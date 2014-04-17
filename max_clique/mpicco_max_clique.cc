@@ -156,15 +156,15 @@ namespace
                     if (s1 < graph.size()) {
                         /* send subproblem */
                         std::cerr << "[" << result.size << "] sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
-                        std::vector<int> subproblem_vector = { s1 /* , s2 */ };
+                        std::vector<int> subproblem_vector = { s1, s2 };
                         world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                         world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
 
                         /* advance */
-                        // if (++s2 == graph.size()) {
-                        //    s2 = 0;
+                        if (++s2 == graph.size()) {
+                            s2 = 0;
                             ++s1;
-                        // }
+                        }
                     }
                     else {
                         /* send finish */
