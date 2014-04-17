@@ -20,6 +20,29 @@ using std::chrono::milliseconds;
 
 namespace
 {
+    namespace Tag
+    {
+        enum Tag
+        {
+            ClientMessage,
+            CurrentGlobalIncumbent,
+            SubproblemForYou,
+            MyIncumbent,
+            MyResultSize,
+            MyResultMembers,
+            MyResultNodes
+        };
+    }
+
+    namespace ClientMessage
+    {
+        enum ClientMessage
+        {
+            GiveMeWork,
+            UpdateIncumbent
+        };
+    }
+
     template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
     struct MPICCO : CCOBase<perm_, inference_, size_, VertexType_, MPICCO<perm_, inference_, size_, VertexType_> >
     {
@@ -35,6 +58,8 @@ namespace
         mpi::communicator & world;
         MaxCliqueResult result;
 
+        unsigned last_update_nodes = 0;
+
         MPICCO(const Graph & g, const MaxCliqueParams & p, mpi::environment & e, mpi::communicator & w) :
             MyCCOBase(g, p),
             env(e),
@@ -45,6 +70,7 @@ namespace
         auto run() -> MaxCliqueResult
         {
             result.size = params.initial_bound;
+            last_update_nodes = 0;
 
             if (0 == world.rank())
                 return run_master();
@@ -52,17 +78,32 @@ namespace
                 return run_slave();
         }
 
+        auto slave_update_incumbent() -> void
+        {
+            int message = ClientMessage::UpdateIncumbent;
+            world.send(0, Tag::ClientMessage, message);
+            unsigned global_incumbent = result.size;
+            world.send(0, Tag::MyIncumbent, global_incumbent);
+            world.recv(0, Tag::CurrentGlobalIncumbent, global_incumbent);
+            result.size = std::max(result.size, global_incumbent);
+        }
+
         auto run_slave() -> MaxCliqueResult
         {
             while (true)
             {
                 /* ask for something to do */
-                int message = 0;
-                world.send(0, 1000, message);
+                int message = ClientMessage::GiveMeWork;
+                world.send(0, Tag::ClientMessage, message);
+
+                /* get an incumbent */
+                unsigned global_incumbent;
+                world.recv(0, Tag::CurrentGlobalIncumbent, global_incumbent);
+                result.size = std::max(result.size, global_incumbent);
 
                 /* get a subproblem */
                 std::vector<int> subproblem;
-                world.recv(0, 1001, subproblem);
+                world.recv(0, Tag::SubproblemForYou, subproblem);
 
                 if (subproblem.empty())
                     break;
@@ -85,13 +126,16 @@ namespace
 
                 // go!
                 expand(c, p, initial_p_order, initial_colours, positions, subproblem);
+
+                /* transmit incumbent */
+                slave_update_incumbent();
             }
 
             /* send result */
-            world.send(0, 1002, result.size);
+            world.send(0, Tag::MyResultSize, result.size);
             std::vector<int> result_members{ result.members.begin(), result.members.end() };
-            world.send(0, 1003, result_members);
-            world.send(0, 1004, result.nodes);
+            world.send(0, Tag::MyResultMembers, result_members);
+            world.send(0, Tag::MyResultNodes, result.nodes);
 
             return result;
         }
@@ -104,36 +148,55 @@ namespace
             while (n_finishes_sent < world.size() - 1) {
                 /* request from anyone */
                 int message;
-                auto status = world.recv(mpi::any_source, 1000, message);
+                auto status = world.recv(mpi::any_source, Tag::ClientMessage, message);
 
-                if (s1 < graph.size()) {
-                    /* send subproblem */
-                    std::cerr << "sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
-                    std::vector<int> subproblem_vector = { s1, s2 };
-                    world.send(status.source(), 1001, subproblem_vector);
-                    if (++s2 == graph.size()) {
-                        s2 = 0;
-                        ++s1;
+                if (ClientMessage::GiveMeWork == message) {
+                    /* someone wants work */
+
+                    if (s1 < graph.size()) {
+                        /* send subproblem */
+                        std::cerr << "[" << result.size << "] sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
+                        std::vector<int> subproblem_vector = { s1 /* , s2 */ };
+                        world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
+                        world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
+
+                        /* advance */
+                        // if (++s2 == graph.size()) {
+                        //    s2 = 0;
+                            ++s1;
+                        // }
+                    }
+                    else {
+                        /* send finish */
+                        std::cerr << "[" << result.size << "] sending finish to " << status.source() << std::endl;
+                        std::vector<int> subproblem_vector;
+                        world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
+                        world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
+                        ++n_finishes_sent;
+
+                        auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
+                        result.times.push_back(overall_time);
+
+                        /* read result */
+                        MaxCliqueResult sub_result;
+                        std::vector<int> sub_result_members;
+                        world.recv(status.source(), Tag::MyResultSize, sub_result.size);
+                        world.recv(status.source(), Tag::MyResultMembers, sub_result_members);
+                        sub_result.members = std::set<int>{ sub_result_members.begin(), sub_result_members.end() };
+                        world.recv(status.source(), Tag::MyResultNodes, sub_result.nodes);
+                        result.merge(sub_result);
                     }
                 }
+                else if (ClientMessage::UpdateIncumbent == message) {
+                    /* just an incumbent update */
+                    unsigned local_incumbent;
+                    world.recv(status.source(), Tag::MyIncumbent, local_incumbent);
+                    std::cerr << "[" << result.size << "] got incumbent " << local_incumbent << " from " << status.source() << std::endl;
+                    result.size = std::max(result.size, local_incumbent);
+                    world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
+                }
                 else {
-                    /* send finish */
-                    std::cerr << "sending finish to " << status.source() << std::endl;
-                    std::vector<int> subproblem_vector;
-                    world.send(status.source(), 1001, subproblem_vector);
-                    ++n_finishes_sent;
-
-                    auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
-                    result.times.push_back(overall_time);
-
-                    /* read result */
-                    MaxCliqueResult sub_result;
-                    std::vector<int> sub_result_members;
-                    world.recv(status.source(), 1002, sub_result.size);
-                    world.recv(status.source(), 1003, sub_result_members);
-                    sub_result.members = std::set<int>{ sub_result_members.begin(), sub_result_members.end() };
-                    world.recv(status.source(), 1004, sub_result.nodes);
-                    result.merge(sub_result);
+                    std::cerr << "eek! protocol error" << std::endl;
                 }
             }
 
@@ -145,6 +208,11 @@ namespace
         auto increment_nodes(std::vector<int> &) -> void
         {
             ++result.nodes;
+
+            if (result.nodes >= 1000000 + last_update_nodes) {
+                last_update_nodes = result.nodes;
+                slave_update_incumbent();
+            }
         }
 
         auto recurse(
@@ -172,6 +240,8 @@ namespace
                 result.members.clear();
                 for (auto & v : c)
                     result.members.insert(order[v]);
+
+                slave_update_incumbent();
             }
         }
 
