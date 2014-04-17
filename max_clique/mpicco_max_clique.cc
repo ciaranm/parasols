@@ -57,12 +57,11 @@ namespace
                 world.send(0, 1000, message);
 
                 /* get a subproblem */
-                world.recv(0, 1001, message);
+                std::vector<int> subproblem;
+                world.recv(0, 1001, subproblem);
 
-                if (-1 == message)
+                if (subproblem.empty())
                     break;
-
-                int subproblem = message;
 
                 std::vector<unsigned> c;
                 c.reserve(graph.size());
@@ -95,23 +94,27 @@ namespace
 
         auto run_master() -> MaxCliqueResult
         {
-            int subproblem = 0, n_finishes_sent = 0;
+            int s1 = 0, s2 = 0, n_finishes_sent = 0;
             while (n_finishes_sent < world.size() - 1) {
                 /* request from anyone */
                 int message;
                 auto status = world.recv(mpi::any_source, 1000, message);
 
-                if (subproblem < graph.size()) {
+                if (s1 < graph.size()) {
                     /* send subproblem */
-                    world.send(status.source(), 1001, subproblem);
-                    std::cerr << "sending subproblem " << subproblem << " to " << status.source() << std::endl;
-                    ++subproblem;
+                    std::cerr << "sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
+                    std::vector<int> subproblem_vector = { s1, s2 };
+                    world.send(status.source(), 1001, subproblem_vector);
+                    if (++s2 == graph.size()) {
+                        s2 = 0;
+                        ++s1;
+                    }
                 }
                 else {
                     /* send finish */
-                    int finish = -1;
                     std::cerr << "sending finish to " << status.source() << std::endl;
-                    world.send(status.source(), 1001, finish);
+                    std::vector<int> subproblem_vector;
+                    world.send(status.source(), 1001, subproblem_vector);
                     ++n_finishes_sent;
 
                     /* read result */
@@ -130,7 +133,7 @@ namespace
             return result;
         }
 
-        auto increment_nodes(int) -> void
+        auto increment_nodes(std::vector<int> &) -> void
         {
             ++result.nodes;
         }
@@ -141,7 +144,7 @@ namespace
                 const std::array<VertexType_, size_ * bits_per_word> & p_order,
                 const std::array<VertexType_, size_ * bits_per_word> & colours,
                 std::vector<int> & position,
-                int subproblem
+                std::vector<int> & subproblem
                 ) -> bool
         {
             expand(c, p, p_order, colours, position, subproblem);
@@ -151,7 +154,7 @@ namespace
         auto potential_new_best(
                 const std::vector<unsigned> & c,
                 const std::vector<int> &,
-                int) -> void
+                std::vector<int> &) -> void
         {
             // potential new best
             if (c.size() > result.size) {
@@ -168,10 +171,10 @@ namespace
             return result.size;
         }
 
-        auto get_skip(unsigned c_popcount, int subproblem, int & skip, bool & keep_going) -> void
+        auto get_skip(unsigned c_popcount, std::vector<int> & subproblem, int & skip, bool & keep_going) -> void
         {
-            if (0 == c_popcount) {
-                skip = subproblem;
+            if (c_popcount < subproblem.size()) {
+                skip = subproblem.at(c_popcount);
                 keep_going = false;
             }
         }
