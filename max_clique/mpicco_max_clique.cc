@@ -14,6 +14,10 @@
 using namespace parasols;
 namespace mpi = boost::mpi;
 
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+
 namespace
 {
     template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
@@ -94,6 +98,8 @@ namespace
 
         auto run_master() -> MaxCliqueResult
         {
+            auto start_time = steady_clock::now(); // local start time
+
             int s1 = 0, s2 = 0, n_finishes_sent = 0;
             while (n_finishes_sent < world.size() - 1) {
                 /* request from anyone */
@@ -116,6 +122,9 @@ namespace
                     std::vector<int> subproblem_vector;
                     world.send(status.source(), 1001, subproblem_vector);
                     ++n_finishes_sent;
+
+                    auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
+                    result.times.push_back(overall_time);
 
                     /* read result */
                     MaxCliqueResult sub_result;
