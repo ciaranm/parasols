@@ -143,6 +143,8 @@ namespace
         auto run_master() -> MaxCliqueResult
         {
             auto start_time = steady_clock::now(); // local start time
+            std::vector<bool> finished(world.size(), false);
+            std::vector<decltype(start_time)> last_heard_from(world.size(), start_time);
 
             int s1 = 0, s2 = 0, n_finishes_sent = 0;
             while (n_finishes_sent < world.size() - 1) {
@@ -150,12 +152,15 @@ namespace
                 int message;
                 auto status = world.recv(mpi::any_source, Tag::ClientMessage, message);
 
+                last_heard_from.at(status.source()) = steady_clock::now();
+
                 if (ClientMessage::GiveMeWork == message) {
                     /* someone wants work */
 
                     if (s1 < graph.size()) {
                         /* send subproblem */
-                        std::cerr << "[" << result.size << "] sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
+                        std::cerr << "-- " << duration_cast<milliseconds>(steady_clock::now() - start_time).count()
+                            << " [" << result.size << "] sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
                         std::vector<int> subproblem_vector = { s1, s2 };
                         world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                         world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
@@ -168,11 +173,13 @@ namespace
                     }
                     else {
                         /* send finish */
-                        std::cerr << "[" << result.size << "] sending finish to " << status.source() << std::endl;
+                        std::cerr << "-- " << duration_cast<milliseconds>(steady_clock::now() - start_time).count()
+                            << " [" << result.size << "] sending finish to " << status.source() << std::endl;
                         std::vector<int> subproblem_vector;
                         world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                         world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
                         ++n_finishes_sent;
+                        finished[status.source()] = true;
 
                         auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
                         result.times.push_back(overall_time);
@@ -192,16 +199,26 @@ namespace
                     unsigned local_incumbent;
                     world.recv(status.source(), Tag::MyIncumbent, local_incumbent);
                     if (local_incumbent > result.size)
-                        std::cerr << "[" << result.size << "] got incumbent " << local_incumbent << " from " << status.source() << std::endl;
+                        std::cerr << "-- " << duration_cast<milliseconds>(steady_clock::now() - start_time).count()
+                            << " [" << result.size << "] got incumbent " << local_incumbent << " from " << status.source() << std::endl;
                     result.size = std::max(result.size, local_incumbent);
                     world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                 }
                 else {
                     std::cerr << "eek! protocol error" << std::endl;
                 }
+
+                auto current_time = steady_clock::now(); // local start time
+                for (int h = 1, h_end = world.size() ; h != h_end ; ++h)
+                    if (! finished[h])
+                        if (duration_cast<milliseconds>(current_time - last_heard_from[h]) > milliseconds(10000)) {
+                            std::cerr << "!!! haven't heard from " << h << std::endl;
+                            last_heard_from[h] = current_time;
+                        }
             }
 
-            std::cerr << "all finishes sent" << std::endl;
+            std::cerr << "-- " << duration_cast<milliseconds>(steady_clock::now() - start_time).count()
+                << " all finishes sent" << std::endl;
 
             return result;
         }
