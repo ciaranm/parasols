@@ -174,7 +174,8 @@ namespace
                     else {
                         /* send finish */
                         std::cerr << "-- " << duration_cast<milliseconds>(steady_clock::now() - start_time).count()
-                            << " [" << result.size << "] sending finish to " << status.source() << std::endl;
+                            << " [" << result.size << "] sending finish to " << status.source() << ", "
+                            << world.size() - n_finishes_sent - 2 << " left" << std::endl;
                         std::vector<int> subproblem_vector;
                         world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                         world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
