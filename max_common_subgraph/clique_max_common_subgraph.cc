@@ -3,6 +3,8 @@
 #include <max_common_subgraph/clique_max_common_subgraph.hh>
 #include <graph/product.hh>
 
+#include <algorithm>
+
 using namespace parasols;
 
 auto parasols::clique_max_common_subgraph(
@@ -18,10 +20,9 @@ auto parasols::clique_max_common_subgraph(
     clique_params.order_function = params.order_function;
     clique_params.abort = params.abort;
 
-    if (params.subgraph_isomorphism) {
-        clique_params.stop_after_finding = graphs.first.size();
+    clique_params.stop_after_finding = std::min({ clique_params.stop_after_finding, unsigned(graphs.first.size()), unsigned(graphs.second.size()) });
+    if (params.subgraph_isomorphism)
         clique_params.initial_bound = graphs.first.size() - 1;
-    }
 
     Graph product = params.subgraph_isomorphism ?
         subgraph_modular_product(graphs.first, graphs.second) :
