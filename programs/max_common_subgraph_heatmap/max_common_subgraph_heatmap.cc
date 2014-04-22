@@ -4,6 +4,7 @@
 #include <max_clique/algorithms.hh>
 
 #include <graph/degree_sort.hh>
+#include <graph/min_width_sort.hh>
 
 #include <boost/program_options.hpp>
 
@@ -23,8 +24,7 @@ using std::chrono::duration_cast;
 using std::chrono::milliseconds;
 
 auto algorithms = {
-    MaxCliqueAlgorithm{ cco_max_clique<CCOPermutations::None, CCOInference::None> },
-    MaxCliqueAlgorithm{ cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination> }
+    MaxCliqueAlgorithm{ cco_max_clique<CCOPermutations::None, CCOInference::None> }
 };
 
 void table(int size1, int size2, int samples)
@@ -36,7 +36,7 @@ void table(int size1, int size2, int samples)
             std::cout << p1 / 100.0 << " " << p2 / 100.0;
 
             for (auto & algorithm : algorithms) {
-                double size_total = 0.0, nodes_total = 0.0;
+                double size_total = 0.0, nodes_total = 0.0, best_nodes_total = 0.0, first = 0.0, second = 0.0;
 
                 for (int sample = 0 ; sample < samples ; ++sample) {
                     std::mt19937 rnd1, rnd2;
@@ -57,18 +57,40 @@ void table(int size1, int size2, int samples)
 
                     MaxCommonSubgraphParams params;
                     params.max_clique_algorithm = algorithm;
-                    params.order_function = std::bind(degree_sort, _1, _2, false);
+                    params.order_function = std::bind(none_sort, _1, _2, false);
                     std::atomic<bool> abort;
                     abort.store(false);
                     params.abort = &abort;
                     params.start_time = steady_clock::now();
 
-                    auto result = clique_max_common_subgraph(std::make_pair(graph1, graph2), params);
-                    size_total += result.size;
-                    nodes_total += result.nodes;
+                    auto result1 = clique_max_common_subgraph(std::make_pair(graph1, graph2), params);
+                    size_total += result1.size;
+                    nodes_total += result1.nodes;
+
+                    params.start_time = steady_clock::now();
+                    auto result2 = clique_max_common_subgraph(std::make_pair(graph2, graph1), params);
+
+                    if (result1.size != result2.size)
+                        throw 0; /* oops... */
+
+                    if (result1.nodes < result2.nodes) {
+                        best_nodes_total += result1.nodes;
+                        first += 1.0;
+                    }
+                    else if (result1.nodes == result2.nodes) {
+                        best_nodes_total += result1.nodes;
+                        first += 0.5;
+                        second += 0.5;
+                    }
+                    else {
+                        best_nodes_total += result2.nodes;
+                        second += 1.0;
+                    }
                 }
 
-                std::cout << " " << (size_total / samples) << " " << (nodes_total / samples);
+                std::cout << " " << (size_total / samples) << " " <<
+                    (nodes_total / samples) << " " << (best_nodes_total /
+                            samples) << " " << first << " " << second;
             }
 
             std::cout << std::endl;
