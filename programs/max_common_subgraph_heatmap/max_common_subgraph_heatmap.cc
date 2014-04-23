@@ -3,8 +3,7 @@
 #include <max_common_subgraph/algorithms.hh>
 #include <max_clique/algorithms.hh>
 
-#include <graph/degree_sort.hh>
-#include <graph/min_width_sort.hh>
+#include <graph/orders.hh>
 
 #include <boost/program_options.hpp>
 
@@ -27,7 +26,7 @@ auto algorithms = {
     MaxCliqueAlgorithm{ cco_max_clique<CCOPermutations::None, CCOInference::None> }
 };
 
-void table(int size1, int size2, int samples)
+void table(int size1, int size2, int samples, const MaxCliqueOrderFunction & order_function)
 {
     using namespace std::placeholders;
 
@@ -57,7 +56,7 @@ void table(int size1, int size2, int samples)
 
                     MaxCommonSubgraphParams params;
                     params.max_clique_algorithm = algorithm;
-                    params.order_function = std::bind(none_sort, _1, _2, false);
+                    params.order_function = order_function;
                     std::atomic<bool> abort;
                     abort.store(false);
                     params.abort = &abort;
@@ -115,6 +114,7 @@ auto main(int argc, char * argv[]) -> int
             ("size1",       po::value<int>(),                       "Size of first graph")
             ("size2",       po::value<int>(),                       "Size of second graph")
             ("samples",     po::value<int>(),                       "Sample size")
+            ("order",      "Specify the initial vertex order")
             ;
 
         po::positional_options_description positional_options;
@@ -122,6 +122,7 @@ auto main(int argc, char * argv[]) -> int
             .add("size1",      1)
             .add("size2",      1)
             .add("samples",    1)
+            .add("order",      1)
             ;
 
         po::variables_map options_vars;
@@ -133,15 +134,16 @@ auto main(int argc, char * argv[]) -> int
 
         /* --help? Show a message, and exit. */
         if (options_vars.count("help")) {
-            std::cout << "Usage: " << argv[0] << " [options] size1 size2 samples" << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] size1 size2 samples order" << std::endl;
             std::cout << std::endl;
             std::cout << display_options << std::endl;
             return EXIT_SUCCESS;
         }
 
         /* No values specified? Show a message and exit. */
-        if (! options_vars.count("size1") || ! options_vars.count("size2") || ! options_vars.count("samples")) {
-            std::cout << "Usage: " << argv[0] << " [options] size1 size2 samples" << std::endl;
+        if (! options_vars.count("size1") || ! options_vars.count("size2") || ! options_vars.count("samples")
+                || ! options_vars.count("order")) {
+            std::cout << "Usage: " << argv[0] << " [options] size1 size2 samples order" << std::endl;
             return EXIT_FAILURE;
         }
 
@@ -149,7 +151,24 @@ auto main(int argc, char * argv[]) -> int
         int size2 = options_vars["size2"].as<int>();
         int samples = options_vars["samples"].as<int>();
 
-        table(size1, size2, samples);
+        /* Turn an order string name into a runnable function. */
+        MaxCliqueOrderFunction order_function;
+        for (auto order = orders.begin() ; order != orders.end() ; ++order)
+            if (std::get<0>(*order) == options_vars["order"].as<std::string>()) {
+                order_function = std::get<1>(*order);
+                break;
+            }
+
+        /* Unknown algorithm? Show a message and exit. */
+        if (! order_function) {
+            std::cerr << "Unknown order " << options_vars["order"].as<std::string>() << ", choose from:";
+            for (auto a : orders)
+                std::cerr << " " << std::get<0>(a);
+            std::cerr << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        table(size1, size2, samples, order_function);
 
         return EXIT_SUCCESS;
     }
