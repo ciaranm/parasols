@@ -29,6 +29,9 @@ namespace parasols
         /// Number of times work donation occurred.
         unsigned donations = 0;
 
+        /// The initial colour bound. Not set by every algorithm.
+        unsigned initial_colour_bound = 0;
+
         /**
          * Runtimes. The first entry in the list is the total runtime.
          * Additional values are for each worker thread.

@@ -26,6 +26,12 @@ namespace parasols
         /// Total number of nodes processed.
         unsigned long long nodes = 0;
 
+        /// The assignment bounds.
+        std::pair<unsigned, unsigned> assignment_bounds;
+
+        /// The initial colour bound.
+        unsigned initial_colour_bound;
+
         /**
          * Runtimes. The first entry in the list is the total runtime.
          * Additional values are for each worker thread.

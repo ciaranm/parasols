@@ -46,6 +46,7 @@ namespace
             std::array<VertexType_, size_ * bits_per_word> initial_p_order;
             std::array<VertexType_, size_ * bits_per_word> initial_colours;
             colour_class_order(SelectColourClassOrderOverload<perm_>(), p, initial_p_order, initial_colours);
+            result.initial_colour_bound = initial_colours[graph.size() - 1];
 
             // go!
             expand(c, p, initial_p_order, initial_colours, positions);

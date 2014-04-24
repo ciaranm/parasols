@@ -34,7 +34,9 @@ void table(int size1, int size2, int samples,
             std::cout << p1 / 100.0 << " " << p2 / 100.0;
 
             double size_total = 0.0, nodes_total = 0.0, best_nodes_total = 0.0, first = 0.0, second = 0.0,
-                   degree_spread = 0.0, find_nodes_total = 0.0, prove_nodes_total = 0.0, degree_sum_total = 0.0;
+                   degree_spread = 0.0, find_nodes_total = 0.0, prove_nodes_total = 0.0, degree_sum_total = 0.0,
+                   assignment_bound_total = 0.0, assignment_gap_total = 0.0, initial_colour_bound_total = 0.0,
+                   initial_colour_gap_total = 0.0;
 
             for (int sample = 0 ; sample < samples ; ++sample) {
                 std::mt19937 rnd1, rnd2;
@@ -64,6 +66,10 @@ void table(int size1, int size2, int samples,
                 auto result1 = clique_max_common_subgraph(std::make_pair(graph1, graph2), params);
                 size_total += result1.size;
                 nodes_total += result1.nodes;
+                assignment_bound_total += std::min(result1.assignment_bounds.first, result1.assignment_bounds.second);
+                assignment_gap_total += std::min(result1.assignment_bounds.first, result1.assignment_bounds.second) - result1.size;
+                initial_colour_bound_total += result1.initial_colour_bound;
+                initial_colour_gap_total += result1.initial_colour_bound - result1.size;
 
                 params.start_time = steady_clock::now();
                 auto result2 = clique_max_common_subgraph(std::make_pair(graph2, graph1), params);
@@ -115,6 +121,10 @@ void table(int size1, int size2, int samples,
                 << " " << first << " " << second << " " << (degree_spread / samples)
                 << " " << (find_nodes_total / samples) << " " << (prove_nodes_total / samples)
                 << " " << (degree_sum_total / samples)
+                << " " << (assignment_bound_total / samples)
+                << " " << (assignment_gap_total / samples)
+                << " " << (initial_colour_bound_total / samples)
+                << " " << (initial_colour_gap_total / samples)
                 << std::endl;
         }
 
