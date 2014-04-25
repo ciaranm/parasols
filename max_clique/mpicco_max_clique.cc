@@ -163,8 +163,8 @@ namespace
                     if (s1 < graph.size()) {
                         /* send subproblem */
                         std::cerr << "-- " << duration_cast<milliseconds>(steady_clock::now() - start_time).count()
-                            << " [" << result.size << "] sending subproblem " << s1 << " " << s2 << " to " << status.source() << std::endl;
-                        std::vector<int> subproblem_vector = { s1, s2 };
+                            << " [" << result.size << "] sending subproblem " << s2 << " " << s1 << " to " << status.source() << std::endl;
+                        std::vector<int> subproblem_vector = { s2, s1 };
                         world.send(status.source(), Tag::CurrentGlobalIncumbent, result.size);
                         world.send(status.source(), Tag::SubproblemForYou, subproblem_vector);
 
