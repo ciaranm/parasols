@@ -44,9 +44,9 @@ namespace
     }
 
     template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
-    struct MPICCO : CCOBase<perm_, inference_, size_, VertexType_, MPICCO<perm_, inference_, size_, VertexType_> >
+    struct MPICCO : CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, MPICCO<perm_, inference_, size_, VertexType_> >
     {
-        using MyCCOBase = CCOBase<perm_, inference_, size_, VertexType_, MPICCO<perm_, inference_, size_, VertexType_> >;
+        using MyCCOBase = CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, MPICCO<perm_, inference_, size_, VertexType_> >;
 
         using MyCCOBase::graph;
         using MyCCOBase::params;

@@ -14,7 +14,7 @@ namespace parasols
     /**
      * Super duper max clique algorithm.
      */
-    template <CCOPermutations, CCOInference>
+    template <CCOPermutations, CCOInference, CCOMerge>
     auto cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
 }
 

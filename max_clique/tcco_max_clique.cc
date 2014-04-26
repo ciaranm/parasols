@@ -112,15 +112,15 @@ namespace
     };
 
     template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
-    struct TCCO : CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >
+    struct TCCO : CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >
     {
-        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::CCOBase;
+        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::CCOBase;
 
-        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::graph;
-        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::params;
-        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::expand;
-        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::order;
-        using CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::colour_class_order;
+        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::graph;
+        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::params;
+        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::expand;
+        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::order;
+        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::colour_class_order;
 
         AtomicIncumbent best_anywhere; // global incumbent
 

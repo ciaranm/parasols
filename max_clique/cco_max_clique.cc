@@ -5,6 +5,7 @@
 #include <max_clique/print_incumbent.hh>
 
 #include <graph/template_voodoo.hh>
+#include <graph/merge_cliques.hh>
 
 #include <algorithm>
 #include <thread>
@@ -14,18 +15,21 @@ using namespace parasols;
 
 namespace
 {
-    template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
-    struct CCO : CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >
+    template <CCOPermutations perm_, CCOInference inference_, CCOMerge merge_, unsigned size_, typename VertexType_>
+    struct CCO : CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >
     {
-        using CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >::CCOBase;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::CCOBase;
 
-        using CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >::graph;
-        using CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >::params;
-        using CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >::expand;
-        using CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >::order;
-        using CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, size_, VertexType_> >::colour_class_order;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::original_graph;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::graph;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::params;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::expand;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::order;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::colour_class_order;
 
         MaxCliqueResult result;
+
+        std::list<std::set<int> > previouses;
 
         auto run() -> MaxCliqueResult
         {
@@ -79,7 +83,6 @@ namespace
                 const std::vector<unsigned> & c,
                 const std::vector<int> & position) -> void
         {
-            // potential new best
             if (c.size() > result.size) {
                 if (params.enumerate) {
                     ++result.result_count;
@@ -94,6 +97,26 @@ namespace
 
                 print_incumbent(params, c.size(), position);
             }
+
+            if (CCOMerge::All == merge_) {
+                std::set<int> new_members;
+                for (auto & v : c)
+                    new_members.insert(order[v]);
+
+                for (auto & p : previouses) {
+                    auto merged = merge_cliques(original_graph, p, new_members);
+
+                    if (merged.size() > result.size) {
+                        result.members = merged;
+                        result.size = result.members.size();
+                        previouses.push_back(result.members);
+                        print_incumbent(params, result.size, position);
+                    }
+                }
+
+                previouses.push_back(result.members);
+                print_position(params, "previouses is now " + std::to_string(previouses.size()), position);
+            }
         }
 
         auto get_best_anywhere_value() -> unsigned
@@ -107,21 +130,25 @@ namespace
     };
 }
 
-template <CCOPermutations perm_, CCOInference inference_>
+template <CCOPermutations perm_, CCOInference inference_, CCOMerge merge_>
 auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
-    return select_graph_size<ApplyPermInference<CCO, perm_, inference_>::template Type, MaxCliqueResult>(
+    return select_graph_size<ApplyPermInferenceMerge<CCO, perm_, inference_, merge_>::template Type, MaxCliqueResult>(
             AllGraphSizes(), graph, params);
 }
 
-template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
-template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
-template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::LazyGlobalDomination>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::GlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::GlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::GlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::LazyGlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
