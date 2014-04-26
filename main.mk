@@ -14,6 +14,7 @@ SUBMAKEFILES := \
 	programs/max_clique_graph/subdir.mk \
 	programs/max_clique_speedup_graph/subdir.mk \
 	programs/max_common_subgraph_heatmap/subdir.mk \
+	programs/merge_cliques/subdir.mk \
 	programs/modify_graph/subdir.mk \
 	programs/solve_max_biclique/subdir.mk \
 	programs/solve_max_clique/subdir.mk \

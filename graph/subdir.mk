@@ -20,5 +20,6 @@ SOURCES := \
 	template_voodoo.cc \
 	product.cc \
 	kneighbours.cc \
-	add_dominated_vertices.cc
+	add_dominated_vertices.cc \
+	merge_cliques.cc
 
