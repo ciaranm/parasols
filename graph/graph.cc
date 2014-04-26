@@ -55,3 +55,11 @@ auto Graph::vertex_name(int a) const -> std::string
         return std::to_string(a);
 }
 
+auto Graph::vertex_number(const std::string & t) const -> int
+{
+    if (_add_one_for_output)
+        return std::stoi(t) - 1;
+    else
+        return std::stoi(t);
+}
+

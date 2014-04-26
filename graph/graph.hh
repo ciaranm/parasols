@@ -83,6 +83,15 @@ namespace parasols
             auto vertex_name(int a) const -> std::string;
 
             /**
+             * Turn a string name into a vertex number.
+             *
+             * Some graphs are 0-indexed, some are 1-indexed. Some might even
+             * have named vertices. This turns a vertex name into a 0-indexed
+             * integer.
+             */
+            auto vertex_number(const std::string &) const -> int;
+
+            /**
              * The adjaceny matrix. Shouldn't really be public, but we snoop
              * around inside it when doing message passing.
              */
