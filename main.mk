@@ -21,11 +21,9 @@ SUBMAKEFILES := \
 	programs/solve_max_common_subgraph/subdir.mk \
 	programs/solve_max_kclub/subdir.mk \
 	programs/solve_max_labelled_clique/subdir.mk \
-	programs/solve_vertex_colouring/subdir.mk \
 	programs/test_max_clique/subdir.mk \
 	solver/subdir.mk \
-	threads/subdir.mk \
-	vertex_colour/subdir.mk
+	threads/subdir.mk
 
 ifndef DISABLE_MPI
 
