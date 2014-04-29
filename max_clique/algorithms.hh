@@ -36,9 +36,13 @@ namespace parasols
         std::make_pair( std::string{ "ccodlgd" },   cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination, CCOMerge::None>),
         std::make_pair( std::string{ "ccoslgd" },   cco_max_clique<CCOPermutations::Sort, CCOInference::LazyGlobalDomination, CCOMerge::None>),
 
-        std::make_pair( std::string{ "cconm" },     cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "ccodm" },     cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "ccosm" },     cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "cconmp" },    cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::Previous>),
+        std::make_pair( std::string{ "ccodmp" },    cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::Previous>),
+        std::make_pair( std::string{ "ccosmp" },    cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::Previous>),
+
+        std::make_pair( std::string{ "cconma" },    cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "ccodma" },    cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "ccosma" },    cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>),
 
         std::make_pair( std::string{ "tccon" },     tcco_max_clique<CCOPermutations::None, CCOInference::None>),
         std::make_pair( std::string{ "tccod" },     tcco_max_clique<CCOPermutations::Defer1, CCOInference::None>),

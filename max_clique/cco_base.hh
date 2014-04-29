@@ -23,6 +23,7 @@ namespace parasols
     enum class CCOMerge
     {
         None,
+        Previous,
         All
     };
 

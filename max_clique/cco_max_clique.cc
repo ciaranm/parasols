@@ -83,39 +83,60 @@ namespace
                 const std::vector<unsigned> & c,
                 const std::vector<int> & position) -> void
         {
-            if (c.size() > result.size) {
-                if (params.enumerate) {
-                    ++result.result_count;
-                    result.size = c.size() - 1;
-                }
-                else
-                    result.size = c.size();
+            switch (merge_) {
+                case CCOMerge::None:
+                    if (c.size() > result.size) {
+                        if (params.enumerate) {
+                            ++result.result_count;
+                            result.size = c.size() - 1;
+                        }
+                        else
+                            result.size = c.size();
 
-                result.members.clear();
-                for (auto & v : c)
-                    result.members.insert(order[v]);
+                        result.members.clear();
+                        for (auto & v : c)
+                            result.members.insert(order[v]);
 
-                print_incumbent(params, c.size(), position);
-            }
-
-            if (CCOMerge::All == merge_) {
-                std::set<int> new_members;
-                for (auto & v : c)
-                    new_members.insert(order[v]);
-
-                for (auto & p : previouses) {
-                    auto merged = merge_cliques(original_graph, p, new_members);
-
-                    if (merged.size() > result.size) {
-                        result.members = merged;
-                        result.size = result.members.size();
-                        previouses.push_back(result.members);
-                        print_incumbent(params, result.size, position);
+                        print_incumbent(params, c.size(), position);
                     }
-                }
+                    break;
 
-                previouses.push_back(result.members);
-                print_position(params, "previouses is now " + std::to_string(previouses.size()), position);
+                case CCOMerge::Previous:
+                    {
+                        std::set<int> new_members;
+                        for (auto & v : c)
+                            new_members.insert(order[v]);
+
+                        auto merged = merge_cliques(original_graph, result.members, new_members);
+                        if (merged.size() > result.size) {
+                            result.members = merged;
+                            result.size = result.members.size();
+                            print_incumbent(params, result.size, position);
+                        }
+                    }
+                    break;
+
+                case CCOMerge::All:
+                    {
+                        std::set<int> new_members;
+                        for (auto & v : c)
+                            new_members.insert(order[v]);
+
+                        for (auto & p : previouses) {
+                            auto merged = merge_cliques(original_graph, p, new_members);
+
+                            if (merged.size() > result.size) {
+                                result.members = merged;
+                                result.size = result.members.size();
+                                previouses.push_back(result.members);
+                                print_incumbent(params, result.size, position);
+                            }
+                        }
+
+                        previouses.push_back(result.members);
+                        print_position(params, "previouses is now " + std::to_string(previouses.size()), position);
+                    }
+                    break;
             }
         }
 
@@ -140,6 +161,10 @@ auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & param
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
