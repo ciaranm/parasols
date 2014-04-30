@@ -122,16 +122,23 @@ namespace
                         for (auto & v : c)
                             new_members.insert(order[v]);
 
-                        for (auto & p : previouses) {
-                            auto merged = merge_cliques(original_graph, p, new_members);
-
-                            if (merged.size() > result.size) {
-                                result.members = merged;
-                                result.size = result.members.size();
-                                previouses.push_back(result.members);
-                                print_incumbent(params, result.size, position);
-                            }
+                        if (previouses.empty()) {
+                            result.members = new_members;
+                            result.size = result.members.size();
+                            previouses.push_back(result.members);
+                            print_incumbent(params, result.size, position);
                         }
+                        else
+                            for (auto & p : previouses) {
+                                auto merged = merge_cliques(original_graph, p, new_members);
+
+                                if (merged.size() > result.size) {
+                                    result.members = merged;
+                                    result.size = result.members.size();
+                                    previouses.push_back(result.members);
+                                    print_incumbent(params, result.size, position);
+                                }
+                            }
 
                         previouses.push_back(result.members);
                         print_position(params, "previouses is now " + std::to_string(previouses.size()), position);
