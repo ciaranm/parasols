@@ -306,14 +306,12 @@ namespace
                             print_incumbent(params, local_result.size, position);
                         }
 
-                        for (auto & p : previouses) {
-                            auto merged = merge_cliques(original_graph, p, new_members);
+                        for (auto & previous : previouses) {
+                            auto merged = merge_cliques(original_graph, previous, new_members);
 
                             if (best_anywhere.update(merged.size())) {
-                                local_result.size = c.size();
-                                local_result.members.clear();
-                                for (auto & v : merged)
-                                    local_result.members.insert(order[v]);
+                                local_result.size = merged.size();
+                                local_result.members = merged;
 
                                 previouses.push_back(local_result.members);
                                 print_position(params, "merge success -> " + std::to_string(merged.size()), position);
