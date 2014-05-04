@@ -111,18 +111,22 @@ namespace
         }
     };
 
-    template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_>
-    struct TCCO : CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >
+    template <CCOPermutations perm_, CCOInference inference_, CCOMerge merge_, unsigned size_, typename VertexType_>
+    struct TCCO : CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >
     {
-        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::CCOBase;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::CCOBase;
 
-        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::graph;
-        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::params;
-        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::expand;
-        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::order;
-        using CCOBase<perm_, inference_, CCOMerge::None, size_, VertexType_, TCCO<perm_, inference_, size_, VertexType_> >::colour_class_order;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::graph;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::original_graph;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::params;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::expand;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::order;
+        using CCOBase<perm_, inference_, merge_, size_, VertexType_, TCCO<perm_, inference_, merge_, size_, VertexType_> >::colour_class_order;
 
         AtomicIncumbent best_anywhere; // global incumbent
+
+        std::list<std::set<int> > previouses;
+        std::mutex previouses_mutex;
 
         auto run() -> MaxCliqueResult
         {
@@ -274,12 +278,53 @@ namespace
                 StealPoints * const
                 ) -> void
         {
-            if (best_anywhere.update(c.size())) {
-                local_result.size = c.size();
-                local_result.members.clear();
-                for (auto & v : c)
-                    local_result.members.insert(order[v]);
-                print_incumbent(params, local_result.size, position);
+            switch (merge_) {
+                case CCOMerge::None:
+                case CCOMerge::Previous:
+                    if (best_anywhere.update(c.size())) {
+                        local_result.size = c.size();
+                        local_result.members.clear();
+                        for (auto & v : c)
+                            local_result.members.insert(order[v]);
+                        print_incumbent(params, local_result.size, position);
+                    }
+                    break;
+
+                case CCOMerge::All:
+                    {
+                        std::set<int> new_members;
+                        for (auto & v : c)
+                            new_members.insert(order[v]);
+
+                        std::unique_lock<std::mutex> guard(previouses_mutex);
+
+                        if (best_anywhere.update(c.size())) {
+                            local_result.size = c.size();
+                            local_result.members.clear();
+                            for (auto & v : c)
+                                local_result.members.insert(order[v]);
+                            print_incumbent(params, local_result.size, position);
+                        }
+
+                        for (auto & p : previouses) {
+                            auto merged = merge_cliques(original_graph, p, new_members);
+
+                            if (best_anywhere.update(merged.size())) {
+                                local_result.size = c.size();
+                                local_result.members.clear();
+                                for (auto & v : merged)
+                                    local_result.members.insert(order[v]);
+
+                                previouses.push_back(local_result.members);
+                                print_position(params, "merge success -> " + std::to_string(merged.size()), position);
+                                print_incumbent(params, local_result.size, position);
+                            }
+                        }
+
+                        previouses.push_back(local_result.members);
+                        print_position(params, "previouses is now " + std::to_string(previouses.size()), position);
+                    }
+                    break;
             }
         }
 
@@ -305,14 +350,18 @@ namespace
     };
 }
 
-template <CCOPermutations perm_, CCOInference inference_>
+template <CCOPermutations perm_, CCOInference inference_, CCOMerge merge_>
 auto parasols::tcco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult
 {
-    return select_graph_size<ApplyPermInference<TCCO, perm_, inference_>::template Type, MaxCliqueResult>(
+    return select_graph_size<ApplyPermInferenceMerge<TCCO, perm_, inference_, merge_>::template Type, MaxCliqueResult>(
             AllGraphSizes(), graph, params);
 }
 
-template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+
+template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
