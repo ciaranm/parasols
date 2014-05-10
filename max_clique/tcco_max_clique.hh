@@ -14,8 +14,15 @@ namespace parasols
     /**
      * Super duper max clique algorithm, threaded.
      */
-    template <CCOPermutations, CCOInference, CCOMerge>
+    template <CCOPermutations, CCOInference, bool merge_queue_>
     auto tcco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
+
+    template <template <CCOPermutations, CCOInference, bool, unsigned, typename VertexType_> class WhichCCO_,
+             CCOPermutations perm_, CCOInference inference_, bool merge_queue_>
+    struct ApplyPermInferenceMQ
+    {
+        template <unsigned size_, typename VertexType_> using Type = WhichCCO_<perm_, inference_, merge_queue_, size_, VertexType_>;
+    };
 }
 
 #endif

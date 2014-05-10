@@ -16,16 +16,18 @@ using namespace parasols;
 namespace
 {
     template <CCOPermutations perm_, CCOInference inference_, CCOMerge merge_, unsigned size_, typename VertexType_>
-    struct CCO : CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >
+    struct CCO : CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >
     {
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::CCOBase;
+        using Base = CCOBase<perm_, inference_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >;
 
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::original_graph;
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::graph;
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::params;
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::expand;
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::order;
-        using CCOBase<perm_, inference_, merge_, size_, VertexType_, CCO<perm_, inference_, merge_, size_, VertexType_> >::colour_class_order;
+        using Base::CCOBase;
+
+        using Base::original_graph;
+        using Base::graph;
+        using Base::params;
+        using Base::expand;
+        using Base::order;
+        using Base::colour_class_order;
 
         MaxCliqueResult result;
 

@@ -4,7 +4,6 @@
 #define PARASOLS_GUARD_MAX_CLIQUE_CCO_BASE_HH 1
 
 #include <graph/bit_graph.hh>
-#include <graph/merge_cliques.hh>
 
 #include <cco/cco.hh>
 #include <cco/cco_mixin.hh>
@@ -18,20 +17,6 @@ namespace parasols
         None,
         GlobalDomination,         // just remove from p
         LazyGlobalDomination      // remove from p, lazy
-    };
-
-    enum class CCOMerge
-    {
-        None,
-        Previous,
-        All
-    };
-
-    template <template <CCOPermutations, CCOInference, CCOMerge, unsigned, typename VertexType_> class WhichCCO_,
-             CCOPermutations perm_, CCOInference inference_, CCOMerge merge_>
-    struct ApplyPermInferenceMerge
-    {
-        template <unsigned size_, typename VertexType_> using Type = WhichCCO_<perm_, inference_, merge_, size_, VertexType_>;
     };
 
     template <template <CCOPermutations, CCOInference, unsigned, typename VertexType_> class WhichCCO_,
@@ -172,12 +157,11 @@ namespace parasols
         }
     };
 
-    template <CCOPermutations perm_, CCOInference inference_, CCOMerge merge_,
-             unsigned size_, typename VertexType_, typename ActualType_>
+    template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_, typename ActualType_>
     struct CCOBase :
-        CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, merge_, size_, VertexType_, ActualType_> >
+        CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_> >
     {
-        using CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, merge_, size_, VertexType_, ActualType_> >::colour_class_order;
+        using CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_> >::colour_class_order;
 
         const Graph & original_graph;
         FixedBitGraph<size_> graph;
