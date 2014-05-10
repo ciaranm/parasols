@@ -103,7 +103,7 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
-        auto merged_clique = merge_cliques(graph, clique1, clique2);
+        auto merged_clique = merge_cliques([&] (int a, int b) { return graph.adjacent(a, b); }, clique1, clique2);
 
         std::cout << clique1.size() << " " << clique2.size() << " " << merged_clique.size() << std::endl;
         for (auto & m : merged_clique)

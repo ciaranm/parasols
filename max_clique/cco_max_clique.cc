@@ -109,7 +109,7 @@ namespace
                         for (auto & v : c)
                             new_members.insert(order[v]);
 
-                        auto merged = merge_cliques(original_graph, result.members, new_members);
+                        auto merged = merge_cliques([&] (int a, int b) { return original_graph.adjacent(a, b); }, result.members, new_members);
                         if (merged.size() > result.size) {
                             result.members = merged;
                             result.size = result.members.size();
@@ -132,7 +132,7 @@ namespace
                         }
                         else
                             for (auto & p : previouses) {
-                                auto merged = merge_cliques(original_graph, p, new_members);
+                                auto merged = merge_cliques([&] (int a, int b) { return original_graph.adjacent(a, b); }, p, new_members);
 
                                 if (merged.size() > result.size) {
                                     result.members = merged;

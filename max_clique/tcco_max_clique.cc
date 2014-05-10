@@ -8,6 +8,7 @@
 #include <threads/atomic_incumbent.hh>
 
 #include <graph/template_voodoo.hh>
+#include <graph/merge_cliques.hh>
 
 #include <algorithm>
 #include <thread>
@@ -111,12 +112,93 @@ namespace
         }
     };
 
+    template <typename Base_, bool merge_queue_, unsigned size_, typename VertexType_>
+    struct MergeQueue
+    {
+        MergeQueue(Base_ * const)
+        {
+        }
+
+        void add(const std::vector<unsigned> &)
+        {
+        }
+
+        bool finish(
+                MaxCliqueResult &,
+                const std::vector<int> &)
+        {
+            return false;
+        }
+    };
+
+    template <typename Base_, unsigned size_, typename VertexType_>
+    struct MergeQueue<Base_, true, size_, VertexType_>
+    {
+        Base_ * const base;
+
+        Queue<std::vector<unsigned> > pending_merges;
+        std::thread merge_thread;
+
+        std::list<std::set<int> > priors;
+        std::set<int> best_merge;
+
+        MergeQueue(Base_ * const b) :
+            base(b),
+            pending_merges(1, false)
+        {
+            merge_thread = std::thread([&] {
+                    std::vector<unsigned> next;
+                    while (pending_merges.dequeue_blocking(next)) {
+                        std::set<int> next_set(next.begin(), next.end());
+
+                        for (auto & prior : priors) {
+                            auto merged = merge_cliques([&] (int a, int b) { return base->graph.adjacent(a, b); }, prior, next_set);
+                            if (base->best_anywhere.update(merged.size())) {
+                                best_merge = merged;
+                                print_position(base->params, "merged " + std::to_string(prior.size()) + " and " + std::to_string(next_set.size())
+                                    + " to get " + std::to_string(merged.size()), std::vector<int>{ });
+                                print_incumbent(base->params, merged.size());
+                                pending_merges.enqueue(std::vector<unsigned>(merged.begin(), merged.end()));
+                            }
+                        }
+
+                        priors.push_back(std::move(next_set));
+                        print_position(base->params, "priors has size " + std::to_string(priors.size()), std::vector<int>{ });
+                    }
+                    });
+        }
+
+        void add(const std::vector<unsigned> & c)
+        {
+            pending_merges.enqueue(std::vector<unsigned>{ c });
+        }
+
+        bool finish(
+                MaxCliqueResult & global_result,
+                const std::vector<int> & order)
+        {
+            bool result = false;
+
+            pending_merges.initial_producer_done();
+            merge_thread.join();
+
+            if (global_result.size < best_merge.size()) {
+                global_result.size = best_merge.size();
+                global_result.members.clear();
+                for (auto & v : best_merge)
+                    global_result.members.insert(order[v]);
+
+                result = true;
+            }
+
+            return result;
+        }
+    };
+
     template <CCOPermutations perm_, CCOInference inference_, bool merge_queue_, unsigned size_, typename VertexType_>
     struct TCCO : CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, merge_queue_, size_, VertexType_> >
     {
         using Base = CCOBase<perm_, inference_, size_, VertexType_, TCCO<perm_, inference_, merge_queue_, size_, VertexType_> >;
-
-        using Base::CCOBase;
 
         using Base::graph;
         using Base::original_graph;
@@ -129,6 +211,14 @@ namespace
 
         std::list<std::set<int> > previouses;
         std::mutex previouses_mutex;
+
+        MergeQueue<TCCO, merge_queue_, size_, VertexType_> merge_queue;
+
+        TCCO(const Graph & g, const MaxCliqueParams & p) :
+            Base(g, p),
+            merge_queue(this)
+        {
+        }
 
         auto run() -> MaxCliqueResult
         {
@@ -236,6 +326,9 @@ namespace
             for (auto & t : threads)
                 t.join();
 
+            if (merge_queue.finish(global_result, order))
+                print_incumbent(params, global_result.size, std::vector<int>{ });
+
             return global_result;
         }
 
@@ -288,7 +381,7 @@ namespace
                 print_incumbent(params, local_result.size, position);
             }
 
-            // merge_queue.add(c);
+            merge_queue.add(c);
         }
 
         auto get_best_anywhere_value() -> unsigned

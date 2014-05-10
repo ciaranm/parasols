@@ -7,7 +7,7 @@
 #include <boost/graph/graph_utility.hpp>
 
 auto parasols::merge_cliques(
-        const Graph & graph, const std::set<int> & clique1, const std::set<int> & clique2) -> std::set<int>
+        const std::function<bool (int, int)> & adjacent, const std::set<int> & clique1, const std::set<int> & clique2) -> std::set<int>
 {
     /* health warning: this code is awful, and was just written to see if the
      * idea is worth doing properly. */
@@ -27,7 +27,7 @@ auto parasols::merge_cliques(
 
     for (unsigned i = 0 ; i < a.size() ; ++i)
         for (unsigned j = 0 ; j < b.size() ; ++j)
-            if (! graph.adjacent(a[i], b[j])) {
+            if (! adjacent(a[i], b[j])) {
                 boost::add_edge(i, a.size() + j, merge_graph);
             }
 
