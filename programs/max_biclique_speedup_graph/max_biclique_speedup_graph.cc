@@ -43,8 +43,8 @@ void table(
             std::vector<double> find_nodes_average((algorithms.size()));
             std::vector<double> prove_nodes_average((algorithms.size()));
             std::vector<double> speedup_average((algorithms.size()));
-            std::vector<std::vector<double> > times((samples));
-            std::vector<std::vector<double> > speedups((samples));
+            std::vector<std::vector<double> > times((algorithms.size()));
+            std::vector<std::vector<double> > speedups((algorithms.size()));
 
             for (int n = 0 ; n < samples ; ++n) {
                 Graph graph(size, false);
@@ -61,6 +61,9 @@ void table(
 
                     {
                         MaxBicliqueParams params;
+                        std::atomic<bool> abort;
+                        abort.store(false);
+                        params.abort = &abort;
                         params.n_threads = 2;
                         params.break_ab_symmetry = symmetry;
                         params.order_function = std::bind(degree_sort, _1, _2, false);
