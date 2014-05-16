@@ -20,6 +20,12 @@ namespace parasols
      */
     auto print_incumbent(const MaxBicliqueParams & params, unsigned size,
             const std::vector<int> & positions) -> void;
+
+    /**
+     * Do some generic string output for a position, if params.print_incumbents is true.
+     */
+    auto print_position(const MaxBicliqueParams & params, const std::string &,
+            const std::vector<int> & positions) -> void;
 }
 
 #endif

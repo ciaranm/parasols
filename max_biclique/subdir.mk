@@ -8,5 +8,7 @@ SOURCES := \
 	max_biclique_result.cc \
 	naive_max_biclique.cc \
 	print_incumbent.cc \
+	cpo_base.cc \
+	cpo_max_biclique.cc \
 	algorithms.cc
 

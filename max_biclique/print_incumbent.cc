@@ -38,3 +38,20 @@ auto parasols::print_incumbent(
     }
 }
 
+auto parasols::print_position(
+        const MaxBicliqueParams & params,
+        const std::string & message,
+        const std::vector<int> & positions) -> void
+{
+    if (params.print_incumbents) {
+        std::stringstream w;
+        for (auto & p : positions)
+            w << " " << p;
+
+        std::cout
+            << lock_output()
+            << "-- " << duration_cast<milliseconds>(steady_clock::now() - params.start_time).count()
+            << " " << message << " at" << w.str() << std::endl;
+    }
+}
+

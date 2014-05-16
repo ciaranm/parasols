@@ -6,6 +6,7 @@
 #include <max_biclique/naive_max_biclique.hh>
 #include <max_biclique/ccd_max_biclique.hh>
 #include <max_biclique/dccd_max_biclique.hh>
+#include <max_biclique/cpo_max_biclique.hh>
 
 #include <utility>
 
@@ -14,7 +15,8 @@ namespace parasols
     auto max_biclique_algorithms = {
         std::make_pair( std::string{ "naive" },      naive_max_biclique ),
         std::make_pair( std::string{ "ccd" },        ccd_max_biclique ),
-        std::make_pair( std::string{ "dccd" },       dccd_max_biclique )
+        std::make_pair( std::string{ "dccd" },       dccd_max_biclique ),
+        std::make_pair( std::string{ "cpo" },        cpo_max_biclique )
     };
 }
 
