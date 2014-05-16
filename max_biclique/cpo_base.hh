@@ -4,52 +4,22 @@
 #define PARASOLS_GUARD_MAX_BICLIQUE_CPO_BASE_HH 1
 
 #include <graph/bit_graph.hh>
+#include <cco/cco_mixin.hh>
 #include <max_biclique/max_biclique_params.hh>
 #include <max_biclique/max_biclique_result.hh>
 
 namespace parasols
 {
-    template <unsigned size_, typename VertexType_, typename ActualType_>
-    struct CPOBase
+    template <CCOPermutations perm_, unsigned size_, typename VertexType_, typename ActualType_>
+    struct CPOBase :
+        CCOMixin<size_, VertexType_, CPOBase<perm_, size_, VertexType_, ActualType_>, true>
     {
+        using CCOMixin<size_, VertexType_, CPOBase<perm_, size_, VertexType_, ActualType_>, true>::colour_class_order;
+
         const Graph & original_graph;
         FixedBitGraph<size_> graph;
         const MaxBicliqueParams & params;
         std::vector<int> order;
-
-        auto clique_partition(
-                const FixedBitSet<size_> & p,
-                std::array<VertexType_, size_ * bits_per_word> & p_order,
-                std::array<VertexType_, size_ * bits_per_word> & result) -> void
-        {
-            FixedBitSet<size_> p_left = p; // not cliqued yet
-            int clique = 0;                // current clique
-            int i = 0;                     // position in result
-
-            // while we've things left to clique
-            while (! p_left.empty()) {
-                // next clique
-                ++clique;
-                // things that can still be given this clique
-                FixedBitSet<size_> q = p_left;
-
-                // while we can still give something this clique
-                while (! q.empty()) {
-                    // first thing we can clique
-                    int v = q.first_set_bit();
-                    p_left.unset(v);
-                    q.unset(v);
-
-                    // can't give anything nonadjacent to this the same clique
-                    graph.intersect_with_row(v, q);
-
-                    // record in result
-                    result[i] = clique;
-                    p_order[i] = v;
-                    ++i;
-                }
-            }
-        }
 
         CPOBase(const Graph & g, const MaxBicliqueParams & p) :
             original_graph(g),
@@ -124,7 +94,7 @@ namespace parasols
                         position.push_back(0);
                         std::array<VertexType_, size_ * bits_per_word> new_pb_order;
                         std::array<VertexType_, size_ * bits_per_word> new_pb_bound;
-                        clique_partition(new_pb, new_pb_order, new_pb_bound);
+                        colour_class_order(SelectColourClassOrderOverload<perm_>(), new_pb, new_pb_order, new_pb_bound);
                         keep_going = static_cast<ActualType_ *>(this)->recurse(
                                 cb, ca, new_pb, new_pa, new_pb_order, new_pb_bound, position, std::forward<MoreArgs_>(more_args_)...) && keep_going;
                         position.pop_back();

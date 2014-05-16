@@ -16,7 +16,9 @@ namespace parasols
         std::make_pair( std::string{ "naive" },      naive_max_biclique ),
         std::make_pair( std::string{ "ccd" },        ccd_max_biclique ),
         std::make_pair( std::string{ "dccd" },       dccd_max_biclique ),
-        std::make_pair( std::string{ "cpo" },        cpo_max_biclique )
+        std::make_pair( std::string{ "cpon" },       cpo_max_biclique<CCOPermutations::None> ),
+        std::make_pair( std::string{ "cpod" },       cpo_max_biclique<CCOPermutations::Defer1> ),
+        std::make_pair( std::string{ "cpos" },       cpo_max_biclique<CCOPermutations::Sort> )
     };
 }
 

@@ -16,9 +16,9 @@ namespace parasols
 
     template <CCOPermutations perm_, unsigned size_, typename VertexType_, typename ActualType_>
     struct LCCOBase :
-        CCOMixin<size_, VertexType_, LCCOBase<perm_, size_, VertexType_, ActualType_> >
+        CCOMixin<size_, VertexType_, LCCOBase<perm_, size_, VertexType_, ActualType_>, false>
     {
-        using CCOMixin<size_, VertexType_, LCCOBase<perm_, size_, VertexType_, ActualType_> >::colour_class_order;
+        using CCOMixin<size_, VertexType_, LCCOBase<perm_, size_, VertexType_, ActualType_>, false>::colour_class_order;
 
         FixedBitGraph<size_> graph;
         const MaxLabelledCliqueParams & params;

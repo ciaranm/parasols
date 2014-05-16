@@ -23,7 +23,7 @@ namespace parasols
     {
     };
 
-    template <unsigned size_, typename VertexType_, typename ActualType_>
+    template <unsigned size_, typename VertexType_, typename ActualType_, bool inverse_>
     struct CCOMixin
     {
         auto colour_class_order(
@@ -58,7 +58,10 @@ namespace parasols
                     q.unset(v);
 
                     // can't give anything adjacent to this the same colour
-                    static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
+                    if (inverse_)
+                        static_cast<ActualType_ *>(this)->graph.intersect_with_row(v, q);
+                    else
+                        static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
 
                     // record in result
                     p_bounds[i] = colour;
@@ -112,7 +115,10 @@ namespace parasols
                     q.unset(v);
 
                     // can't give anything adjacent to this the same colour
-                    static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
+                    if (inverse_)
+                        static_cast<ActualType_ *>(this)->graph.intersect_with_row(v, q);
+                    else
+                        static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
 
                     // record in result
                     p_bounds[i] = colour;
@@ -179,7 +185,10 @@ namespace parasols
                     q.unset(v);
 
                     // can't give anything adjacent to this the same colour
-                    static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
+                    if (inverse_)
+                        static_cast<ActualType_ *>(this)->graph.intersect_with_row(v, q);
+                    else
+                        static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
 
                     // record in p_bounds
                     colour_classes.back().push_back(v);

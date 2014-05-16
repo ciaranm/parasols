@@ -159,9 +159,9 @@ namespace parasols
 
     template <CCOPermutations perm_, CCOInference inference_, unsigned size_, typename VertexType_, typename ActualType_>
     struct CCOBase :
-        CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_> >
+        CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_>, false>
     {
-        using CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_> >::colour_class_order;
+        using CCOMixin<size_, VertexType_, CCOBase<perm_, inference_, size_, VertexType_, ActualType_>, false>::colour_class_order;
 
         const Graph & original_graph;
         FixedBitGraph<size_> graph;

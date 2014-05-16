@@ -14,10 +14,10 @@ using namespace parasols;
 
 namespace
 {
-    template <unsigned size_, typename VertexType_>
-    struct CPO : CPOBase<size_, VertexType_, CPO<size_, VertexType_> >
+    template <CCOPermutations perm_, unsigned size_, typename VertexType_>
+    struct CPO : CPOBase<perm_, size_, VertexType_, CPO<perm_, size_, VertexType_> >
     {
-        using Base = CPOBase<size_, VertexType_, CPO<size_, VertexType_> >;
+        using Base = CPOBase<perm_, size_, VertexType_, CPO<perm_, size_, VertexType_> >;
 
         using Base::CPOBase;
 
@@ -25,7 +25,7 @@ namespace
         using Base::params;
         using Base::expand;
         using Base::order;
-        using Base::clique_partition;
+        using Base::colour_class_order;
 
         MaxBicliqueResult result;
 
@@ -52,7 +52,7 @@ namespace
             // initial colouring
             std::array<VertexType_, size_ * bits_per_word> initial_p_order;
             std::array<VertexType_, size_ * bits_per_word> initial_bound;
-            clique_partition(pa, initial_p_order, initial_bound);
+            colour_class_order(SelectColourClassOrderOverload<perm_>(), pa, initial_p_order, initial_bound);
 
             // go!
             expand(ca, cb, pa, pb, initial_p_order, initial_bound, positions);
@@ -111,8 +111,13 @@ namespace
     };
 }
 
+template <CCOPermutations perm_>
 auto parasols::cpo_max_biclique(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
 {
-    return select_graph_size<CPO, MaxBicliqueResult>(AllGraphSizes(), graph, params);
+    return select_graph_size<ApplyPerm<CPO, perm_>::template Type, MaxBicliqueResult>(AllGraphSizes(), graph, params);
 }
+
+template auto parasols::cpo_max_biclique<CCOPermutations::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::Defer1>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::Sort>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 
