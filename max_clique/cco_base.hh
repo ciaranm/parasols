@@ -19,6 +19,20 @@ namespace parasols
         LazyGlobalDomination      // remove from p, lazy
     };
 
+    enum class CCOMerge
+    {
+        None,
+        Previous,
+        All
+    };
+
+    template <template <CCOPermutations, CCOInference, CCOMerge, unsigned, typename VertexType_> class WhichCCO_,
+             CCOPermutations perm_, CCOInference inference_, CCOMerge merge_>
+    struct ApplyPermInferenceMerge
+    {
+        template <unsigned size_, typename VertexType_> using Type = WhichCCO_<perm_, inference_, merge_, size_, VertexType_>;
+    };
+
     template <template <CCOPermutations, CCOInference, unsigned, typename VertexType_> class WhichCCO_,
              CCOPermutations perm_, CCOInference inference_>
     struct ApplyPermInference

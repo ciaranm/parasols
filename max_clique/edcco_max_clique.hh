@@ -1,7 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#ifndef PARASOLS_GUARD_MAX_CLIQUE_CCO_MAX_CLIQUE_HH
-#define PARASOLS_GUARD_MAX_CLIQUE_CCO_MAX_CLIQUE_HH 1
+#ifndef PARASOLS_GUARD_MAX_CLIQUE_EDCCO_MAX_CLIQUE_HH
+#define PARASOLS_GUARD_MAX_CLIQUE_EDCCO_MAX_CLIQUE_HH 1
 
 #include <graph/graph.hh>
 #include <cco/cco.hh>
@@ -12,10 +12,10 @@
 namespace parasols
 {
     /**
-     * Super duper max clique algorithm.
+     * Super duper max clique algorithm, with early discrepancies.
      */
     template <CCOPermutations, CCOInference, CCOMerge>
-    auto cco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
+    auto edcco_max_clique(const Graph & graph, const MaxCliqueParams & params) -> MaxCliqueResult;
 }
 
 #endif
