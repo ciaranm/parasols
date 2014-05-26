@@ -389,12 +389,13 @@ namespace
             return best_anywhere.get();
         }
 
-        auto get_skip(
+        auto get_skip_and_stop(
                 unsigned c_popcount,
                 MaxCliqueResult &,
                 Subproblem * const subproblem,
                 StealPoints * const,
                 int & skip,
+                int &,
                 bool & keep_going
                 ) -> void
         {

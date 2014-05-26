@@ -272,7 +272,7 @@ namespace
             return result.size;
         }
 
-        auto get_skip(unsigned c_popcount, std::vector<int> & subproblem, int & skip, bool & keep_going) -> void
+        auto get_skip_and_stop(unsigned c_popcount, std::vector<int> & subproblem, int & skip, int &, bool & keep_going) -> void
         {
             if (c_popcount < subproblem.size()) {
                 skip = subproblem.at(c_popcount);

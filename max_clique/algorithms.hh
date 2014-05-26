@@ -63,7 +63,19 @@ namespace parasols
 
         std::make_pair( std::string{ "edcconma" },  edcco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
         std::make_pair( std::string{ "edccodma" },  edcco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "edccosma" },  edcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>)
+        std::make_pair( std::string{ "edccosma" },  edcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>),
+
+        std::make_pair( std::string{ "id1cconma" }, id1cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "id1ccodma" }, id1cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
+
+        std::make_pair( std::string{ "id2cconma" }, id2cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "id2ccodma" }, id2cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
+
+        std::make_pair( std::string{ "id3cconma" }, id3cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "id3ccodma" }, id3cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
+
+        std::make_pair( std::string{ "id4cconma" }, id4cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "id4ccodma" }, id4cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
     };
 }
 

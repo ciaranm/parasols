@@ -216,9 +216,9 @@ namespace parasols
         {
             static_cast<ActualType_ *>(this)->increment_nodes(std::forward<MoreArgs_>(more_args_)...);
 
-            int skip = 0;
+            int skip = 0, stop = std::numeric_limits<int>::max();
             bool keep_going = true;
-            static_cast<ActualType_ *>(this)->get_skip(c.size(), std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
+            static_cast<ActualType_ *>(this)->get_skip_and_stop(c.size(), std::forward<MoreArgs_>(more_args_)..., skip, stop, keep_going);
 
             int previous_v = -1;
 
@@ -267,6 +267,8 @@ namespace parasols
                     c.pop_back();
                     p.unset(v);
                     inferer.propagate_no_immediate(v, p);
+
+                    keep_going = keep_going && (--stop > 0);
 
                     if (! keep_going)
                         break;

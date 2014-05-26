@@ -154,7 +154,7 @@ namespace
             return result.size;
         }
 
-        auto get_skip(unsigned, int &, bool &) -> void
+        auto get_skip_and_stop(unsigned, int &, int &, bool &) -> void
         {
         }
     };
