@@ -54,6 +54,8 @@ namespace
             colour_class_order(SelectColourClassOrderOverload<perm_>(), p, initial_p_order, initial_colours);
             result.initial_colour_bound = initial_colours[graph.size() - 1];
 
+            print_position(params, "initial colouring used " + std::to_string(result.initial_colour_bound), std::vector<int>{ });
+
             // go!
             expand(c, p, initial_p_order, initial_colours, positions);
 
