@@ -9,6 +9,7 @@
 #include <cco/cco_mixin.hh>
 
 #include <max_clique/max_clique_params.hh>
+#include <max_clique/print_incumbent.hh>
 
 namespace parasols
 {
@@ -46,7 +47,7 @@ namespace parasols
     template <unsigned size_, typename VertexType_>
     struct CCOInferer<CCOInference::None, size_, VertexType_>
     {
-        void preprocess(FixedBitGraph<size_> &)
+        void preprocess(const MaxCliqueParams &, FixedBitGraph<size_> &)
         {
         }
 
@@ -73,8 +74,10 @@ namespace parasols
     {
         std::vector<FixedBitSet<size_> > unsets;
 
-        void preprocess(FixedBitGraph<size_> & graph)
+        void preprocess(const MaxCliqueParams & params, FixedBitGraph<size_> & graph)
         {
+            unsigned count = 0;
+
             unsets.resize(graph.size());
             for (int i = 0 ; i < graph.size() ; ++i)
                 unsets[i].resize(graph.size());
@@ -90,10 +93,14 @@ namespace parasols
                     FixedBitSet<size_> nij = ni;
                     nij.intersect_with_complement(nj);
                     nij.unset(j);
-                    if (nij.empty())
+                    if (nij.empty()) {
+                        ++count;
                         unsets[j].set(i);
+                    }
                 }
             }
+
+            print_position(params, "found " + std::to_string(count) + " dominations", std::vector<int>{ });
         }
 
         void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
@@ -122,7 +129,7 @@ namespace parasols
         const FixedBitGraph<size_> * graph;
         std::vector<std::pair<bool, FixedBitSet<size_> > > unsets;
 
-        void preprocess(FixedBitGraph<size_> & g)
+        void preprocess(const MaxCliqueParams &, FixedBitGraph<size_> & g)
         {
             graph = &g;
             unsets.resize(g.size());
@@ -201,7 +208,7 @@ namespace parasols
                     if (g.adjacent(order[i], order[j]))
                         graph.add_edge(i, j);
 
-            inferer.preprocess(graph);
+            inferer.preprocess(params, graph);
         }
 
         template <typename... MoreArgs_>
