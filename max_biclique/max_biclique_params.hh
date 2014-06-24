@@ -45,7 +45,8 @@ namespace parasols
     enum class BicliqueSymmetryRemoval
     {
         None,
-        Remove
+        Remove,
+        Skip
     };
 }
 

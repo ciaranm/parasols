@@ -45,6 +45,9 @@ namespace
             pb.resize(graph.size());
             pb.set_all();
 
+            FixedBitSet<size_> sym_skip;
+            sym_skip.resize(graph.size());
+
             std::vector<int> positions;
             positions.reserve(graph.size());
             positions.push_back(0);
@@ -55,7 +58,7 @@ namespace
             colour_class_order(SelectColourClassOrderOverload<perm_>(), pa, initial_p_order, initial_bound);
 
             // go!
-            expand(ca, cb, pa, pb, initial_p_order, initial_bound, positions);
+            expand(ca, cb, pa, pb, sym_skip, initial_p_order, initial_bound, positions);
 
             return result;
         }
@@ -70,12 +73,13 @@ namespace
                 std::vector<unsigned> & cb,
                 FixedBitSet<size_> & pa,
                 FixedBitSet<size_> & pb,
+                FixedBitSet<size_> & sym_skip,
                 const std::array<VertexType_, size_ * bits_per_word> & pa_order,
                 const std::array<VertexType_, size_ * bits_per_word> & pa_bounds,
                 std::vector<int> & position
                 ) -> bool
         {
-            expand(ca, cb, pa, pb, pa_order, pa_bounds, position);
+            expand(ca, cb, pa, pb, sym_skip, pa_order, pa_bounds, position);
             return true;
         }
 
@@ -124,4 +128,6 @@ template auto parasols::cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetry
 template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 template auto parasols::cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 template auto parasols::cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+
+template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Skip>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 

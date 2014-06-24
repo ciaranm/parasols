@@ -24,6 +24,7 @@ namespace parasols
 
         std::make_pair( std::string{ "cponn" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::None> ),
         std::make_pair( std::string{ "cponr" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove> ),
+        std::make_pair( std::string{ "cpons" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Skip> ),
         std::make_pair( std::string{ "cpodn" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::None> ),
         std::make_pair( std::string{ "cpodr" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove> ),
         std::make_pair( std::string{ "cposn" },       cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::None> ),

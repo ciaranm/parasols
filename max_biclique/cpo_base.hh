@@ -45,6 +45,7 @@ namespace parasols
                 std::vector<unsigned> & cb,
                 FixedBitSet<size_> & pa,
                 FixedBitSet<size_> & pb,
+                FixedBitSet<size_> & sym_skip,
                 const std::array<VertexType_, size_ * bits_per_word> & pa_order,
                 const std::array<VertexType_, size_ * bits_per_word> & pa_bound,
                 std::vector<int> & position,
@@ -77,6 +78,9 @@ namespace parasols
                     --skip;
                     pa.unset(v);
                 }
+                else if (ca.empty() && sym_skip.test(v)) {
+                    pa.unset(v);
+                }
                 else {
                     // consider taking v
                     ca.push_back(v);
@@ -96,7 +100,7 @@ namespace parasols
                         std::array<VertexType_, size_ * bits_per_word> new_pb_bound;
                         colour_class_order(SelectColourClassOrderOverload<perm_>(), new_pb, new_pb_order, new_pb_bound);
                         keep_going = static_cast<ActualType_ *>(this)->recurse(
-                                cb, ca, new_pb, new_pa, new_pb_order, new_pb_bound, position, std::forward<MoreArgs_>(more_args_)...) && keep_going;
+                                cb, ca, new_pb, new_pa, sym_skip, new_pb_order, new_pb_bound, position, std::forward<MoreArgs_>(more_args_)...) && keep_going;
                         position.pop_back();
                     }
 
@@ -108,6 +112,11 @@ namespace parasols
 
                     switch (sym_) {
                         case BicliqueSymmetryRemoval::None:
+                            break;
+
+                        case BicliqueSymmetryRemoval::Skip:
+                            if (cb.empty())
+                                sym_skip.set(v);
                             break;
 
                         case BicliqueSymmetryRemoval::Remove:
