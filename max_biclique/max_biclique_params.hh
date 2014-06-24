@@ -20,9 +20,6 @@ namespace parasols
 
     struct MaxBicliqueParams
     {
-        /// If true, break a/b symmetry.
-        bool break_ab_symmetry = true;
-
         /// Override the initial size of the incumbent.
         unsigned initial_bound = 0;
 
@@ -43,6 +40,12 @@ namespace parasols
 
         /// Initial vertex ordering.
         MaxBicliqueOrderFunction order_function;
+    };
+
+    enum class BicliqueSymmetryRemoval
+    {
+        None,
+        Remove
     };
 }
 

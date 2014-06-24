@@ -9,6 +9,7 @@
 
 namespace parasols
 {
+    template <BicliqueSymmetryRemoval sym_>
     auto dccd_max_biclique(const Graph & graph, const MaxBicliqueParams &) -> MaxBicliqueResult;
 }
 

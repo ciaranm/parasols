@@ -10,11 +10,11 @@
 
 namespace parasols
 {
-    template <CCOPermutations perm_, unsigned size_, typename VertexType_, typename ActualType_>
+    template <CCOPermutations perm_, BicliqueSymmetryRemoval sym_, unsigned size_, typename VertexType_, typename ActualType_>
     struct CPOBase :
-        CCOMixin<size_, VertexType_, CPOBase<perm_, size_, VertexType_, ActualType_>, true>
+        CCOMixin<size_, VertexType_, CPOBase<perm_, sym_, size_, VertexType_, ActualType_>, true>
     {
-        using CCOMixin<size_, VertexType_, CPOBase<perm_, size_, VertexType_, ActualType_>, true>::colour_class_order;
+        using CCOMixin<size_, VertexType_, CPOBase<perm_, sym_, size_, VertexType_, ActualType_>, true>::colour_class_order;
 
         const Graph & original_graph;
         FixedBitGraph<size_> graph;
@@ -106,13 +106,25 @@ namespace parasols
                     if (! keep_going)
                         break;
 
-                    if (params.break_ab_symmetry) {
-                        if (cb.empty())
-                            pb.unset(v);
+                    switch (sym_) {
+                        case BicliqueSymmetryRemoval::None:
+                            break;
+
+                        case BicliqueSymmetryRemoval::Remove:
+                            if (cb.empty())
+                                pb.unset(v);
+                            break;
                     }
                 }
             }
         }
+    };
+
+    template <template <CCOPermutations, BicliqueSymmetryRemoval, unsigned, typename VertexType_> class WhichCCO_,
+             CCOPermutations perm_, BicliqueSymmetryRemoval sym_>
+    struct ApplyPermSym
+    {
+        template <unsigned size_, typename VertexType_> using Type = WhichCCO_<perm_, sym_, size_, VertexType_>;
     };
 }
 

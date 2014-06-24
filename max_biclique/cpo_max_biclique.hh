@@ -11,7 +11,7 @@
 
 namespace parasols
 {
-    template <CCOPermutations>
+    template <CCOPermutations, BicliqueSymmetryRemoval>
     auto cpo_max_biclique(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult;
 }
 

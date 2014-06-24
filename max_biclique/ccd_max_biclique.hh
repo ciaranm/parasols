@@ -4,6 +4,7 @@
 #define PARASOLS_GUARD_MAX_BICLIQUE_CCD_MAX_BICLIQUE_HH 1
 
 #include <graph/graph.hh>
+#include <cco/cco.hh>
 #include <max_biclique/max_biclique_params.hh>
 #include <max_biclique/max_biclique_result.hh>
 
@@ -12,6 +13,7 @@ namespace parasols
     /**
      * Less stupid max biclique algorithm, with independent sets detection.
      */
+    template <BicliqueSymmetryRemoval sym_>
     auto ccd_max_biclique(const Graph & graph, const MaxBicliqueParams &) -> MaxBicliqueResult;
 }
 

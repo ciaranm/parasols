@@ -34,7 +34,6 @@ auto main(int argc, char * argv[]) -> int
             ("initial-bound",      po::value<int>(),  "Specify an initial bound")
             ("print-incumbents",                      "Print new incumbents as they are found")
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
-            ("break-ab-symmetry",  po::value<bool>(), "Break a/b symmetry (on by default)")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
             ("format",             po::value<std::string>(), "Specify the format of the input")
             ;
@@ -125,9 +124,6 @@ auto main(int argc, char * argv[]) -> int
 
         if (options_vars.count("print-incumbents"))
             params.print_incumbents = true;
-
-        if (options_vars.count("break-ab-symmetry"))
-            params.break_ab_symmetry = options_vars["break-ab-symmetry"].as<bool>();
 
         /* Turn a format name into a runnable function. */
         auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();

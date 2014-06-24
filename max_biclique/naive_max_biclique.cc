@@ -11,7 +11,7 @@ using namespace parasols;
 
 namespace
 {
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const MaxBicliqueParams & params,
@@ -75,7 +75,7 @@ namespace
 
             if (! new_pb.empty()) {
                 /* swap a and b */
-                expand(graph, params, result, o, cb, ca, new_pb, new_pa);
+                expand<sym_, size_>(graph, params, result, o, cb, ca, new_pb, new_pa);
             }
 
             // now consider not taking v
@@ -83,16 +83,21 @@ namespace
             --ca_popcount;
 
             // if cb is empty, do not take cb = { v }
-            if (params.break_ab_symmetry) {
-                if (cb.empty()) {
-                    pb.unset(v);
-                    pb_popcount = pb.popcount();
-                }
+            switch (sym_) {
+                case BicliqueSymmetryRemoval::None:
+                    break;
+
+                case BicliqueSymmetryRemoval::Remove:
+                    if (cb.empty()) {
+                        pb.unset(v);
+                        pb_popcount = pb.popcount();
+                    }
+                    break;
             }
         }
     }
 
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto naive(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
     {
         MaxBicliqueResult result;
@@ -122,40 +127,44 @@ namespace
                     bit_graph.add_edge(i, j);
 
         // go!
-        expand(bit_graph, params, result, o, ca, cb, pa, pb);
+        expand<sym_, size_>(bit_graph, params, result, o, ca, cb, pa, pb);
 
         return result;
     }
 }
 
+template <BicliqueSymmetryRemoval sym_>
 auto parasols::naive_max_biclique(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return naive<1>(graph, params);
+        return naive<sym_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return naive<2>(graph, params);
+        return naive<sym_, 2>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return naive<4>(graph, params);
+        return naive<sym_, 4>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return naive<8>(graph, params);
+        return naive<sym_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return naive<16>(graph, params);
+        return naive<sym_, 16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return naive<32>(graph, params);
+        return naive<sym_, 32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return naive<64>(graph, params);
+        return naive<sym_, 64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return naive<128>(graph, params);
+        return naive<sym_, 128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return naive<256>(graph, params);
+        return naive<sym_, 256>(graph, params);
     else if (graph.size() < 512 * bits_per_word)
-        return naive<512>(graph, params);
+        return naive<sym_, 512>(graph, params);
     else if (graph.size() < 1024 * bits_per_word)
-        return naive<1024>(graph, params);
+        return naive<sym_, 1024>(graph, params);
     else
         throw GraphTooBig();
 }
+
+template auto parasols::naive_max_biclique<BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::naive_max_biclique<BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 

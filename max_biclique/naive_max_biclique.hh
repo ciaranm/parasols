@@ -12,6 +12,7 @@ namespace parasols
     /**
      * Very stupid max biclique algorithm.
      */
+    template <BicliqueSymmetryRemoval sym_>
     auto naive_max_biclique(const Graph & graph, const MaxBicliqueParams &) -> MaxBicliqueResult;
 }
 

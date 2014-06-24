@@ -60,7 +60,7 @@ namespace
         }
     }
 
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto naive_expand(
             const FixedBitGraph<size_> & graph,
             const MaxBicliqueParams & params,
@@ -141,16 +141,21 @@ namespace
             --ca_popcount;
 
             // if cb is empty, do not take cb = { v }
-            if (params.break_ab_symmetry) {
-                if (cb.empty()) {
-                    pb.unset(v);
-                    pb_popcount = pb.popcount();
-                }
+            switch (sym_) {
+                case BicliqueSymmetryRemoval::None:
+                    break;
+
+                case BicliqueSymmetryRemoval::Remove:
+                    if (cb.empty()) {
+                        pb.unset(v);
+                        pb_popcount = pb.popcount();
+                    }
+                    break;
             }
         }
     }
 
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const MaxBicliqueParams & params,
@@ -231,7 +236,7 @@ namespace
                     //if (new_pa_is_independent && pb_is_independent)
                     //    naive_expand(graph, params, maybe_queue, blocking_enqueue, result, best_anywhere, o, cb, ca, new_pb, new_pa, position);
                     //else
-                        expand(graph, params, maybe_queue, blocking_enqueue,
+                        expand<sym_, size_>(graph, params, maybe_queue, blocking_enqueue,
                                 result, best_anywhere, o, cb, ca, new_pb, new_pa, pb_is_independent, new_pa_is_independent, position);
                     position.pop_back();
                 }
@@ -242,16 +247,21 @@ namespace
             --ca_popcount;
 
             // if cb is empty, do not take cb = { v }
-            if (params.break_ab_symmetry) {
-                if (cb.empty()) {
-                    pb.unset(v);
-                    pb_popcount = pb.popcount();
-                }
+            switch (sym_) {
+                case BicliqueSymmetryRemoval::None:
+                    break;
+
+                case BicliqueSymmetryRemoval::Remove:
+                    if (cb.empty()) {
+                        pb.unset(v);
+                        pb_popcount = pb.popcount();
+                    }
+                    break;
             }
         }
     }
 
-    template <unsigned size_>
+    template <unsigned size_, BicliqueSymmetryRemoval sym_>
     auto max_biclique(
             const FixedBitGraph<size_> & graph,
             const std::vector<int> & o,
@@ -286,7 +296,7 @@ namespace
                     position.push_back(0);
 
                     // populate!
-                    expand<size_>(graph, params, &queue, true, result, best_anywhere, o, tca, tcb, tpa, tpb, false, false, position);
+                    expand<sym_, size_>(graph, params, &queue, true, result, best_anywhere, o, tca, tcb, tpa, tpb, false, false, position);
 
                     // merge results
                     queue.initial_producer_done();
@@ -308,7 +318,7 @@ namespace
                                 break;
 
                             // do some work
-                            expand<size_>(graph, params, nullptr, false, tr, best_anywhere, o,
+                            expand<sym_, size_>(graph, params, nullptr, false, tr, best_anywhere, o,
                                 args.ca, args.cb, args.pa, args.pb, false, false, args.position);
                         }
 
@@ -330,7 +340,7 @@ namespace
         return result;
     }
 
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto dccd(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
     {
         MaxBicliqueResult result;
@@ -349,38 +359,42 @@ namespace
                 if (graph.adjacent(o[i], o[j]))
                     bit_graph.add_edge(i, j);
 
-        return max_biclique(bit_graph, o, params);
+        return max_biclique<size_, sym_>(bit_graph, o, params);
     }
 }
 
+template <BicliqueSymmetryRemoval sym_>
 auto parasols::dccd_max_biclique(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return dccd<1>(graph, params);
+        return dccd<sym_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return dccd<2>(graph, params);
+        return dccd<sym_, 2>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return dccd<4>(graph, params);
+        return dccd<sym_, 4>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return dccd<8>(graph, params);
+        return dccd<sym_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return dccd<16>(graph, params);
+        return dccd<sym_, 16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return dccd<32>(graph, params);
+        return dccd<sym_, 32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return dccd<64>(graph, params);
+        return dccd<sym_, 64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return dccd<128>(graph, params);
+        return dccd<sym_, 128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return dccd<256>(graph, params);
+        return dccd<sym_, 256>(graph, params);
     else if (graph.size() < 512 * bits_per_word)
-        return dccd<512>(graph, params);
+        return dccd<sym_, 512>(graph, params);
     else if (graph.size() < 1024 * bits_per_word)
-        return dccd<1024>(graph, params);
+        return dccd<sym_, 1024>(graph, params);
     else
         throw GraphTooBig();
 }
+
+template auto parasols::dccd_max_biclique<BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::dccd_max_biclique<BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 

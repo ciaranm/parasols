@@ -13,12 +13,21 @@
 namespace parasols
 {
     auto max_biclique_algorithms = {
-        std::make_pair( std::string{ "naive" },      naive_max_biclique ),
-        std::make_pair( std::string{ "ccd" },        ccd_max_biclique ),
-        std::make_pair( std::string{ "dccd" },       dccd_max_biclique ),
-        std::make_pair( std::string{ "cpon" },       cpo_max_biclique<CCOPermutations::None> ),
-        std::make_pair( std::string{ "cpod" },       cpo_max_biclique<CCOPermutations::Defer1> ),
-        std::make_pair( std::string{ "cpos" },       cpo_max_biclique<CCOPermutations::Sort> )
+        std::make_pair( std::string{ "naiven" },      naive_max_biclique<BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "naiver" },      naive_max_biclique<BicliqueSymmetryRemoval::Remove> ),
+
+        std::make_pair( std::string{ "ccdn" },        ccd_max_biclique<BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "ccdr" },        ccd_max_biclique<BicliqueSymmetryRemoval::Remove> ),
+
+        std::make_pair( std::string{ "dccdn" },       dccd_max_biclique<BicliqueSymmetryRemoval::None>),
+        std::make_pair( std::string{ "dccdr" },       dccd_max_biclique<BicliqueSymmetryRemoval::Remove>),
+
+        std::make_pair( std::string{ "cponn" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "cponr" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove> ),
+        std::make_pair( std::string{ "cpodn" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "cpodr" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove> ),
+        std::make_pair( std::string{ "cposn" },       cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "cposr" },       cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::Remove> )
     };
 }
 

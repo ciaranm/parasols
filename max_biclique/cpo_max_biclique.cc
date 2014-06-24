@@ -14,10 +14,10 @@ using namespace parasols;
 
 namespace
 {
-    template <CCOPermutations perm_, unsigned size_, typename VertexType_>
-    struct CPO : CPOBase<perm_, size_, VertexType_, CPO<perm_, size_, VertexType_> >
+    template <CCOPermutations perm_, BicliqueSymmetryRemoval sym_, unsigned size_, typename VertexType_>
+    struct CPO : CPOBase<perm_, sym_, size_, VertexType_, CPO<perm_, sym_, size_, VertexType_> >
     {
-        using Base = CPOBase<perm_, size_, VertexType_, CPO<perm_, size_, VertexType_> >;
+        using Base = CPOBase<perm_, sym_, size_, VertexType_, CPO<perm_, sym_, size_, VertexType_> >;
 
         using Base::CPOBase;
 
@@ -111,13 +111,17 @@ namespace
     };
 }
 
-template <CCOPermutations perm_>
+template <CCOPermutations perm_, BicliqueSymmetryRemoval sym_>
 auto parasols::cpo_max_biclique(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
 {
-    return select_graph_size<ApplyPerm<CPO, perm_>::template Type, MaxBicliqueResult>(AllGraphSizes(), graph, params);
+    return select_graph_size<ApplyPermSym<CPO, perm_, sym_>::template Type, MaxBicliqueResult>(AllGraphSizes(), graph, params);
 }
 
-template auto parasols::cpo_max_biclique<CCOPermutations::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
-template auto parasols::cpo_max_biclique<CCOPermutations::Defer1>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
-template auto parasols::cpo_max_biclique<CCOPermutations::Sort>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+
+template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 

@@ -12,7 +12,7 @@ using namespace parasols;
 
 namespace
 {
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto naive_expand(
             const FixedBitGraph<size_> & graph,
             const MaxBicliqueParams & params,
@@ -80,7 +80,7 @@ namespace
             if (! new_pb.empty()) {
                 /* swap a and b */
                 position.push_back(0);
-                naive_expand(graph, params, result, o, cb, ca, new_pb, new_pa, position);
+                naive_expand<sym_, size_>(graph, params, result, o, cb, ca, new_pb, new_pa, position);
                 position.pop_back();
             }
 
@@ -89,16 +89,21 @@ namespace
             --ca_popcount;
 
             // if cb is empty, do not take cb = { v }
-            if (params.break_ab_symmetry) {
-                if (cb.empty()) {
-                    pb.unset(v);
-                    pb_popcount = pb.popcount();
-                }
+            switch (sym_) {
+                case BicliqueSymmetryRemoval::None:
+                    break;
+
+                case BicliqueSymmetryRemoval::Remove:
+                    if (cb.empty()) {
+                        pb.unset(v);
+                        pb_popcount = pb.popcount();
+                    }
+                    break;
             }
         }
     }
 
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto expand(
             const FixedBitGraph<size_> & graph,
             const MaxBicliqueParams & params,
@@ -174,9 +179,9 @@ namespace
                 /* swap a and b */
                 position.push_back(0);
                 if (new_pa_is_independent && pb_is_independent)
-                    naive_expand(graph, params, result, o, cb, ca, new_pb, new_pa, position);
+                    naive_expand<sym_, size_>(graph, params, result, o, cb, ca, new_pb, new_pa, position);
                 else
-                    expand(graph, params, result, o, cb, ca, new_pb, new_pa, pb_is_independent, new_pa_is_independent, position);
+                    expand<sym_, size_>(graph, params, result, o, cb, ca, new_pb, new_pa, pb_is_independent, new_pa_is_independent, position);
                 position.pop_back();
             }
 
@@ -185,16 +190,21 @@ namespace
             --ca_popcount;
 
             // if cb is empty, do not take cb = { v }
-            if (params.break_ab_symmetry) {
-                if (cb.empty()) {
-                    pb.unset(v);
-                    pb_popcount = pb.popcount();
-                }
+            switch (sym_) {
+                case BicliqueSymmetryRemoval::None:
+                    break;
+
+                case BicliqueSymmetryRemoval::Remove:
+                    if (cb.empty()) {
+                        pb.unset(v);
+                        pb_popcount = pb.popcount();
+                    }
+                    break;
             }
         }
     }
 
-    template <unsigned size_>
+    template <BicliqueSymmetryRemoval sym_, unsigned size_>
     auto ccd(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
     {
         MaxBicliqueResult result;
@@ -228,40 +238,44 @@ namespace
         positions.push_back(0);
 
         // go!
-        expand(bit_graph, params, result, o, ca, cb, pa, pb, false, false, positions);
+        expand<sym_, size_>(bit_graph, params, result, o, ca, cb, pa, pb, false, false, positions);
 
         return result;
     }
 }
 
+template <BicliqueSymmetryRemoval sym_>
 auto parasols::ccd_max_biclique(const Graph & graph, const MaxBicliqueParams & params) -> MaxBicliqueResult
 {
     /* This is pretty horrible: in order to avoid dynamic allocation, select
      * the appropriate specialisation for our graph's size. */
     static_assert(max_graph_words == 1024, "Need to update here if max_graph_size is changed.");
     if (graph.size() < bits_per_word)
-        return ccd<1>(graph, params);
+        return ccd<sym_, 1>(graph, params);
     else if (graph.size() < 2 * bits_per_word)
-        return ccd<2>(graph, params);
+        return ccd<sym_, 2>(graph, params);
     else if (graph.size() < 4 * bits_per_word)
-        return ccd<4>(graph, params);
+        return ccd<sym_, 4>(graph, params);
     else if (graph.size() < 8 * bits_per_word)
-        return ccd<8>(graph, params);
+        return ccd<sym_, 8>(graph, params);
     else if (graph.size() < 16 * bits_per_word)
-        return ccd<16>(graph, params);
+        return ccd<sym_, 16>(graph, params);
     else if (graph.size() < 32 * bits_per_word)
-        return ccd<32>(graph, params);
+        return ccd<sym_, 32>(graph, params);
     else if (graph.size() < 64 * bits_per_word)
-        return ccd<64>(graph, params);
+        return ccd<sym_, 64>(graph, params);
     else if (graph.size() < 128 * bits_per_word)
-        return ccd<128>(graph, params);
+        return ccd<sym_, 128>(graph, params);
     else if (graph.size() < 256 * bits_per_word)
-        return ccd<256>(graph, params);
+        return ccd<sym_, 256>(graph, params);
     else if (graph.size() < 512 * bits_per_word)
-        return ccd<512>(graph, params);
+        return ccd<sym_, 512>(graph, params);
     else if (graph.size() < 1024 * bits_per_word)
-        return ccd<1024>(graph, params);
+        return ccd<sym_, 1024>(graph, params);
     else
         throw GraphTooBig();
 }
+
+template auto parasols::ccd_max_biclique<BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
+template auto parasols::ccd_max_biclique<BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 
