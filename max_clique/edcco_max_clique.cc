@@ -166,7 +166,7 @@ namespace
         auto get_skip_and_stop(unsigned c_size, int & skip, int & stop, bool & keep_going) -> void
         {
             if (-1 != discrepancies) {
-               if (c_size > discrepancies) {
+               if (c_size > unsigned(discrepancies)) {
                    skip = 0;
                    keep_going = false;
                }
