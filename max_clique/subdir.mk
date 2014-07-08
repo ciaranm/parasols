@@ -4,6 +4,7 @@ SOURCES := \
 	bmcsa_max_clique.cc \
 	cco_base.cc \
 	cco_max_clique.cc \
+	cco_inference.cc \
 	edcco_max_clique.cc \
 	tcco_max_clique.cc \
 	colourise.cc \
