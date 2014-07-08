@@ -9,10 +9,6 @@
 #include <list>
 #include <vector>
 
-#ifdef DISTRIBUTION_INSTRUMENTATION
-#  include <iostream>
-#endif
-
 namespace parasols
 {
     /**
@@ -36,10 +32,6 @@ namespace parasols
             VertexType_ colour = 0;        // current colour
             VertexType_ i = 0;             // position in p_bounds
 
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            std::vector<std::pair<double, double> > colour_class_sizes;
-#endif
-
             // while we've things left to colour
             while (! p_left.empty()) {
                 // next colour
@@ -48,9 +40,6 @@ namespace parasols
                 FixedBitSet<size_> q = p_left;
 
                 // while we can still give something this colour
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                unsigned number_with_this_colour = 0;
-#endif
                 while (! q.empty()) {
                     // first thing we can colour
                     int v = q.first_set_bit();
@@ -67,19 +56,8 @@ namespace parasols
                     p_bounds[i] = colour;
                     p_order[i] = v;
                     ++i;
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                    ++number_with_this_colour;
-#endif
                 }
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, number_with_this_colour));
-#endif
             }
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            distribution_counter.add(colour_class_sizes);
-#endif
         }
 
         auto colour_class_order(
@@ -94,10 +72,6 @@ namespace parasols
 
             VertexType_ d = 0;             // number deferred
             std::array<VertexType_, size_ * bits_per_word> defer;
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            std::vector<std::pair<double, double> > colour_class_sizes;
-#endif
 
             // while we've things left to colour
             while (! p_left.empty()) {
@@ -132,11 +106,6 @@ namespace parasols
                     --colour;
                     defer[d++] = p_order[i];
                 }
-                else {
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                    colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, number_with_this_colour));
-#endif
-                }
             }
 
             for (VertexType_ n = 0 ; n < d ; ++n) {
@@ -144,15 +113,7 @@ namespace parasols
                 p_order[i] = defer[n];
                 p_bounds[i] = colour;
                 i++;
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, 1));
-#endif
             }
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            distribution_counter.add(colour_class_sizes);
-#endif
         }
 
         auto colour_class_order(
@@ -200,10 +161,6 @@ namespace parasols
                     return a.size() > b.size();
                     });
 
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            std::vector<std::pair<double, double> > colour_class_sizes;
-#endif
-
             for (auto & colour_class : colour_classes) {
                 ++colour;
                 for (auto & v : colour_class) {
@@ -211,14 +168,7 @@ namespace parasols
                     p_order[i] = v;
                     ++i;
                 }
-#ifdef DISTRIBUTION_INSTRUMENTATION
-                colour_class_sizes.push_back(std::make_pair(colour_class_sizes.size() + 1, colour_class.size()));
-#endif
             }
-
-#ifdef DISTRIBUTION_INSTRUMENTATION
-            distribution_counter.add(colour_class_sizes);
-#endif
         }
     };
 
