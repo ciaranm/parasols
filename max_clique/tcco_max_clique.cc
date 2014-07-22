@@ -416,9 +416,7 @@ auto parasols::tcco_max_clique(const Graph & graph, const MaxCliqueParams & para
 
 template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::None, false>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, false>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None, false>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::tcco_max_clique<CCOPermutations::None, CCOInference::None, true>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, true>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::tcco_max_clique<CCOPermutations::Sort, CCOInference::None, true>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 

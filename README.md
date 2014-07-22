@@ -50,10 +50,8 @@ where filename.clq is in the DIMACS format, algorithm is one of:
     naive:       Very dumb.
     ccon:        Bitset encoded version of Prosser's MCSa variant
     ccod:        Like ccon, with size 1 colour classes deferred
-    ccos:        Like ccon, with sorted colour classes (slow)
     tccon:       Like ccon, threaded
     tccod:       Like ccod, threaded (probably the best choice)
-    tccos:       Like ccos, threaded
     bmcsa:       Older bitset encoded version of Prosser's MCSa variant
     tbmcsa:      Older threaded bmcsa
     dbmcsa:      Another older threaded bmcsa
@@ -105,9 +103,9 @@ run, do:
 
     solve_max_labelled_clique algorithm order labels budget seed filename.clq
 
-where order is as above, algorithm is one of lccon, lccod, lccos, tlccon,
-tlccod, tlccos, with meanings as for clique, labels is the number of labels to
-use, budget is the budget, and seed is a seed for the random label allocation.
+where order is as above, algorithm is one of lccon, lccod, tlccon, tlccod, with
+meanings as for clique, labels is the number of labels to use, budget is the
+budget, and seed is a seed for the random label allocation.
 
 solve_max_common_subgraph
 -------------------------

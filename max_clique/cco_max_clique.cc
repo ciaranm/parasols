@@ -171,16 +171,12 @@ auto parasols::cco_max_clique(const Graph & graph, const MaxCliqueParams & param
 
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
-template auto parasols::cco_max_clique<CCOPermutations::Sort, CCOInference::LazyGlobalDomination, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;

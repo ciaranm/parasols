@@ -115,61 +115,6 @@ namespace parasols
                 i++;
             }
         }
-
-        auto colour_class_order(
-                const SelectColourClassOrderOverload<CCOPermutations::Sort> &,
-                const FixedBitSet<size_> & p,
-                std::array<VertexType_, size_ * bits_per_word> & p_order,
-                std::array<VertexType_, size_ * bits_per_word> & p_bounds) -> void
-        {
-            FixedBitSet<size_> p_left = p; // not coloured yet
-            VertexType_ colour = 0;        // current colour
-            VertexType_ i = 0;             // position in p_bounds
-
-            // this is sloooooow. is it worth making it fast, or is d nearly as
-            // good anyway?
-            std::list<std::vector<VertexType_> > colour_classes;
-
-            // while we've things left to colour
-            while (! p_left.empty()) {
-                // next colour
-                colour_classes.emplace_back();
-
-                // things that can still be given this colour
-                FixedBitSet<size_> q = p_left;
-
-                // while we can still give something this colour
-                while (! q.empty()) {
-                    // first thing we can colour
-                    int v = q.first_set_bit();
-                    p_left.unset(v);
-                    q.unset(v);
-
-                    // can't give anything adjacent to this the same colour
-                    if (inverse_)
-                        static_cast<ActualType_ *>(this)->graph.intersect_with_row(v, q);
-                    else
-                        static_cast<ActualType_ *>(this)->graph.intersect_with_row_complement(v, q);
-
-                    // record in p_bounds
-                    colour_classes.back().push_back(v);
-                }
-            }
-
-            // this is stable
-            colour_classes.sort([] (const std::vector<VertexType_> & a, const std::vector<VertexType_> & b) -> bool {
-                    return a.size() > b.size();
-                    });
-
-            for (auto & colour_class : colour_classes) {
-                ++colour;
-                for (auto & v : colour_class) {
-                    p_bounds[i] = colour;
-                    p_order[i] = v;
-                    ++i;
-                }
-            }
-        }
     };
 
     template <template <CCOPermutations, unsigned, typename VertexType_> class WhichCCO_, CCOPermutations perm_>

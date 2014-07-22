@@ -337,5 +337,4 @@ auto parasols::tlcco_max_labelled_clique(const Graph & graph, const MaxLabelledC
 
 template auto parasols::tlcco_max_labelled_clique<CCOPermutations::None>(const Graph &, const MaxLabelledCliqueParams &) -> MaxLabelledCliqueResult;
 template auto parasols::tlcco_max_labelled_clique<CCOPermutations::Defer1>(const Graph &, const MaxLabelledCliqueParams &) -> MaxLabelledCliqueResult;
-template auto parasols::tlcco_max_labelled_clique<CCOPermutations::Sort>(const Graph &, const MaxLabelledCliqueParams &) -> MaxLabelledCliqueResult;
 

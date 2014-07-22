@@ -11,8 +11,7 @@ namespace parasols
     enum class CCOPermutations
     {
         None,
-        Defer1,
-        Sort
+        Defer1
     };
 }
 

@@ -123,11 +123,9 @@ auto parasols::cpo_max_biclique(const Graph & graph, const MaxBicliqueParams & p
 
 template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 template auto parasols::cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
-template auto parasols::cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::None>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 
 template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 template auto parasols::cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
-template auto parasols::cpo_max_biclique<CCOPermutations::Sort, BicliqueSymmetryRemoval::Remove>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 
 template auto parasols::cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Skip>(const Graph &, const MaxBicliqueParams &) -> MaxBicliqueResult;
 
