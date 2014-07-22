@@ -4,7 +4,6 @@ SUBMAKEFILES := \
 	max_biclique/subdir.mk \
 	max_clique/subdir.mk \
 	max_common_subgraph/subdir.mk \
-	max_kclub/subdir.mk \
 	max_labelled_clique/subdir.mk \
 	programs/about_graph/subdir.mk \
 	programs/create_random_bipartite_graph/subdir.mk \
@@ -19,7 +18,6 @@ SUBMAKEFILES := \
 	programs/solve_max_biclique/subdir.mk \
 	programs/solve_max_clique/subdir.mk \
 	programs/solve_max_common_subgraph/subdir.mk \
-	programs/solve_max_kclub/subdir.mk \
 	programs/solve_max_labelled_clique/subdir.mk \
 	programs/test_max_clique/subdir.mk \
 	solver/subdir.mk \
