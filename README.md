@@ -26,11 +26,6 @@ To compile, run make in the top level directory:
 
     make
 
-If you don't need MPI support (for distributed systems; the threaded algorithms
-do not use MPI), you can disable it:
-
-    make DISABLE_MPI=1
-
 By default, compiled programs go in "build/$HOSTNAME/". You can override this,
 for example, by doing:
 

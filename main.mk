@@ -25,14 +25,6 @@ SUBMAKEFILES := \
 	solver/subdir.mk \
 	threads/subdir.mk
 
-ifndef DISABLE_MPI
-
-SUBMAKEFILES += \
-	max_clique/subdir_mpi.mk \
-	programs/mpi_solve_max_clique/subdir_mpi.mk
-
-endif
-
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
 
@@ -42,6 +34,4 @@ boost_mpi_ldlibs := -lboost_mpi -lboost_serialization
 
 override CXXFLAGS += -O3 -march=native -std=c++11 -I./ -W -Wall -g -ggdb3 -pthread
 override LDFLAGS += -pthread
-
-MPICXX = mpic++
 
