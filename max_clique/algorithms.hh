@@ -9,7 +9,6 @@
 #include <max_clique/dbmcsa_max_clique.hh>
 #include <max_clique/cco_max_clique.hh>
 #include <max_clique/tcco_max_clique.hh>
-#include <max_clique/edcco_max_clique.hh>
 
 #include <utility>
 #include <string>
@@ -47,31 +46,7 @@ namespace parasols
 
         std::make_pair( std::string{ "tcconmq" },   tcco_max_clique<CCOPermutations::None, CCOInference::None, true>),
         std::make_pair( std::string{ "tccodmq" },   tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, true>),
-        std::make_pair( std::string{ "tccosmq" },   tcco_max_clique<CCOPermutations::Sort, CCOInference::None, true>),
-
-        std::make_pair( std::string{ "edccon" },    edcco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::None>),
-        std::make_pair( std::string{ "edccod" },    edcco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::None>),
-        std::make_pair( std::string{ "edccos" },    edcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::None>),
-
-        std::make_pair( std::string{ "edcconmp" },  edcco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::Previous>),
-        std::make_pair( std::string{ "edccodmp" },  edcco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::Previous>),
-        std::make_pair( std::string{ "edccosmp" },  edcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::Previous>),
-
-        std::make_pair( std::string{ "edcconma" },  edcco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "edccodma" },  edcco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "edccosma" },  edcco_max_clique<CCOPermutations::Sort, CCOInference::None, CCOMerge::All>),
-
-        std::make_pair( std::string{ "id1cconma" }, id1cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "id1ccodma" }, id1cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
-
-        std::make_pair( std::string{ "id2cconma" }, id2cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "id2ccodma" }, id2cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
-
-        std::make_pair( std::string{ "id3cconma" }, id3cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "id3ccodma" }, id3cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
-
-        std::make_pair( std::string{ "id4cconma" }, id4cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::All>),
-        std::make_pair( std::string{ "id4ccodma" }, id4cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::All>),
+        std::make_pair( std::string{ "tccosmq" },   tcco_max_clique<CCOPermutations::Sort, CCOInference::None, true>)
     };
 }
 
