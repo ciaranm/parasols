@@ -13,7 +13,6 @@ namespace parasols
     enum class CCOInference
     {
         None,
-        GlobalDomination,         // just remove from p
         LazyGlobalDomination      // remove from p, lazy
     };
 
@@ -31,10 +30,6 @@ namespace parasols
         {
         }
 
-        void propagate_no_immediate(VertexType_, FixedBitSet<size_> &)
-        {
-        }
-
         void propagate_no_lazy(VertexType_, FixedBitSet<size_> &)
         {
         }
@@ -42,60 +37,6 @@ namespace parasols
         auto skip(VertexType_, FixedBitSet<size_> &) -> bool
         {
             return false;
-        }
-    };
-
-    template <unsigned size_, typename VertexType_>
-    struct CCOInferer<CCOInference::GlobalDomination, size_, VertexType_>
-    {
-        std::vector<FixedBitSet<size_> > unsets;
-
-        void preprocess(const MaxCliqueParams & params, FixedBitGraph<size_> & graph)
-        {
-            unsigned count = 0;
-
-            unsets.resize(graph.size());
-            for (int i = 0 ; i < graph.size() ; ++i)
-                unsets[i].resize(graph.size());
-
-            for (int i = 0 ; i < graph.size() ; ++i) {
-                for (int j = 0 ; j < graph.size() ; ++j) {
-                    if (i == j)
-                        continue;
-
-                    FixedBitSet<size_> ni = graph.neighbourhood(i);
-                    FixedBitSet<size_> nj = graph.neighbourhood(j);
-
-                    FixedBitSet<size_> nij = ni;
-                    nij.intersect_with_complement(nj);
-                    nij.unset(j);
-                    if (nij.empty()) {
-                        ++count;
-                        unsets[j].set(i);
-                    }
-                }
-            }
-
-            print_position(params, "found " + std::to_string(count) + " dominations", std::vector<int>{ });
-        }
-
-        void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
-        {
-            p.intersect_with_complement(unsets[v]);
-        }
-
-        void propagate_no_immediate(VertexType_ v, FixedBitSet<size_> & p)
-        {
-            p.intersect_with_complement(unsets[v]);
-        }
-
-        void propagate_no_lazy(VertexType_, FixedBitSet<size_> &)
-        {
-        }
-
-        auto skip(VertexType_ v, FixedBitSet<size_> & p) -> bool
-        {
-            return ! p.test(v);
         }
     };
 
@@ -114,10 +55,6 @@ namespace parasols
         void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
         {
             really_propagate_no(v, p);
-        }
-
-        void propagate_no_immediate(VertexType_, FixedBitSet<size_> &)
-        {
         }
 
         void propagate_no_lazy(VertexType_ v, FixedBitSet<size_> & p)
@@ -153,7 +90,6 @@ namespace parasols
             return ! p.test(v);
         }
     };
-
 }
 
 #endif

@@ -130,7 +130,6 @@ namespace parasols
                     // now consider not taking v
                     c.pop_back();
                     p.unset(v);
-                    inferer.propagate_no_immediate(v, p);
 
                     keep_going = keep_going && (--stop > 0);
 
