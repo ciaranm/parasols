@@ -62,12 +62,9 @@ and order is one of:
     ex:          Exdegree (Prosser's 2)
     dynex:       Dynamic exdegree (Tomita's MCS ordering? Probably best)
     mw:          Minimum width (Prosser's 3. Better when all degrees are equal.)
+    mwsi:        San Segundo's MWSI
+    mwssi:       San Segundo's MWSI, but with sigma computed statically
     none:        No ordering (typically bad, except on trivial graphs)
-    rev:         Reverse ordering (equally bad)
-    revdeg:      Reverse deg (terrible)
-    revex:       Reverse ex (terrible)
-    revdynex:    Reverse dynex (terrible)
-    revmw:       Reverse mw (terrible)
 
 There are various options, use 'solve_max_clique --help' to list them.
 
