@@ -84,7 +84,7 @@ auto main(int argc, char * argv[]) -> int
         for (int e = 0 ; e < product.size() ; ++e) {
             for (int f = e + 1 ; f < product.size() ; ++f) {
                 if (product.adjacent(e, f))
-                    std::cout << "e " << e << " " << f << std::endl;
+                    std::cout << "e " << (e + 1) << " " << (f + 1) << std::endl;
             }
         }
 
