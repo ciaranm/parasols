@@ -11,7 +11,11 @@ namespace parasols
     enum class CCOPermutations
     {
         None,
-        Defer1
+        Defer1,
+        RepairAll,
+        RepairAllDefer1,
+        RepairSelected,
+        RepairSelectedDefer1
     };
 }
 

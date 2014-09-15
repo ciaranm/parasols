@@ -26,6 +26,10 @@ namespace parasols
 
         std::make_pair( std::string{ "ccon" },      cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::None>),
         std::make_pair( std::string{ "ccod" },      cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::None>),
+        std::make_pair( std::string{ "cconra" },    cco_max_clique<CCOPermutations::RepairAll, CCOInference::None, CCOMerge::None>),
+        std::make_pair( std::string{ "ccodra" },    cco_max_clique<CCOPermutations::RepairAllDefer1, CCOInference::None, CCOMerge::None>),
+        std::make_pair( std::string{ "cconrs" },    cco_max_clique<CCOPermutations::RepairSelected, CCOInference::None, CCOMerge::None>),
+        std::make_pair( std::string{ "ccodrs" },    cco_max_clique<CCOPermutations::RepairSelectedDefer1, CCOInference::None, CCOMerge::None>),
 
         std::make_pair( std::string{ "cconlgd" },   cco_max_clique<CCOPermutations::None, CCOInference::LazyGlobalDomination, CCOMerge::None>),
         std::make_pair( std::string{ "ccodlgd" },   cco_max_clique<CCOPermutations::Defer1, CCOInference::LazyGlobalDomination, CCOMerge::None>),

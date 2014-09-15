@@ -121,7 +121,7 @@ namespace parasols
                         position.push_back(0);
                         std::array<VertexType_, size_ * bits_per_word> new_p_order;
                         std::array<VertexType_, size_ * bits_per_word> new_colours;
-                        colour_class_order(SelectColourClassOrderOverload<perm_>(), new_p, new_p_order, new_colours);
+                        colour_class_order(SelectColourClassOrderOverload<perm_>(), new_p, new_p_order, new_colours, best_anywhere_value - c.size());
                         keep_going = static_cast<ActualType_ *>(this)->recurse(
                                 c, new_p, new_p_order, new_colours, position, std::forward<MoreArgs_>(more_args_)...) && keep_going;
                         position.pop_back();
