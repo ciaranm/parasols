@@ -5,6 +5,7 @@
 #include <max_clique/algorithms.hh>
 
 #include <graph/degree_sort.hh>
+#include <graph/orders.hh>
 
 #include <boost/program_options.hpp>
 
@@ -28,6 +29,7 @@ std::mt19937 rnd;
 void table(
         int size,
         int samples,
+        const MaxCliqueOrderFunction & order_function,
         const std::vector<std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> > & algorithms,
         bool find_prove)
 {
@@ -55,7 +57,7 @@ void table(
                 unsigned omega;
                 {
                     MaxCliqueParams params;
-                    params.order_function = std::bind(degree_sort, _1, _2, false);
+                    params.order_function = order_function;
                     params.n_threads = std::thread::hardware_concurrency();
                     params.original_graph = &graph;
                     std::atomic<bool> abort;
@@ -76,7 +78,7 @@ void table(
 
                 if (find_prove) {
                     MaxCliqueParams params;
-                    params.order_function = std::bind(degree_sort, _1, _2, false);
+                    params.order_function = order_function;
                     params.n_threads = std::thread::hardware_concurrency();
                     params.original_graph = &graph;
                     std::atomic<bool> abort;
@@ -96,7 +98,7 @@ void table(
 
                 if (find_prove) {
                     MaxCliqueParams params;
-                    params.order_function = std::bind(degree_sort, _1, _2, false);
+                    params.order_function = order_function;
                     params.n_threads = std::thread::hardware_concurrency();
                     params.original_graph = &graph;
                     std::atomic<bool> abort;
@@ -153,6 +155,7 @@ auto main(int argc, char * argv[]) -> int
         all_options.add_options()
             ("size",        po::value<int>(),                       "Size of graph")
             ("samples",     po::value<int>(),                       "Sample size")
+            ("order",       po::value<std::string>(),               "Vertex ordering")
             ("algorithm",   po::value<std::vector<std::string> >(), "Algorithms")
             ;
 
@@ -160,6 +163,7 @@ auto main(int argc, char * argv[]) -> int
         positional_options
             .add("size",         1)
             .add("samples",      1)
+            .add("order",        1)
             .add("algorithm",    -1)
             ;
 
@@ -172,20 +176,37 @@ auto main(int argc, char * argv[]) -> int
 
         /* --help? Show a message, and exit. */
         if (options_vars.count("help")) {
-            std::cout << "Usage: " << argv[0] << " [options] size samples algorithms..." << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] size samples order algorithms..." << std::endl;
             std::cout << std::endl;
             std::cout << display_options << std::endl;
             return EXIT_SUCCESS;
         }
 
         /* No values specified? Show a message and exit. */
-        if (! options_vars.count("size") || ! options_vars.count("samples")) {
-            std::cout << "Usage: " << argv[0] << " [options] size samples algorithms..." << std::endl;
+        if (! options_vars.count("size") || ! options_vars.count("samples") || ! options_vars.count("order")) {
+            std::cout << "Usage: " << argv[0] << " [options] size samples order algorithms..." << std::endl;
             return EXIT_FAILURE;
         }
 
         int size = options_vars["size"].as<int>();
         int samples = options_vars["samples"].as<int>();
+
+        /* Turn an order string name into a runnable function. */
+        MaxCliqueOrderFunction order_function;
+        for (auto order = orders.begin() ; order != orders.end() ; ++order)
+            if (std::get<0>(*order) == options_vars["order"].as<std::string>()) {
+                order_function = std::get<1>(*order);
+                break;
+            }
+
+        /* Unknown algorithm? Show a message and exit. */
+        if (! order_function) {
+            std::cerr << "Unknown order " << options_vars["order"].as<std::string>() << ", choose from:";
+            for (auto a : orders)
+                std::cerr << " " << std::get<0>(a);
+            std::cerr << std::endl;
+            return EXIT_FAILURE;
+        }
 
         std::vector<std::function<MaxCliqueResult (const Graph &, const MaxCliqueParams &)> > selected_algorithms;
         for (auto & s : options_vars["algorithm"].as<std::vector<std::string> >()) {
@@ -206,7 +227,7 @@ auto main(int argc, char * argv[]) -> int
             selected_algorithms.push_back(std::get<1>(*algorithm));
         }
 
-        table(size, samples, selected_algorithms, options_vars.count("find-prove"));
+        table(size, samples, order_function, selected_algorithms, options_vars.count("find-prove"));
 
         return EXIT_SUCCESS;
     }
