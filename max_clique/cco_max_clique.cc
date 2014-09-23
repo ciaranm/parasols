@@ -175,6 +175,8 @@ template auto parasols::cco_max_clique<CCOPermutations::RepairAll, CCOInference:
 template auto parasols::cco_max_clique<CCOPermutations::RepairAllDefer1, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::RepairSelected, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::RepairSelectedDefer1, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::RepairSelectedFast, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
+template auto parasols::cco_max_clique<CCOPermutations::RepairAllFast, CCOInference::None, CCOMerge::None>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 
 template auto parasols::cco_max_clique<CCOPermutations::None, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;
 template auto parasols::cco_max_clique<CCOPermutations::Defer1, CCOInference::None, CCOMerge::Previous>(const Graph &, const MaxCliqueParams &) -> MaxCliqueResult;

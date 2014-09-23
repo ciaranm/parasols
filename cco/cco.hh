@@ -15,7 +15,9 @@ namespace parasols
         RepairAll,
         RepairAllDefer1,
         RepairSelected,
-        RepairSelectedDefer1
+        RepairSelectedDefer1,
+        RepairSelectedFast,
+        RepairAllFast
     };
 }
 
