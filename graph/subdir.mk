@@ -4,6 +4,7 @@ SOURCES := \
 	bit_graph.cc \
 	degree_sort.cc \
 	min_width_sort.cc \
+	adj.cc \
 	dimacs.cc \
 	pairs.cc \
 	net.cc \
