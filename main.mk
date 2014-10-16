@@ -6,6 +6,7 @@ SUBMAKEFILES := \
 	max_common_subgraph/subdir.mk \
 	max_labelled_clique/subdir.mk \
 	programs/about_graph/subdir.mk \
+	programs/combine_graphs/subdir.mk \
 	programs/create_random_bipartite_graph/subdir.mk \
 	programs/create_random_graph/subdir.mk \
 	programs/create_graph_product/subdir.mk \
