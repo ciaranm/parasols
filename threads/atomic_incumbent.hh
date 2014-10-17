@@ -29,7 +29,12 @@ namespace parasols
             }
         }
 
-        unsigned get()
+        bool beaten_by(unsigned v) const
+        {
+            return v > value.load(std::memory_order_seq_cst);
+        }
+
+        unsigned get() const
         {
             return value.load(std::memory_order_relaxed);
         }

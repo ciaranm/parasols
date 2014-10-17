@@ -373,15 +373,26 @@ namespace
                 StealPoints * const
                 ) -> void
         {
-            if (best_anywhere.update(c.size())) {
-                local_result.size = c.size();
-                local_result.members.clear();
-                for (auto & v : c)
-                    local_result.members.insert(order[v]);
-                print_incumbent(params, local_result.size, position);
+            if (params.enumerate) {
+                if (best_anywhere.beaten_by(c.size())) {
+                    ++local_result.result_count;
+                    local_result.size = c.size();
+                    local_result.members.clear();
+                    for (auto & v : c)
+                        local_result.members.insert(order[v]);
+                }
             }
+            else {
+                if (best_anywhere.update(c.size())) {
+                    local_result.size = c.size();
+                    local_result.members.clear();
+                    for (auto & v : c)
+                        local_result.members.insert(order[v]);
+                    print_incumbent(params, local_result.size, position);
+                }
 
-            merge_queue.add(c);
+                merge_queue.add(c);
+            }
         }
 
         auto get_best_anywhere_value() -> unsigned
