@@ -101,7 +101,7 @@ namespace parasols
                 auto v = p_order[n];
                 previous_v = v;
 
-                if (skip > 0 || inferer.skip(v, p)) {
+                if (skip > 0 || inferer.skip(v, p) || (params.vertex_transitive && c.empty() && n != int(p.popcount() - 1))) {
                     --skip;
                     p.unset(v);
                     inferer.propagate_no_skip(v, p);

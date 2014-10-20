@@ -60,6 +60,9 @@ namespace parasols
         /// If true, enable work donation.
         bool work_donation = false;
 
+        /// If true, the graph is known to be vertex transitive.
+        bool vertex_transitive = false;
+
         /// If this is set to true, we should abort due to a time limit.
         std::atomic<bool> * abort;
 

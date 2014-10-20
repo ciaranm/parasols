@@ -79,6 +79,7 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(), "Abort after this many seconds")
             ("complement",                           "Take the complement of the graph (to solve independent set)")
             ("power",              po::value<int>(), "Raise the graph to this power (to solve s-clique)")
+            ("vertex-transitive",                    "Specify if the graph is known to be vertex transitive")
             ("add-dominated",      po::value<int>(), "Add this many dominated vertices to the input graph")
             ("dominated-edges",    po::value<double>(), "When adding dominated vertices, keep edges with this probability")
             ("join-dominated",     po::value<double>(), "When adding dominated vertices, join dominated vertices with this probability")
@@ -200,6 +201,9 @@ auto main(int argc, char * argv[]) -> int
 
             if (options_vars.count("power"))
                 params.power = options_vars["power"].as<int>();
+
+            if (options_vars.count("vertex-transitive"))
+                params.vertex_transitive = true;
 
             unsigned dominated_vertices = 0;
             double dominated_edge_p = 1.0;
