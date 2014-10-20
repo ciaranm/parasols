@@ -87,6 +87,7 @@ namespace parasols
             int previous_v = -1;
 
             // for each v in p... (v comes later)
+            bool first = true;
             for (int n = p.popcount() - 1 ; n >= 0 ; --n) {
                 ++position.back();
 
@@ -101,7 +102,7 @@ namespace parasols
                 auto v = p_order[n];
                 previous_v = v;
 
-                if (skip > 0 || inferer.skip(v, p) || (params.vertex_transitive && c.empty() && n != int(p.popcount() - 1))) {
+                if (skip > 0 || inferer.skip(v, p) || (params.vertex_transitive && c.empty() && ! first)) {
                     --skip;
                     p.unset(v);
                     inferer.propagate_no_skip(v, p);
@@ -136,6 +137,8 @@ namespace parasols
                     if (! keep_going)
                         break;
                 }
+
+                first = false;
             }
         }
     };
