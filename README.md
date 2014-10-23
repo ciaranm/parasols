@@ -52,9 +52,6 @@ where filename.clq is in the DIMACS format, algorithm is one of:
     ccod:        Like ccon, with size 1 colour classes deferred
     tccon:       Like ccon, threaded
     tccod:       Like ccod, threaded (probably the best choice)
-    bmcsa:       Older bitset encoded version of Prosser's MCSa variant
-    tbmcsa:      Older threaded bmcsa
-    dbmcsa:      Another older threaded bmcsa
 
 and order is one of:
 
@@ -157,7 +154,7 @@ same output each time, avoiding the need for storing large graph files.
 
 To avoid writing to a temp file, bash lets you do this:
 
-    solve_max_clique bmcsa1 <(create_random_graph 100 0.5 1)
+    solve_max_clique ccon deg <(create_random_graph 100 0.5 1)
 
 create_random_bipartite_graph
 -----------------------------
@@ -167,10 +164,6 @@ n2 p s' where n1 is the number of vertices in the first set, n2 is the number
 of vertices in the second set, p is the edge probability (between 0.0 and 1.0),
 and s is the seed (an integer). Specifying the same seed will produce the same
 output each time, avoiding the need for storing large graph files.
-
-To avoid writing to a temp file, bash lets you do this:
-
-    solve_max_biclique naive <(create_random_bipartite_graph 20 20 0.5 1)
 
 .. vim: set ft=markdown spell spelllang=en :
 
