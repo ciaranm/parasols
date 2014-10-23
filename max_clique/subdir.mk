@@ -5,6 +5,7 @@ SOURCES := \
 	cco_max_clique.cc \
 	cco_inference.cc \
 	tcco_max_clique.cc \
+	ost_max_clique.cc \
 	max_clique_params.cc \
 	max_clique_result.cc \
 	naive_max_clique.cc \

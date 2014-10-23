@@ -6,6 +6,7 @@
 #include <max_clique/naive_max_clique.hh>
 #include <max_clique/cco_max_clique.hh>
 #include <max_clique/tcco_max_clique.hh>
+#include <max_clique/ost_max_clique.hh>
 
 #include <utility>
 #include <string>
@@ -37,7 +38,9 @@ namespace parasols
         std::make_pair( std::string{ "tccod" },     tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, false>),
 
         std::make_pair( std::string{ "tcconmq" },   tcco_max_clique<CCOPermutations::None, CCOInference::None, true>),
-        std::make_pair( std::string{ "tccodmq" },   tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, true>)
+        std::make_pair( std::string{ "tccodmq" },   tcco_max_clique<CCOPermutations::Defer1, CCOInference::None, true>),
+
+        std::make_pair( std::string{ "ost" },       ost_max_clique)
     };
 }
 
