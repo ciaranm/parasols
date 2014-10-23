@@ -112,6 +112,9 @@ namespace
 
                 bool found = false;
                 expand(c, p, positions, found);
+
+                positions.pop_back();
+
                 print_position(params, "subproblem is " + std::to_string(result.size), positions);
                 subproblems[i] = result.size;
                 if (0 != i)
