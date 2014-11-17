@@ -208,6 +208,17 @@ auto main(int argc, char * argv[]) -> int
                     std::cerr << "Oops! not a clique" << std::endl;
                     return EXIT_FAILURE;
                 }
+
+                std::set<int> used_labels;
+                for (auto & v : result.members)
+                    for (auto & w : result.members)
+                        if (v != w)
+                            used_labels.insert(params.labels.at(v).at(w));
+
+                if (used_labels.size() > params.budget) {
+                    std::cerr << "Oops! budget exceeded, cost is " << used_labels.size() << std::endl;
+                    return EXIT_FAILURE;
+                }
             }
         }
 

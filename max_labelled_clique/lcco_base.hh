@@ -23,10 +23,12 @@ namespace parasols
         FixedBitGraph<size_> graph;
         const MaxLabelledCliqueParams & params;
         std::vector<int> order;
+        Labels permuted_labels;
 
         LCCOBase(const Graph & g, const MaxLabelledCliqueParams & p) :
             params(p),
-            order(g.size())
+            order(g.size()),
+            permuted_labels(p.labels)
         {
             // populate our order with every vertex initially
             std::iota(order.begin(), order.end(), 0);
@@ -39,6 +41,10 @@ namespace parasols
                 for (int j = 0 ; j < g.size() ; ++j)
                     if (g.adjacent(order[i], order[j]))
                         graph.add_edge(i, j);
+
+            for (int i = 0 ; i < g.size() ; ++i)
+                for (int j = 0 ; j < g.size() ; ++j)
+                    permuted_labels[i][j] = p.labels[order[i]][order[j]];
         }
 
         template <typename... MoreArgs_>
@@ -91,7 +97,7 @@ namespace parasols
                     LabelSet new_u = u;
                     for (auto & i : c)
                         if (graph.adjacent(v, i))
-                            new_u.set(params.labels.at(v).at(i));
+                            new_u.set(permuted_labels.at(v).at(i));
 
                     unsigned new_u_popcount = new_u.popcount();
 
