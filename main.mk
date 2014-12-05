@@ -20,8 +20,10 @@ SUBMAKEFILES := \
 	programs/solve_max_clique/subdir.mk \
 	programs/solve_max_common_subgraph/subdir.mk \
 	programs/solve_max_labelled_clique/subdir.mk \
+	programs/solve_subgraph_isomorphism/subdir.mk \
 	programs/test_max_clique/subdir.mk \
 	solver/subdir.mk \
+	subgraph_isomorphism/subdir.mk \
 	threads/subdir.mk
 
 BUILD_DIR := $(shell echo intermediate/`hostname`)
