@@ -9,7 +9,7 @@
 #include <graph/metis.hh>
 #include <graph/mivia.hh>
 #include <graph/adj.hh>
-#include <graph/lv.hh>
+#include <graph/lad.hh>
 
 #include <utility>
 #include <functional>
@@ -30,7 +30,7 @@ namespace parasols
             std::make_pair( std::string{ "metis" },   GraphFileFormatFunction{ std::bind(read_metis, _1) } ),
             std::make_pair( std::string{ "mivia" },   GraphFileFormatFunction{ std::bind(read_mivia, _1) } ),
             std::make_pair( std::string{ "adj" },     GraphFileFormatFunction{ std::bind(read_adj, _1) } ),
-            std::make_pair( std::string{ "lv" },      GraphFileFormatFunction{ std::bind(read_lv, _1) } )
+            std::make_pair( std::string{ "lad" },     GraphFileFormatFunction{ std::bind(read_lad, _1) } )
         };
     }
 

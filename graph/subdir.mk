@@ -10,7 +10,7 @@ SOURCES := \
 	net.cc \
 	metis.cc \
 	mivia.cc \
-	lv.cc \
+	lad.cc \
 	graph.cc \
 	power.cc \
 	complement.cc \
