@@ -167,7 +167,7 @@ auto main(int argc, char * argv[]) -> int
             }
         }
 
-        return EXIT_SUCCESS;
+        return result.isomorphism.empty() ? EXIT_FAILURE : EXIT_SUCCESS;
     }
     catch (const po::error & e) {
         std::cerr << "Error: " << e.what() << std::endl;
