@@ -12,6 +12,8 @@ namespace
     auto expand(const Graph & pattern, const Graph & target, const SubgraphIsomorphismParams & params, Domains & domains, unsigned long long & nodes) -> bool
     {
         ++nodes;
+        if (params.abort->load())
+            return false;
 
         bool revise = true;
         int branch_on;
