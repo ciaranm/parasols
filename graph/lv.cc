@@ -56,9 +56,9 @@ auto parasols::read_lv(const std::string & filename) -> Graph
     }
 
     std::string rest;
-    std::getline(infile, rest);
-    infile.peek();
-    if ((! rest.empty()) || (! infile.eof()))
+    if (infile >> rest)
+        throw InvalidLVFile{ filename, "EOF not reached, next text is \"" + rest + "\"" };
+    if (! infile.eof())
         throw InvalidLVFile{ filename, "EOF not reached" };
 
     return result;
