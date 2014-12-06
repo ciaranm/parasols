@@ -26,6 +26,20 @@ namespace
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
 
+        FixedBitGraph<size_> target_bitgraph;
+
+        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a) :
+            target(t),
+            pattern(p),
+            params(a)
+        {
+            target_bitgraph.resize(target.size());
+            for (int i = 0 ; i < target.size() ; ++i)
+                for (int j = 0 ; j < target.size() ; ++j)
+                    if (target.adjacent(i, j))
+                        target_bitgraph.add_edge(i, j);
+        }
+
         auto expand(Domains & domains, unsigned long long & nodes) -> bool
         {
             ++nodes;
@@ -58,21 +72,17 @@ namespace
 
                             if (pattern.adjacent(i, j)) {
                                 // i--j => f(i)--f(j)
-                                for (int v = 0 ; v < target.size() ; ++v) {
-                                    if (domains.at(j).values.test(v) && ! target.adjacent(f_i, v)) {
-                                        domains.at(j).values.unset(v);
-                                        revise = true;
-                                    }
-                                }
+                                unsigned before = domains.at(j).values.popcount();
+                                target_bitgraph.intersect_with_row(f_i, domains.at(j).values);
+                                if (before != domains.at(j).values.popcount())
+                                    revise = true;
                             }
                             else if (params.induced) {
                                 // induced && i-/-j => f(i)-/-f(j)
-                                for (int v = 0 ; v < target.size() ; ++v) {
-                                    if (domains.at(j).values.test(v) && target.adjacent(f_i, v)) {
-                                        domains.at(j).values.unset(v);
-                                        revise = true;
-                                    }
-                                }
+                                unsigned before = domains.at(j).values.popcount();
+                                target_bitgraph.intersect_with_row_complement(f_i, domains.at(j).values);
+                                if (before != domains.at(j).values.popcount())
+                                    revise = true;
                             }
                         }
                     }
