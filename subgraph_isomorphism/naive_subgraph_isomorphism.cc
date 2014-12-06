@@ -20,7 +20,10 @@ namespace
         while (revise) {
             revise = false;
             branch_on = -1;
-            for (int i = 0 ; i < pattern.size() ; ++i)
+            for (int i = 0 ; i < pattern.size() ; ++i) {
+                if (params.abort->load())
+                    return false;
+
                 if (domains.at(i).empty())
                     return false;
                 else if (domains.at(i).size() == 1) {
@@ -61,6 +64,7 @@ namespace
                 }
                 else
                     branch_on = i;
+            }
         }
 
         if (-1 == branch_on)
