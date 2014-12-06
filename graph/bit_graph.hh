@@ -63,7 +63,8 @@ namespace parasols
             }
 
             /**
-             * Set all bits on. */
+             * Set all bits on.
+             */
             auto set_all() -> void
             {
                 // Could be more efficient, but we only do it once. We can't
@@ -71,6 +72,15 @@ namespace parasols
                 // breaking first_set_bit().
                 for (int i = 0 ; i < _size ; ++i)
                     set(i);
+            }
+
+            /**
+             * Set all bits off.
+             */
+            auto unset_all() -> void
+            {
+                for (unsigned i = 0 ; i < words_ ; ++i)
+                    _bits[i] = 0;
             }
 
             /**
