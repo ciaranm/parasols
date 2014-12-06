@@ -27,13 +27,15 @@ namespace
         const Graph & target;
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
+        const bool dds;
 
         FixedBitGraph<size_> target_bitgraph;
 
-        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a) :
+        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a, bool d) :
             target(t),
             pattern(p),
-            params(a)
+            params(a),
+            dds(d)
         {
             target_bitgraph.resize(target.size());
             for (int i = 0 ; i < target.size() ; ++i)
@@ -42,7 +44,8 @@ namespace
                         target_bitgraph.add_edge(i, j);
         }
 
-        auto expand(Domains & domains, ToRevise & to_revise, unsigned long long & nodes) -> bool
+        auto expand(Domains & domains, ToRevise & to_revise, unsigned long long & nodes,
+                unsigned depth, unsigned allow_discrepancies_above) -> bool
         {
             ++nodes;
             if (params.abort->load())
@@ -119,22 +122,29 @@ namespace
             if (-1 == branch_on)
                 return true;
 
+            bool first = true;
             for (int v = 0 ; v < target.size() ; ++v) {
                 if (domains.at(branch_on).values.test(v)) {
-                    auto new_domains = domains;
-                    for (int w = 0 ; w < target.size() ; ++w) {
-                        new_domains.at(branch_on).values.unset_all();
-                        new_domains.at(branch_on).values.set(v);
-                        new_domains.at(branch_on).revise = true;
+                    if (! (first && depth + 1 == allow_discrepancies_above)) {
+                        auto new_domains = domains;
+                        for (int w = 0 ; w < target.size() ; ++w) {
+                            new_domains.at(branch_on).values.unset_all();
+                            new_domains.at(branch_on).values.set(v);
+                            new_domains.at(branch_on).revise = true;
+                        }
+
+                        ToRevise new_to_revise;
+                        new_to_revise.push_back(branch_on);
+
+                        if (expand(new_domains, new_to_revise, nodes, depth + 1, allow_discrepancies_above)) {
+                            domains = std::move(new_domains);
+                            return true;
+                        }
                     }
 
-                    ToRevise new_to_revise;
-                    new_to_revise.push_back(branch_on);
-
-                    if (expand(new_domains, new_to_revise, nodes)) {
-                        domains = std::move(new_domains);
-                        return true;
-                    }
+                    first = false;
+                    if (depth >= allow_discrepancies_above)
+                        break;
                 }
             }
 
@@ -163,9 +173,22 @@ namespace
                         domains.at(i).values.set(j);
             }
 
-            if (expand(domains, to_revise, result.nodes)) {
-                for (int i = 0 ; i < pattern.size() ; ++i)
-                    result.isomorphism.emplace(i, domains.at(i).values.first_set_bit());
+            if (! dds) {
+                if (expand(domains, to_revise, result.nodes, 0, pattern.size() + 1)) {
+                    for (int i = 0 ; i < pattern.size() ; ++i)
+                        result.isomorphism.emplace(i, domains.at(i).values.first_set_bit());
+                }
+            }
+            else {
+                for (int k = 0 ; k < pattern.size() ; ++k) {
+                    auto domains_copy = domains;
+                    auto to_revise_copy = to_revise;
+                    if (expand(domains_copy, to_revise_copy, result.nodes, 0, k)) {
+                        for (int i = 0 ; i < pattern.size() ; ++i)
+                            result.isomorphism.emplace(i, domains_copy.at(i).values.first_set_bit());
+                        break;
+                    }
+                }
             }
 
             return result;
@@ -175,6 +198,11 @@ namespace
 
 auto parasols::b_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params);
+    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::bdds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
