@@ -27,15 +27,16 @@ namespace
         const Graph & target;
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
-        const bool dds;
+        const bool dds, nds;
 
         FixedBitGraph<size_> target_bitgraph;
 
-        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a, bool d) :
+        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a, bool d, bool n) :
             target(t),
             pattern(p),
             params(a),
-            dds(d)
+            dds(d),
+            nds(n)
         {
             target_bitgraph.resize(target.size());
             for (int i = 0 ; i < target.size() ; ++i)
@@ -164,13 +165,53 @@ namespace
             for (int i = 0 ; i < target.size() ; ++i)
                 target_degrees.at(i) = target.degree(i);
 
-            for (int i = 0 ; i < pattern.size() ; ++i) {
-                domains.at(i).values.resize(target.size());
-                domains.at(i).revise = true;
-                to_revise.push_back(i);
-                for (int j = 0 ; j < target.size() ; ++j)
-                    if (target_degrees.at(j) >= pattern_degrees.at(i))
-                        domains.at(i).values.set(j);
+            if (! nds) {
+                for (int i = 0 ; i < pattern.size() ; ++i) {
+                    domains.at(i).values.resize(target.size());
+                    domains.at(i).revise = true;
+                    to_revise.push_back(i);
+                    for (int j = 0 ; j < target.size() ; ++j)
+                        if (target_degrees.at(j) >= pattern_degrees.at(i))
+                            domains.at(i).values.set(j);
+                }
+            }
+            else {
+                std::vector<std::vector<int> > pattern_ndss(pattern.size()), target_ndss(target.size());
+                for (int i = 0 ; i < pattern.size() ; ++i) {
+                    for (int j = 0 ; j < pattern.size() ; ++j) {
+                        if (pattern.adjacent(i, j))
+                            pattern_ndss.at(i).push_back(pattern_degrees.at(j));
+                    }
+                    std::sort(pattern_ndss.at(i).begin(), pattern_ndss.at(i).end(), std::greater<int>());
+                }
+
+                for (int i = 0 ; i < target.size() ; ++i) {
+                    for (int j = 0 ; j < target.size() ; ++j) {
+                        if (target.adjacent(i, j))
+                            target_ndss.at(i).push_back(target_degrees.at(j));
+                    }
+                    std::sort(target_ndss.at(i).begin(), target_ndss.at(i).end(), std::greater<int>());
+                }
+
+                for (int i = 0 ; i < pattern.size() ; ++i) {
+                    domains.at(i).values.resize(target.size());
+                    domains.at(i).revise = true;
+                    to_revise.push_back(i);
+
+                    for (int j = 0 ; j < target.size() ; ++j) {
+                        if (target_ndss.at(j).size() >= pattern_ndss.at(i).size()) {
+                            bool ok = true;
+                            for (unsigned x = 0 ; x < pattern_ndss.at(i).size() ; ++x)
+                                if (target_ndss.at(j).at(x) < pattern_ndss.at(i).at(x)) {
+                                    ok = false;
+                                    break;
+                                }
+
+                            if (ok)
+                                domains.at(i).values.set(j);
+                        }
+                    }
+                }
             }
 
             if (! dds) {
@@ -198,11 +239,22 @@ namespace
 
 auto parasols::b_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false);
+    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, false);
 }
 
 auto parasols::bdds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true);
+    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true, false);
 }
+
+auto parasols::bnds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true);
+}
+
+auto parasols::bndsdds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<SGI, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true, true);
+}
+
 
