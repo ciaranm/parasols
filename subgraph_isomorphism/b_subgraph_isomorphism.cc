@@ -72,11 +72,16 @@ namespace
 
                         // all different
                         if (domains.at(j).values.test(f_i)) {
-                            if (! domains.at(j).revise) {
-                                domains.at(j).revise = true;
-                                to_revise.push_back(j);
-                            }
                             domains.at(j).values.unset(f_i);
+                            if (! domains.at(j).revise) {
+                                unsigned after = domains.at(j).values.popcount();
+                                if (0 == after)
+                                    return false;
+                                else if (after < 2) {
+                                    domains.at(j).revise = true;
+                                    to_revise.push_back(j);
+                                }
+                            }
                         }
 
                         if (pattern.adjacent(i, j)) {
@@ -86,7 +91,7 @@ namespace
                             unsigned after = domains.at(j).values.popcount();
                             if (0 == after)
                                 return false;
-                            else if (before != after) {
+                            else if (before != after && after < 2) {
                                 if (! domains.at(j).revise) {
                                     domains.at(j).revise = true;
                                     to_revise.push_back(j);
@@ -100,7 +105,7 @@ namespace
                             unsigned after = domains.at(j).values.popcount();
                             if (0 == after)
                                 return false;
-                            else if (before != after) {
+                            else if (before != after && after < 2) {
                                 if (! domains.at(j).revise) {
                                     domains.at(j).revise = true;
                                     to_revise.push_back(j);
