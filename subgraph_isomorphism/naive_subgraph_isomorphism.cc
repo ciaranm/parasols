@@ -16,7 +16,7 @@ namespace
             return false;
 
         bool revise = true;
-        int branch_on;
+        int branch_on, branch_on_popcount = 0;
         while (revise) {
             revise = false;
             branch_on = -1;
@@ -59,8 +59,10 @@ namespace
                         }
                     }
                 }
-                else
+                else if (-1 == branch_on || popcount < branch_on_popcount) {
                     branch_on = i;
+                    branch_on_popcount = popcount;
+                }
             }
         }
 
