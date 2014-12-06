@@ -1,13 +1,13 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include <subgraph_isomorphism/naive_subgraph_isomorphism.hh>
-#include <set>
+#include <algorithm>
 
 using namespace parasols;
 
 namespace
 {
-    using Domains = std::vector<std::set<int> >;
+    using Domains = std::vector<std::vector<bool> >;
 
     auto expand(const Graph & pattern, const Graph & target, const SubgraphIsomorphismParams & params, Domains & domains, unsigned long long & nodes) -> bool
     {
@@ -24,38 +24,35 @@ namespace
                 if (params.abort->load())
                     return false;
 
-                if (domains.at(i).empty())
+                int popcount = std::count(domains.at(i).begin(), domains.at(i).end(), true);
+                if (0 == popcount)
                     return false;
-                else if (domains.at(i).size() == 1) {
-                    int f_i = *domains.at(i).begin();
+                else if (1 == popcount) {
+                    int f_i = std::find(domains.at(i).begin(), domains.at(i).end(), true) - domains.at(i).begin();
                     for (int j = 0 ; j < pattern.size() ; ++j) {
                         if (i == j)
                             continue;
 
                         // all different
-                        if (domains.at(j).count(f_i)) {
+                        if (domains.at(j).at(f_i)) {
                             revise = true;
-                            domains.at(j).erase(f_i);
+                            domains.at(j).at(f_i) = false;
                         }
 
                         if (pattern.adjacent(i, j)) {
                             // i--j => f(i)--f(j)
-                            for (auto v = domains.at(j).begin(), v_end = domains.at(j).end() ; v != v_end ; ) {
-                                if (target.adjacent(f_i, *v))
-                                    ++v;
-                                else {
-                                    domains.at(j).erase(v++);
+                            for (int v = 0 ; v < target.size() ; ++v) {
+                                if (domains.at(j).at(v) && ! target.adjacent(f_i, v)) {
+                                    domains.at(j).at(v) = false;
                                     revise = true;
                                 }
                             }
                         }
                         else if (params.induced) {
                             // induced && i-/-j => f(i)-/-f(j)
-                            for (auto v = domains.at(j).begin(), v_end = domains.at(j).end() ; v != v_end ; ) {
-                                if (! target.adjacent(f_i, *v))
-                                    ++v;
-                                else {
-                                    domains.at(j).erase(v++);
+                            for (int v = 0 ; v < target.size() ; ++v) {
+                                if (domains.at(j).at(v) && target.adjacent(f_i, v)) {
+                                    domains.at(j).at(v) = false;
                                     revise = true;
                                 }
                             }
@@ -70,12 +67,16 @@ namespace
         if (-1 == branch_on)
             return true;
 
-        for (auto & v : domains.at(branch_on)) {
-            auto domains_copy = domains;
-            domains_copy.at(branch_on) = { v };
-            if (expand(pattern, target, params, domains_copy, nodes)) {
-                domains = domains_copy;
-                return true;
+        for (int v = 0 ; v < target.size() ; ++v) {
+            if (domains.at(branch_on).at(v)) {
+                auto domains_copy = domains;
+                for (int w = 0 ; w < target.size() ; ++w)
+                    domains_copy.at(branch_on).at(w) = (v == w);
+
+                if (expand(pattern, target, params, domains_copy, nodes)) {
+                    domains = domains_copy;
+                    return true;
+                }
             }
         }
 
@@ -96,15 +97,17 @@ auto parasols::naive_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs
     for (int i = 0 ; i < target.size() ; ++i)
         target_degrees.at(i) = target.degree(i);
 
-    for (int i = 0 ; i < pattern.size() ; ++i)
+    for (int i = 0 ; i < pattern.size() ; ++i) {
+        domains.at(i).resize(target.size());
         for (int j = 0 ; j < target.size() ; ++j)
             if (target_degrees.at(j) >= pattern_degrees.at(i))
-                domains.at(i).insert(j);
+                domains.at(i).at(j) = true;
+    }
 
     SubgraphIsomorphismResult result;
     if (expand(pattern, target, params, domains, result.nodes)) {
         for (int i = 0 ; i < pattern.size() ; ++i)
-            result.isomorphism.emplace(i, *domains.at(i).begin());
+            result.isomorphism.emplace(i, std::find(domains.at(i).begin(), domains.at(i).end(), true) - domains.at(i).begin());
     }
 
     return result;
