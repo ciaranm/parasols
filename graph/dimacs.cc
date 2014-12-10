@@ -55,7 +55,7 @@ auto parasols::read_dimacs(const std::string & filename) -> Graph
             if (0 == a || 0 == b || a > result.size() || b > result.size())
                 throw InvalidDIMACSFile{ filename, "line '" + line + "' edge index out of bounds" };
             else if (a == b)
-                throw InvalidDIMACSFile{ filename, "line '" + line + "' contains a loop" };
+                throw InvalidDIMACSFile{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
             result.add_edge(a - 1, b - 1);
         }
         else

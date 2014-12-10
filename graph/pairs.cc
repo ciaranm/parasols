@@ -61,7 +61,7 @@ auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Gra
             if (a >= result.size() || b >= result.size() || a < 0 || b < 0)
                 throw InvalidPairsFile{ filename, "line '" + line + "' edge index out of bounds" };
             else if (a == b)
-                throw InvalidPairsFile{ filename, "line '" + line + "' contains a loop" };
+                throw InvalidPairsFile{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
             result.add_edge(a, b);
         }
         else

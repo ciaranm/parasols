@@ -49,7 +49,7 @@ auto parasols::read_lad(const std::string & filename) -> Graph
             if (e < 0 || e >= result.size())
                 throw InvalidLADFile{ filename, "edge index out of bounds" };
             else if (r == e)
-                throw InvalidLADFile{ filename, "contains a loop" };
+                throw InvalidLADFile{ filename, "loop on vertex " + std::to_string(r) };
 
             result.add_edge(r, e);
         }

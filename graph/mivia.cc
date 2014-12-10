@@ -50,7 +50,7 @@ auto parasols::read_mivia(const std::string & filename) -> Graph
             if (e < 0 || e >= result.size())
                 throw InvalidMIVIAFile{ filename, "edge index out of bounds" };
             else if (r == e)
-                throw InvalidMIVIAFile{ filename, "contains a loop" };
+                throw InvalidMIVIAFile{ filename, "loop on vertex " + std::to_string(r) };
 
             result.add_edge(r, e);
         }
