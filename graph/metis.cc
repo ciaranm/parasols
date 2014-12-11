@@ -2,20 +2,11 @@
 
 #include <graph/metis.hh>
 #include <graph/graph.hh>
+#include <graph/graph_file_error.hh>
 #include <boost/regex.hpp>
 #include <fstream>
 
 using namespace parasols;
-
-InvalidMETISFile::InvalidMETISFile(const std::string & filename, const std::string & message) throw () :
-    _what("Error reading METIS file '" + filename + "': " + message)
-{
-}
-
-auto InvalidMETISFile::what() const throw () -> const char *
-{
-    return _what.c_str();
-}
 
 auto parasols::read_metis(const std::string & filename) -> Graph
 {
@@ -23,7 +14,7 @@ auto parasols::read_metis(const std::string & filename) -> Graph
 
     std::ifstream infile{ filename };
     if (! infile)
-        throw InvalidMETISFile{ filename, "unable to open file" };
+        throw GraphFileError{ filename, "unable to open file" };
 
     /* Lines are comments, a problem description (contains the number of
      * vertices), or an edge. */
@@ -47,21 +38,21 @@ auto parasols::read_metis(const std::string & filename) -> Graph
                 if (match.str(4) == "1")
                     weighted_edges = true;
                 else if (match.str(4) != "0")
-                    throw InvalidMETISFile{ filename, "unsupported fmt " + match.str(4) + " is not 0 or 1" };
+                    throw GraphFileError{ filename, "unsupported fmt " + match.str(4) + " is not 0 or 1" };
             }
 
             if (! match.str(6).empty())
                 if (match.str(6) != "0")
-                    throw InvalidMETISFile{ filename, "unsupported ncon " + match.str(6) + " is not 0" };
+                    throw GraphFileError{ filename, "unsupported ncon " + match.str(6) + " is not 0" };
 
             break;
         }
         else
-            throw InvalidMETISFile{ filename, "could not parse first line" };
+            throw GraphFileError{ filename, "could not parse first line" };
     }
 
     if (0 == result.size())
-        throw InvalidMETISFile{ filename, "no problem line found" };
+        throw GraphFileError{ filename, "no problem line found" };
 
     int row = 0;
     while (std::getline(infile, line)) {
@@ -75,7 +66,7 @@ auto parasols::read_metis(const std::string & filename) -> Graph
             int e;
             while (line_s >> e) {
                 if (e > result.size() || e < 1)
-                    throw InvalidMETISFile{ filename, "bad edge destination" };
+                    throw GraphFileError{ filename, "bad edge destination" };
 
                 result.add_edge(row - 1, e - 1);
                 if (weighted_edges)
@@ -83,7 +74,7 @@ auto parasols::read_metis(const std::string & filename) -> Graph
             }
 
             if (! line_s.eof())
-                throw InvalidMETISFile{ filename, "bad edges line" };
+                throw GraphFileError{ filename, "bad edges line" };
         }
 
         if (row == result.size())
@@ -93,14 +84,14 @@ auto parasols::read_metis(const std::string & filename) -> Graph
     while (std::getline(infile, line)) {
         boost::smatch match;
         if ((! line.empty()) && (! regex_match(line, match, comment)))
-            throw InvalidMETISFile{ filename, "trailing non-empty lines" };
+            throw GraphFileError{ filename, "trailing non-empty lines" };
     }
 
     if (row != result.size())
-        throw InvalidMETISFile{ filename, "not enough lines read" };
+        throw GraphFileError{ filename, "not enough lines read" };
 
     if (! infile.eof())
-        throw InvalidMETISFile{ filename, "error reading file" };
+        throw GraphFileError{ filename, "error reading file" };
 
     return result;
 }

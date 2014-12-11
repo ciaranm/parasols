@@ -9,24 +9,9 @@
 namespace parasols
 {
     /**
-     * Thrown if we come across bad data in a file.
-     */
-    class InvalidNetFile :
-        public std::exception
-    {
-        private:
-            std::string _what;
-
-        public:
-            InvalidNetFile(const std::string & filename, const std::string & message) throw ();
-
-            auto what() const throw () -> const char *;
-    };
-
-    /**
      * Read a net format file into a Graph.
      *
-     * \throw InvalidNetFile
+     * \throw GraphFileError
      */
     auto read_net(const std::string & filename) -> Graph;
 }

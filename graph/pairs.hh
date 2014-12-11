@@ -9,28 +9,13 @@
 namespace parasols
 {
     /**
-     * Thrown if we come across bad data in a file.
-     */
-    class InvalidPairsFile :
-        public std::exception
-    {
-        private:
-            std::string _what;
-
-        public:
-            InvalidPairsFile(const std::string & filename, const std::string & message) throw ();
-
-            auto what() const throw () -> const char *;
-    };
-
-    /**
      * Read a (v,v) or (v v) format file into a Graph.
      *
      * The first number is the number of vertices. The second is the number of
      * edges (this is often wrong, and is ignored). Subsequent lines are pairs
      * v1,v2 or v1 v2 of edges.
      *
-     * \throw InvalidPairsFile
+     * \throw GraphFileError
      */
     auto read_pairs(const std::string & filename, bool one_indexed) -> Graph;
 }

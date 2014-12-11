@@ -2,20 +2,11 @@
 
 #include <graph/dimacs.hh>
 #include <graph/graph.hh>
+#include <graph/graph_file_error.hh>
 #include <boost/regex.hpp>
 #include <fstream>
 
 using namespace parasols;
-
-InvalidDIMACSFile::InvalidDIMACSFile(const std::string & filename, const std::string & message) throw () :
-    _what("Error reading DIMACS file '" + filename + "': " + message)
-{
-}
-
-auto InvalidDIMACSFile::what() const throw () -> const char *
-{
-    return _what.c_str();
-}
 
 auto parasols::read_dimacs(const std::string & filename) -> Graph
 {
@@ -23,7 +14,7 @@ auto parasols::read_dimacs(const std::string & filename) -> Graph
 
     std::ifstream infile{ filename };
     if (! infile)
-        throw InvalidDIMACSFile{ filename, "unable to open file" };
+        throw GraphFileError{ filename, "unable to open file" };
 
     std::string line;
     while (std::getline(infile, line)) {
@@ -45,7 +36,7 @@ auto parasols::read_dimacs(const std::string & filename) -> Graph
             /* Problem. Specifies the size of the graph. Must happen exactly
              * once. */
             if (0 != result.size())
-                throw InvalidDIMACSFile{ filename, "multiple 'p' lines encountered" };
+                throw GraphFileError{ filename, "multiple 'p' lines encountered" };
             result.resize(std::stoi(match.str(2)));
         }
         else if (regex_match(line, match, edge)) {
@@ -53,17 +44,17 @@ auto parasols::read_dimacs(const std::string & filename) -> Graph
              * a problem line (if not our size will be 0, so we'll throw). */
             int a{ std::stoi(match.str(1)) }, b{ std::stoi(match.str(2)) };
             if (0 == a || 0 == b || a > result.size() || b > result.size())
-                throw InvalidDIMACSFile{ filename, "line '" + line + "' edge index out of bounds" };
+                throw GraphFileError{ filename, "line '" + line + "' edge index out of bounds" };
             else if (a == b)
-                throw InvalidDIMACSFile{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
+                throw GraphFileError{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
             result.add_edge(a - 1, b - 1);
         }
         else
-            throw InvalidDIMACSFile{ filename, "cannot parse line '" + line + "'" };
+            throw GraphFileError{ filename, "cannot parse line '" + line + "'" };
     }
 
     if (! infile.eof())
-        throw InvalidDIMACSFile{ filename, "error reading file" };
+        throw GraphFileError{ filename, "error reading file" };
 
     return result;
 }

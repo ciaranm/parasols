@@ -2,26 +2,17 @@
 
 #include <graph/pairs.hh>
 #include <graph/graph.hh>
+#include <graph/graph_file_error.hh>
 #include <boost/regex.hpp>
 #include <fstream>
 
 using namespace parasols;
 
-InvalidPairsFile::InvalidPairsFile(const std::string & filename, const std::string & message) throw () :
-    _what("Error reading file '" + filename + "': " + message)
-{
-}
-
-auto InvalidPairsFile::what() const throw () -> const char *
-{
-    return _what.c_str();
-}
-
 auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Graph
 {
     std::ifstream infile{ filename };
     if (! infile)
-        throw InvalidPairsFile{ filename, "unable to open file" };
+        throw GraphFileError{ filename, "unable to open file" };
 
     std::string line;
 
@@ -29,7 +20,7 @@ auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Gra
     unsigned size;
 
     if (! std::getline(infile, line))
-        throw InvalidPairsFile{ filename, "cannot parse number of vertices" };
+        throw GraphFileError{ filename, "cannot parse number of vertices" };
 
     {
         boost::smatch match;
@@ -59,17 +50,17 @@ auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Gra
             }
 
             if (a >= result.size() || b >= result.size() || a < 0 || b < 0)
-                throw InvalidPairsFile{ filename, "line '" + line + "' edge index out of bounds" };
+                throw GraphFileError{ filename, "line '" + line + "' edge index out of bounds" };
             else if (a == b)
-                throw InvalidPairsFile{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
+                throw GraphFileError{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
             result.add_edge(a, b);
         }
         else
-            throw InvalidPairsFile{ filename, "cannot parse line '" + line + "'" };
+            throw GraphFileError{ filename, "cannot parse line '" + line + "'" };
     }
 
     if (! infile.eof())
-        throw InvalidPairsFile{ filename, "error reading file" };
+        throw GraphFileError{ filename, "error reading file" };
 
     return result;
 }

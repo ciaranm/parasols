@@ -6,16 +6,6 @@
 
 using namespace parasols;
 
-InvalidLADFile::InvalidLADFile(const std::string & filename, const std::string & message) throw () :
-    _what("Error reading LAD file '" + filename + "': " + message)
-{
-}
-
-auto InvalidLADFile::what() const throw () -> const char *
-{
-    return _what.c_str();
-}
-
 namespace
 {
     auto read_word(std::ifstream & infile) -> int
@@ -32,24 +22,24 @@ auto parasols::read_lad(const std::string & filename) -> Graph
 
     std::ifstream infile{ filename };
     if (! infile)
-        throw InvalidLADFile{ filename, "unable to open file" };
+        throw GraphFileError{ filename, "unable to open file" };
 
     result.resize(read_word(infile));
     if (! infile)
-        throw InvalidLADFile{ filename, "error reading size" };
+        throw GraphFileError{ filename, "error reading size" };
 
     for (int r = 0 ; r < result.size() ; ++r) {
         int c_end = read_word(infile);
         if (! infile)
-            throw InvalidLADFile{ filename, "error reading edges count" };
+            throw GraphFileError{ filename, "error reading edges count" };
 
         for (int c = 0 ; c < c_end ; ++c) {
             int e = read_word(infile);
 
             if (e < 0 || e >= result.size())
-                throw InvalidLADFile{ filename, "edge index out of bounds" };
+                throw GraphFileError{ filename, "edge index out of bounds" };
             else if (r == e)
-                throw InvalidLADFile{ filename, "loop on vertex " + std::to_string(r) };
+                throw GraphFileError{ filename, "loop on vertex " + std::to_string(r) };
 
             result.add_edge(r, e);
         }
@@ -57,9 +47,9 @@ auto parasols::read_lad(const std::string & filename) -> Graph
 
     std::string rest;
     if (infile >> rest)
-        throw InvalidLADFile{ filename, "EOF not reached, next text is \"" + rest + "\"" };
+        throw GraphFileError{ filename, "EOF not reached, next text is \"" + rest + "\"" };
     if (! infile.eof())
-        throw InvalidLADFile{ filename, "EOF not reached" };
+        throw GraphFileError{ filename, "EOF not reached" };
 
     return result;
 }

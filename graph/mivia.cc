@@ -2,19 +2,10 @@
 
 #include <graph/mivia.hh>
 #include <graph/graph.hh>
+#include <graph/graph_file_error.hh>
 #include <fstream>
 
 using namespace parasols;
-
-InvalidMIVIAFile::InvalidMIVIAFile(const std::string & filename, const std::string & message) throw () :
-    _what("Error reading MIVIA file '" + filename + "': " + message)
-{
-}
-
-auto InvalidMIVIAFile::what() const throw () -> const char *
-{
-    return _what.c_str();
-}
 
 namespace
 {
@@ -33,24 +24,24 @@ auto parasols::read_mivia(const std::string & filename) -> Graph
 
     std::ifstream infile{ filename };
     if (! infile)
-        throw InvalidMIVIAFile{ filename, "unable to open file" };
+        throw GraphFileError{ filename, "unable to open file" };
 
     result.resize(read_word(infile));
     if (! infile)
-        throw InvalidMIVIAFile{ filename, "error reading size" };
+        throw GraphFileError{ filename, "error reading size" };
 
     for (int r = 0 ; r < result.size() ; ++r) {
         int c_end = read_word(infile);
         if (! infile)
-            throw InvalidMIVIAFile{ filename, "error reading edges count" };
+            throw GraphFileError{ filename, "error reading edges count" };
 
         for (int c = 0 ; c < c_end ; ++c) {
             int e = read_word(infile);
 
             if (e < 0 || e >= result.size())
-                throw InvalidMIVIAFile{ filename, "edge index out of bounds" };
+                throw GraphFileError{ filename, "edge index out of bounds" };
             else if (r == e)
-                throw InvalidMIVIAFile{ filename, "loop on vertex " + std::to_string(r) };
+                throw GraphFileError{ filename, "loop on vertex " + std::to_string(r) };
 
             result.add_edge(r, e);
         }
@@ -58,7 +49,7 @@ auto parasols::read_mivia(const std::string & filename) -> Graph
 
     infile.peek();
     if (! infile.eof())
-        throw InvalidMIVIAFile{ filename, "EOF not reached" };
+        throw GraphFileError{ filename, "EOF not reached" };
 
     return result;
 }

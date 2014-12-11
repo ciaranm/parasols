@@ -2,20 +2,11 @@
 
 #include <graph/adj.hh>
 #include <graph/graph.hh>
+#include <graph/graph_file_error.hh>
 #include <boost/regex.hpp>
 #include <fstream>
 
 using namespace parasols;
-
-InvalidADJFile::InvalidADJFile(const std::string & filename, const std::string & message) throw () :
-    _what("Error reading ADJ file '" + filename + "': " + message)
-{
-}
-
-auto InvalidADJFile::what() const throw () -> const char *
-{
-    return _what.c_str();
-}
 
 auto parasols::read_adj(const std::string & filename) -> Graph
 {
@@ -23,7 +14,7 @@ auto parasols::read_adj(const std::string & filename) -> Graph
 
     std::ifstream infile{ filename };
     if (! infile)
-        throw InvalidADJFile{ filename, "unable to open file" };
+        throw GraphFileError{ filename, "unable to open file" };
 
     std::string word;
     int depth = 0;
@@ -36,19 +27,19 @@ auto parasols::read_adj(const std::string & filename) -> Graph
         }
         else if (word == "]" || word == "],") {
             if (--depth < 0)
-                throw InvalidADJFile{ filename, "too many close brackets" };
+                throw GraphFileError{ filename, "too many close brackets" };
 
             if (0 == row)
                 result.resize(row_values.size());
 
             if (1 == depth) {
                 if (unsigned(row_values.size()) != unsigned(result.size()))
-                    throw InvalidADJFile{ filename, "bad row length" };
+                    throw GraphFileError{ filename, "bad row length" };
 
                 for (int i = 0 ; i < result.size() ; ++i)
                     if (row_values.at(i)) {
                         if (i == row)
-                            throw InvalidADJFile{ filename, "loop detected" };
+                            throw GraphFileError{ filename, "loop detected" };
                         result.add_edge(row, i);
                     }
 
@@ -67,15 +58,15 @@ auto parasols::read_adj(const std::string & filename) -> Graph
             else if (word.empty()) {
             }
             else
-                throw InvalidADJFile{ filename, "unexpected token '" + word + "'" };
+                throw GraphFileError{ filename, "unexpected token '" + word + "'" };
         }
     }
 
     if (0 != depth || row != result.size() || ! row_values.empty())
-        throw InvalidADJFile{ filename, "couldn't finish reading file" };
+        throw GraphFileError{ filename, "couldn't finish reading file" };
 
     if (! infile.eof())
-        throw InvalidADJFile{ filename, "error reading file" };
+        throw GraphFileError{ filename, "error reading file" };
 
     return result;
 }

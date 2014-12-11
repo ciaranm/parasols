@@ -9,24 +9,9 @@
 namespace parasols
 {
     /**
-     * Thrown if we come across bad data in a MIVIA format file.
-     */
-    class InvalidMIVIAFile :
-        public std::exception
-    {
-        private:
-            std::string _what;
-
-        public:
-            InvalidMIVIAFile(const std::string & filename, const std::string & message) throw ();
-
-            auto what() const throw () -> const char *;
-    };
-
-    /**
      * Read a MIVIA format file into a Graph.
      *
-     * \throw InvalidMIVIAFile
+     * \throw GraphFileError
      */
     auto read_mivia(const std::string & filename) -> Graph;
 }
