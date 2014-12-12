@@ -102,8 +102,14 @@ auto parasols::naive_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs
     for (int i = 0 ; i < pattern.size() ; ++i) {
         domains.at(i).resize(target.size());
         for (int j = 0 ; j < target.size() ; ++j)
-            if (target_degrees.at(j) >= pattern_degrees.at(i))
-                domains.at(i).at(j) = true;
+            if (target_degrees.at(j) >= pattern_degrees.at(i)) {
+                if (pattern.adjacent(i, i) && ! target.adjacent(j, j)) {
+                }
+                else if (params.induced && target.adjacent(j, j) && ! pattern.adjacent(i, i)) {
+                }
+                else
+                    domains.at(i).at(j) = true;
+            }
     }
 
     SubgraphIsomorphismResult result;

@@ -182,8 +182,14 @@ namespace
                     domains.at(i).revise = true;
                     to_revise.push_back(i);
                     for (int j = 0 ; j < target.size() ; ++j)
-                        if (target_degrees.at(j) >= pattern_degrees.at(i))
-                            domains.at(i).values.set(j);
+                        if (target_degrees.at(j) >= pattern_degrees.at(i)) {
+                            if (pattern.adjacent(i, i) && ! target.adjacent(j, j)) {
+                            }
+                            else if (params.induced && target.adjacent(j, j) && ! pattern.adjacent(i, i)) {
+                            }
+                            else
+                                domains.at(i).values.set(j);
+                        }
                 }
             }
             else {
