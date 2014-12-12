@@ -78,7 +78,7 @@ auto main(int argc, char * argv[]) -> int
         /* Read in the graphs */
         auto input_files = options_vars["input-file"].as<std::vector<std::string> >();
         for (auto & input_file : input_files) {
-            auto graph = std::get<1>(*format)(input_file);
+            auto graph = std::get<1>(*format)(input_file, GraphOptions::AllowLoops);
 
             if (0 == result.size())
                 result.resize(graph.size());

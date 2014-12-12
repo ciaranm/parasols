@@ -17,7 +17,7 @@ namespace parasols
      *
      * \throw GraphFileError
      */
-    auto read_pairs(const std::string & filename, bool one_indexed) -> Graph;
+    auto read_pairs(const std::string & filename, bool one_indexed, const GraphOptions &) -> Graph;
 }
 
 #endif

@@ -164,7 +164,7 @@ auto main(int argc, char * argv[]) -> int
             }
 
             /* Read in the graph */
-            auto graph = std::get<1>(*format)(input_file);
+            auto graph = std::get<1>(*format)(input_file, GraphOptions::None);
 
             /* Create labels */
             params.labels = make_random_labels(graph.size(), options_vars["labels"].as<int>(),

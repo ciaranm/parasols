@@ -8,7 +8,7 @@
 
 using namespace parasols;
 
-auto parasols::read_dimacs(const std::string & filename) -> Graph
+auto parasols::read_dimacs(const std::string & filename, const GraphOptions & options) -> Graph
 {
     Graph result(0, true);
 
@@ -45,7 +45,7 @@ auto parasols::read_dimacs(const std::string & filename) -> Graph
             int a{ std::stoi(match.str(1)) }, b{ std::stoi(match.str(2)) };
             if (0 == a || 0 == b || a > result.size() || b > result.size())
                 throw GraphFileError{ filename, "line '" + line + "' edge index out of bounds" };
-            else if (a == b)
+            else if (a == b && ! test(options, GraphOptions::AllowLoops))
                 throw GraphFileError{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
             result.add_edge(a - 1, b - 1);
         }

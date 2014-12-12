@@ -13,7 +13,7 @@ namespace parasols
      *
      * \throw GraphFileError
      */
-    auto read_dimacs(const std::string & filename) -> Graph;
+    auto read_dimacs(const std::string & filename, const GraphOptions & options) -> Graph;
 }
 
 #endif

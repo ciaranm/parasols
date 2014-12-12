@@ -8,7 +8,7 @@
 
 using namespace parasols;
 
-auto parasols::read_adj(const std::string & filename) -> Graph
+auto parasols::read_adj(const std::string & filename, const GraphOptions & options) -> Graph
 {
     Graph result(0, true);
 
@@ -38,7 +38,7 @@ auto parasols::read_adj(const std::string & filename) -> Graph
 
                 for (int i = 0 ; i < result.size() ; ++i)
                     if (row_values.at(i)) {
-                        if (i == row)
+                        if (i == row && ! test(options, GraphOptions::AllowLoops))
                             throw GraphFileError{ filename, "loop detected" };
                         result.add_edge(row, i);
                     }

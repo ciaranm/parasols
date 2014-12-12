@@ -18,7 +18,7 @@ namespace
     }
 }
 
-auto parasols::read_mivia(const std::string & filename) -> Graph
+auto parasols::read_mivia(const std::string & filename, const GraphOptions & options) -> Graph
 {
     Graph result(0, false);
 
@@ -40,7 +40,7 @@ auto parasols::read_mivia(const std::string & filename) -> Graph
 
             if (e < 0 || e >= result.size())
                 throw GraphFileError{ filename, "edge index out of bounds" };
-            else if (r == e)
+            else if (r == e && ! test(options, GraphOptions::AllowLoops))
                 throw GraphFileError{ filename, "loop on vertex " + std::to_string(r) };
 
             result.add_edge(r, e);

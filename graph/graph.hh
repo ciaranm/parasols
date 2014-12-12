@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <type_traits>
 #include <cstdint>
 
 namespace parasols
@@ -108,6 +109,19 @@ namespace parasols
                 return _add_one_for_output;
             }
     };
+
+    enum class GraphOptions
+    {
+        None       = 0,
+        AllowLoops = 1
+    };
+
+    inline bool test(GraphOptions a, GraphOptions b)
+    {
+        return
+            static_cast<std::underlying_type<GraphOptions>::type>(a) &
+            static_cast<std::underlying_type<GraphOptions>::type>(b);
+    }
 }
 
 #endif

@@ -86,7 +86,7 @@ auto main(int argc, char * argv[]) -> int
             }
 
             /* Read in the graph */
-            auto graph = std::get<1>(*format)(input_file);
+            auto graph = std::get<1>(*format)(input_file, GraphOptions::AllowLoops);
 
             if (options_vars.count("complement"))
                 graph = complement(graph);

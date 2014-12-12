@@ -171,8 +171,8 @@ auto main(int argc, char * argv[]) -> int
 
         /* Read in the graphs */
         auto graphs = std::make_pair(
-                std::get<1>(*format)(options_vars["file1"].as<std::string>()),
-                std::get<1>(*format)(options_vars["file2"].as<std::string>()));
+                std::get<1>(*format)(options_vars["file1"].as<std::string>(), GraphOptions::None),
+                std::get<1>(*format)(options_vars["file2"].as<std::string>(), GraphOptions::None));
 
         /* Do the actual run. */
         bool aborted = false;

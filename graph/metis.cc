@@ -8,7 +8,7 @@
 
 using namespace parasols;
 
-auto parasols::read_metis(const std::string & filename) -> Graph
+auto parasols::read_metis(const std::string & filename, const GraphOptions & options) -> Graph
 {
     Graph result(0, true);
 
@@ -67,6 +67,9 @@ auto parasols::read_metis(const std::string & filename) -> Graph
             while (line_s >> e) {
                 if (e > result.size() || e < 1)
                     throw GraphFileError{ filename, "bad edge destination" };
+
+                if (e == row && ! test(options, GraphOptions::AllowLoops))
+                    throw GraphFileError{ filename, "loop detected" };
 
                 result.add_edge(row - 1, e - 1);
                 if (weighted_edges)

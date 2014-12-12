@@ -79,7 +79,7 @@ auto main(int argc, char * argv[]) -> int
         }
 
         /* Read in the graph */
-        auto graph = std::get<1>(*format)(options_vars["graph"].as<std::string>());
+        auto graph = std::get<1>(*format)(options_vars["graph"].as<std::string>(), GraphOptions::None);
 
         boost::char_separator<char> sep(",");
 

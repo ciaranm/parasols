@@ -8,7 +8,7 @@
 
 using namespace parasols;
 
-auto parasols::read_net(const std::string & filename) -> Graph
+auto parasols::read_net(const std::string & filename, const GraphOptions & options) -> Graph
 {
     Graph result(0, true);
 
@@ -67,8 +67,12 @@ auto parasols::read_net(const std::string & filename) -> Graph
 
         while (line_s >> t) {
             --t;
-            if (t < 0 || t >= result.size() || t == f)
+            if (t < 0 || t >= result.size())
                 throw GraphFileError{ filename, "invalid t value " + std::to_string(t) + " (" + std::to_string(f) + ", " + std::to_string(result.size()) + ")" };
+
+            if (f == t && ! test(options, GraphOptions::AllowLoops))
+                throw GraphFileError{ filename, "loop on vertex " + std::to_string(f) };
+
             result.add_edge(f, t);
         }
 

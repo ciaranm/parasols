@@ -8,7 +8,7 @@
 
 using namespace parasols;
 
-auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Graph
+auto parasols::read_pairs(const std::string & filename, bool one_indexed, const GraphOptions & options) -> Graph
 {
     std::ifstream infile{ filename };
     if (! infile)
@@ -51,7 +51,7 @@ auto parasols::read_pairs(const std::string & filename, bool one_indexed) -> Gra
 
             if (a >= result.size() || b >= result.size() || a < 0 || b < 0)
                 throw GraphFileError{ filename, "line '" + line + "' edge index out of bounds" };
-            else if (a == b)
+            else if (a == b && ! test(options, GraphOptions::AllowLoops))
                 throw GraphFileError{ filename, "line '" + line + "' contains a loop on vertex " + std::to_string(a) };
             result.add_edge(a, b);
         }

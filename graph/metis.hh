@@ -13,7 +13,7 @@ namespace parasols
      *
      * \throw GraphFileError
      */
-    auto read_metis(const std::string & filename) -> Graph;
+    auto read_metis(const std::string & filename, const GraphOptions &) -> Graph;
 }
 
 #endif

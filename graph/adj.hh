@@ -13,7 +13,7 @@ namespace parasols
      *
      * \throw GraphFileError
      */
-    auto read_adj(const std::string & filename) -> Graph;
+    auto read_adj(const std::string & filename, const GraphOptions &) -> Graph;
 }
 
 #endif

@@ -14,7 +14,7 @@ namespace parasols
      *
      * \throw GraphFileError
      */
-    auto read_lad(const std::string & filename) -> Graph;
+    auto read_lad(const std::string & filename, const GraphOptions & options) -> Graph;
 }
 
 #endif

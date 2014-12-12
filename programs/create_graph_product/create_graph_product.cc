@@ -75,8 +75,8 @@ auto main(int argc, char * argv[]) -> int
         }
 
         /* Read in the graphs */
-        auto graph1 = std::get<1>(*format)(options_vars["graph1"].as<std::string>());
-        auto graph2 = std::get<1>(*format)(options_vars["graph2"].as<std::string>());
+        auto graph1 = std::get<1>(*format)(options_vars["graph1"].as<std::string>(), GraphOptions::AllowLoops);
+        auto graph2 = std::get<1>(*format)(options_vars["graph2"].as<std::string>(), GraphOptions::AllowLoops);
 
         auto product = modular_product(graph1, graph2);
 
