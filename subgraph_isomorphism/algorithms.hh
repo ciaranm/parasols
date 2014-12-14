@@ -14,10 +14,8 @@ namespace parasols
         std::make_pair( std::string{ "naive" },      naive_subgraph_isomorphism ),
         std::make_pair( std::string{ "b" },          b_subgraph_isomorphism ),
         std::make_pair( std::string{ "bdds" },       bdds_subgraph_isomorphism ),
-        std::make_pair( std::string{ "bddsc" },      bddsc_subgraph_isomorphism ),
         std::make_pair( std::string{ "bnds" },       bnds_subgraph_isomorphism ),
-        std::make_pair( std::string{ "bndsdds" },    bndsdds_subgraph_isomorphism ),
-        std::make_pair( std::string{ "bndsddsc" },   bndsddsc_subgraph_isomorphism )
+        std::make_pair( std::string{ "bndsdds" },    bndsdds_subgraph_isomorphism )
     };
 }
 
