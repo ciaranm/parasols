@@ -154,26 +154,26 @@ namespace
                 return true;
 
             bool first = true;
-            for (int v = 0 ; v < target.size() ; ++v) {
-                if (domains.at(branch_on).values.test(v)) {
-                    if (! (first && depth + 1 == allow_discrepancies_above)) {
-                        auto new_domains = domains;
-                        for (int w = 0 ; w < target.size() ; ++w) {
-                            new_domains.at(branch_on).values.unset_all();
-                            new_domains.at(branch_on).values.set(v);
-                            new_domains.at(branch_on).uncommitted_singleton = true;
-                        }
-
-                        if (expand(new_domains, branch_on, nodes, depth + 1, allow_discrepancies_above)) {
-                            domains = std::move(new_domains);
-                            return true;
-                        }
+            int v;
+            while (((v = domains.at(branch_on).values.first_set_bit())) != -1) {
+                domains.at(branch_on).values.unset(v);
+                if (! (first && depth + 1 == allow_discrepancies_above)) {
+                    auto new_domains = domains;
+                    for (int w = 0 ; w < target.size() ; ++w) {
+                        new_domains.at(branch_on).values.unset_all();
+                        new_domains.at(branch_on).values.set(v);
+                        new_domains.at(branch_on).uncommitted_singleton = true;
                     }
 
-                    first = false;
-                    if (depth >= allow_discrepancies_above)
-                        break;
+                    if (expand(new_domains, branch_on, nodes, depth + 1, allow_discrepancies_above)) {
+                        domains = std::move(new_domains);
+                        return true;
+                    }
                 }
+
+                first = false;
+                if (depth >= allow_discrepancies_above)
+                    break;
             }
 
             return false;
