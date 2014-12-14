@@ -141,11 +141,13 @@ namespace
 
             int branch_on = -1, branch_on_popcount = 0;
             for (int i = 0 ; i < pattern.size() ; ++i) {
-                int popcount = domains.at(i).values.popcount();
-                if (popcount > 1) {
-                    if (-1 == branch_on || popcount < branch_on_popcount) {
-                        branch_on = i;
-                        branch_on_popcount = popcount;
+                if (! domains.at(i).committed) {
+                    int popcount = domains.at(i).values.popcount();
+                    if (popcount > 1) {
+                        if (-1 == branch_on || popcount < branch_on_popcount) {
+                            branch_on = i;
+                            branch_on_popcount = popcount;
+                        }
                     }
                 }
             }
