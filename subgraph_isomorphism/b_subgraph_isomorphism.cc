@@ -17,6 +17,7 @@ namespace
     {
         bool uncommitted_singleton = false;
         bool committed = false;
+        int popcount;
 
         FixedBitSet<target_size_> values;
     };
@@ -57,10 +58,10 @@ namespace
             if (-1 == branch_point) {
                 /* no branch point at the top of search, check all domains */
                 for (int v = 0 ; v < pattern.size() ; ++v) {
-                    int count = domains.at(v).values.popcount();
-                    if (0 == count)
+                    domains.at(v).popcount = domains.at(v).values.popcount();
+                    if (0 == domains.at(v).popcount)
                         return false;
-                    else if (1 == count) {
+                    else if (1 == domains.at(v).popcount) {
                         uncommitted_singletons[uncommitted_singletons_end++] = v;
                         domains.at(v).uncommitted_singleton = true;
                     }
@@ -111,7 +112,8 @@ namespace
 
                     if (w_domain_potentially_changed) {
                         /* zero or one values left in the domain? */
-                        switch (domains.at(w).values.popcount()) {
+                        domains.at(w).popcount = domains.at(w).values.popcount();
+                        switch (domains.at(w).popcount) {
                             case 0:
                                 return false;
 
@@ -142,7 +144,7 @@ namespace
             int branch_on = -1, branch_on_popcount = 0;
             for (int i = 0 ; i < pattern.size() ; ++i) {
                 if (! domains.at(i).committed) {
-                    int popcount = domains.at(i).values.popcount();
+                    int popcount = domains.at(i).popcount;
                     if (popcount > 1) {
                         if (-1 == branch_on || popcount < branch_on_popcount) {
                             branch_on = i;
