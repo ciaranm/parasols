@@ -12,18 +12,19 @@ using namespace parasols;
 
 namespace
 {
-    template <unsigned size_>
+    template <unsigned target_size_>
     struct Domain
     {
-        bool revise;
-        FixedBitSet<size_> values;
+        bool uncommitted_singleton = false;
+        bool committed = false;
+
+        FixedBitSet<target_size_> values;
     };
 
-    template <unsigned size_, typename>
+    template <unsigned target_size_, typename>
     struct SGI
     {
-        using Domains = std::vector<Domain<size_> >;
-        using ToRevise = std::vector<int>;
+        using Domains = std::vector<Domain<target_size_> >;
 
         const Graph & target;
         const Graph & pattern;
@@ -31,7 +32,7 @@ namespace
         const bool dds, nds;
         const int remaining_vars_cutoff;
 
-        FixedBitGraph<size_> target_bitgraph;
+        FixedBitGraph<target_size_> target_bitgraph;
 
         SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a, bool d, bool n, bool c) :
             target(t),
@@ -48,76 +49,97 @@ namespace
                         target_bitgraph.add_edge(i, j);
         }
 
-        auto expand(Domains & domains, ToRevise & to_revise, unsigned long long & nodes,
+        auto filter(Domains & domains, int branch_point) -> bool
+        {
+            /* really a vector, but memory allocation is expensive. only needs
+             * room for pattern.size() elements, but target_size_ will do. */
+            std::array<int, target_size_ * bits_per_word> uncommitted_singletons;
+            int uncommitted_singletons_end = 0;
+
+            if (-1 == branch_point) {
+                /* no branch point at the top of search, check all domains */
+                for (int v = 0 ; v < pattern.size() ; ++v) {
+                    int count = domains.at(v).values.popcount();
+                    if (0 == count)
+                        return false;
+                    else if (1 == count) {
+                        uncommitted_singletons[uncommitted_singletons_end++] = v;
+                        domains.at(v).uncommitted_singleton = true;
+                    }
+                }
+            }
+            else {
+                /* start by revising the branch point */
+                uncommitted_singletons[uncommitted_singletons_end++] = branch_point;
+                domains.at(branch_point).uncommitted_singleton = true;
+            }
+
+            /* commit all uncommitted singletons */
+            while (uncommitted_singletons_end > 0) {
+                if (params.abort->load())
+                    return false;
+
+                /* v has only one value in its domain, but is not committed */
+                int v = uncommitted_singletons[--uncommitted_singletons_end];
+                domains.at(v).uncommitted_singleton = false;
+                domains.at(v).committed = true;
+
+                /* what's it mapped to? */
+                int f_v = domains.at(v).values.first_set_bit();
+
+                /* for each other domain... */
+                for (int w = 0 ; w < pattern.size() ; ++w) {
+                    if (v == w || domains.at(w).committed)
+                        continue;
+
+                    bool w_domain_potentially_changed = false;
+
+                    if (domains.at(w).values.test(f_v)) {
+                        /* no other domain can be mapped to f_v */
+                        domains.at(w).values.unset(f_v);
+                        w_domain_potentially_changed = true;
+                    }
+
+                    if (pattern.adjacent(v, w)) {
+                        /* v is adjacent to w, so w can only be mapped to things adjacent to f_v */
+                        target_bitgraph.intersect_with_row(f_v, domains.at(w).values);
+                        w_domain_potentially_changed = true;
+                    }
+                    else if (params.induced) {
+                        /* v is nonadjacent to w, so w can only be mapped to things nonadjacent to f_v */
+                        target_bitgraph.intersect_with_row_complement(f_v, domains.at(w).values);
+                        w_domain_potentially_changed = true;
+                    }
+
+                    if (w_domain_potentially_changed) {
+                        /* zero or one values left in the domain? */
+                        switch (domains.at(w).values.popcount()) {
+                            case 0:
+                                return false;
+
+                            case 1:
+                                if (! domains.at(w).uncommitted_singleton) {
+                                    domains.at(w).uncommitted_singleton = true;
+                                    uncommitted_singletons[uncommitted_singletons_end++] = w;
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        auto expand(Domains & domains, int branch_point, unsigned long long & nodes,
                 unsigned depth, unsigned allow_discrepancies_above) -> bool
         {
             ++nodes;
             if (params.abort->load())
                 return false;
 
-            while (! to_revise.empty()) {
-                if (params.abort->load())
-                    return false;
-
-                int i = to_revise.back();
-                to_revise.pop_back();
-                domains.at(i).revise = false;
-
-                int popcount = domains.at(i).values.popcount();
-
-                if (0 == popcount)
-                    return false;
-                else if (1 == popcount) {
-                    int f_i = domains.at(i).values.first_set_bit();
-                    for (int j = 0 ; j < pattern.size() ; ++j) {
-                        if (i == j)
-                            continue;
-
-                        // all different
-                        if (domains.at(j).values.test(f_i)) {
-                            domains.at(j).values.unset(f_i);
-                            if (! domains.at(j).revise) {
-                                unsigned after = domains.at(j).values.popcount();
-                                if (0 == after)
-                                    return false;
-                                else if (after < 2) {
-                                    domains.at(j).revise = true;
-                                    to_revise.push_back(j);
-                                }
-                            }
-                        }
-
-                        if (pattern.adjacent(i, j)) {
-                            // i--j => f(i)--f(j)
-                            unsigned before = domains.at(j).values.popcount();
-                            target_bitgraph.intersect_with_row(f_i, domains.at(j).values);
-                            unsigned after = domains.at(j).values.popcount();
-                            if (0 == after)
-                                return false;
-                            else if (before != after && after < 2) {
-                                if (! domains.at(j).revise) {
-                                    domains.at(j).revise = true;
-                                    to_revise.push_back(j);
-                                }
-                            }
-                        }
-                        else if (params.induced) {
-                            // induced && i-/-j => f(i)-/-f(j)
-                            unsigned before = domains.at(j).values.popcount();
-                            target_bitgraph.intersect_with_row_complement(f_i, domains.at(j).values);
-                            unsigned after = domains.at(j).values.popcount();
-                            if (0 == after)
-                                return false;
-                            else if (before != after && after < 2) {
-                                if (! domains.at(j).revise) {
-                                    domains.at(j).revise = true;
-                                    to_revise.push_back(j);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            if (! filter(domains, branch_point))
+                return false;
 
             int branch_on = -1, branch_on_popcount = 0, remaining_vars = 0;
             for (int i = 0 ; i < pattern.size() ; ++i) {
@@ -142,13 +164,10 @@ namespace
                         for (int w = 0 ; w < target.size() ; ++w) {
                             new_domains.at(branch_on).values.unset_all();
                             new_domains.at(branch_on).values.set(v);
-                            new_domains.at(branch_on).revise = true;
+                            new_domains.at(branch_on).uncommitted_singleton = true;
                         }
 
-                        ToRevise new_to_revise;
-                        new_to_revise.push_back(branch_on);
-
-                        if (expand(new_domains, new_to_revise, nodes, depth + 1, allow_discrepancies_above)) {
+                        if (expand(new_domains, branch_on, nodes, depth + 1, allow_discrepancies_above)) {
                             domains = std::move(new_domains);
                             return true;
                         }
@@ -167,8 +186,13 @@ namespace
         {
             SubgraphIsomorphismResult result;
 
+            if (pattern.size() > target.size()) {
+                /* some of our fixed size data structures will throw a hissy
+                 * fit. check this early. */
+                return result;
+            }
+
             Domains domains(pattern.size());
-            ToRevise to_revise(pattern.size());
 
             std::vector<int> pattern_degrees(pattern.size()), target_degrees(target.size());
             for (int i = 0 ; i < pattern.size() ; ++i)
@@ -179,8 +203,6 @@ namespace
             if (! nds) {
                 for (int i = 0 ; i < pattern.size() ; ++i) {
                     domains.at(i).values.resize(target.size());
-                    domains.at(i).revise = true;
-                    to_revise.push_back(i);
                     for (int j = 0 ; j < target.size() ; ++j)
                         if (target_degrees.at(j) >= pattern_degrees.at(i)) {
                             if (pattern.adjacent(i, i) && ! target.adjacent(j, j)) {
@@ -212,8 +234,6 @@ namespace
 
                 for (int i = 0 ; i < pattern.size() ; ++i) {
                     domains.at(i).values.resize(target.size());
-                    domains.at(i).revise = true;
-                    to_revise.push_back(i);
 
                     for (int j = 0 ; j < target.size() ; ++j) {
                         if (target_ndss.at(j).size() >= pattern_ndss.at(i).size()) {
@@ -232,7 +252,7 @@ namespace
             }
 
             if (! dds) {
-                if (expand(domains, to_revise, result.nodes, 0, pattern.size() + 1)) {
+                if (expand(domains, -1, result.nodes, 0, pattern.size() + 1)) {
                     for (int i = 0 ; i < pattern.size() ; ++i)
                         result.isomorphism.emplace(i, domains.at(i).values.first_set_bit());
                 }
@@ -240,8 +260,7 @@ namespace
             else {
                 for (int k = 0 ; k < pattern.size() ; ++k) {
                     auto domains_copy = domains;
-                    auto to_revise_copy = to_revise;
-                    if (expand(domains_copy, to_revise_copy, result.nodes, 0, k)) {
+                    if (expand(domains_copy, -1, result.nodes, 0, k)) {
                         for (int i = 0 ; i < pattern.size() ; ++i)
                             result.isomorphism.emplace(i, domains_copy.at(i).values.first_set_bit());
                         break;
