@@ -95,12 +95,17 @@ auto main(int argc, char * argv[]) -> int
                 graph = power(graph, options_vars["power"].as<int>());
 
             unsigned edges = 0;
-            for (int i = 0 ; i < graph.size() ; ++i)
-                for (int j = 0 ; j < i ; ++j)
+            unsigned loops = 0;
+            for (int i = 0 ; i < graph.size() ; ++i) {
+                if (graph.adjacent(i, i))
+                    ++loops;
+
+                for (int j = 0 ; j <= i ; ++j)
                     if (graph.adjacent(i, j))
                         ++edges;
+            }
 
-            std::cout << graph.size() << " " << edges << std::endl;
+            std::cout << graph.size() << " " << edges << " " << loops << std::endl;
         }
 
         return EXIT_SUCCESS;
