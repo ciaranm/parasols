@@ -112,8 +112,7 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
-        if (options_vars.count("induced"))
-            params.induced = true;
+        params.induced = options_vars.count("induced");
 
         /* Read in the graphs */
         auto graphs = std::make_pair(
