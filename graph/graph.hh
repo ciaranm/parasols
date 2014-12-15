@@ -48,6 +48,8 @@ namespace parasols
 
             Graph(const Graph &) = default;
 
+            explicit Graph() = default;
+
             /**
              * Number of vertices.
              */
