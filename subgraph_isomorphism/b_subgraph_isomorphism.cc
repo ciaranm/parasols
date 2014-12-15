@@ -237,13 +237,18 @@ namespace
                     domains.at(i).values.resize(target.size());
 
                     for (int j = 0 ; j < target.size() ; ++j) {
-                        if (target_ndss.at(j).size() >= pattern_ndss.at(i).size()) {
+                        if (pattern.adjacent(i, i) && ! target.adjacent(j, j)) {
+                        }
+                        else if (params.induced && target.adjacent(j, j) && ! pattern.adjacent(i, i)) {
+                        }
+                        else if (target_ndss.at(j).size() >= pattern_ndss.at(i).size()) {
                             bool ok = true;
-                            for (unsigned x = 0 ; x < pattern_ndss.at(i).size() ; ++x)
+                            for (unsigned x = 0 ; x < pattern_ndss.at(i).size() ; ++x) {
                                 if (target_ndss.at(j).at(x) < pattern_ndss.at(i).at(x)) {
                                     ok = false;
                                     break;
                                 }
+                            }
 
                             if (ok)
                                 domains.at(i).values.set(j);
