@@ -31,7 +31,7 @@ namespace
         const Graph & target;
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
-        const bool dds, nds, ndsr, x2;
+        const bool dds, nds, ndsr, x2, x22;
 
         FixedBitGraph<target_size_> target_bitgraph;
 
@@ -40,14 +40,15 @@ namespace
         Graph pattern_paths3;
         FixedBitGraph<target_size_> target_paths3_bitgraph;
 
-        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a, bool d, bool n, bool r, bool x) :
+        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a, bool d, bool n, bool r, bool x, bool xx) :
             target(t),
             pattern(p),
             params(a),
             dds(d),
             nds(n),
             ndsr(r),
-            x2(x)
+            x2(x),
+            x22(xx)
         {
             target_bitgraph.resize(target.size());
             for (int i = 0 ; i < target.size() ; ++i)
@@ -125,7 +126,7 @@ namespace
                             w_domain_potentially_changed = true;
                         }
 
-                        if ((! x2) && pattern_paths3.adjacent(v, w)) {
+                        if (((! x2) || (x2 && x22)) && pattern_paths3.adjacent(v, w)) {
                             /* v is distance 2 away from w, so w can only be mapped to things distance 2 away from f_v */
                             target_paths3_bitgraph.intersect_with_row(f_v, domains.at(w).values);
                             w_domain_potentially_changed = true;
@@ -360,26 +361,36 @@ namespace
                 }
                 else if (p3_ && x2) {
                     pattern_paths2.resize(pattern.size());
+                    pattern_paths3.resize(pattern.size());
 
                     for (int v = 0 ; v < pattern.size() ; ++v) {
                         for (int c = 0 ; c < pattern.size() ; ++c) {
                             if (pattern.adjacent(c, v)) {
-                                for (int w = 0 ; w < pattern.size() ; ++w) {
-                                    if (pattern.adjacent(c, w))
-                                        pattern_paths2.add_edge(v, w);
+                                for (int w = 0 ; w < v ; ++w) {
+                                    if (pattern.adjacent(c, w)) {
+                                        if (x22 && pattern_paths2.adjacent(v, w))
+                                            pattern_paths3.add_edge(v, w);
+                                        else
+                                            pattern_paths2.add_edge(v, w);
+                                    }
                                 }
                             }
                         }
                     }
 
                     target_paths2_bitgraph.resize(target.size());
+                    target_paths3_bitgraph.resize(target.size());
 
                     for (int v = 0 ; v < target.size() ; ++v) {
                         for (int c = 0 ; c < target.size() ; ++c) {
                             if (target.adjacent(c, v)) {
-                                for (int w = 0 ; w < target.size() ; ++w) {
-                                    if (target.adjacent(c, w))
-                                        target_paths2_bitgraph.add_edge(v, w);
+                                for (int w = 0 ; w < v ; ++w) {
+                                    if (target.adjacent(c, w)) {
+                                        if (x22 && target_paths2_bitgraph.adjacent(v, w))
+                                            target_paths3_bitgraph.add_edge(v, w);
+                                        else
+                                            target_paths2_bitgraph.add_edge(v, w);
+                                    }
                                 }
                             }
                         }
@@ -417,46 +428,51 @@ namespace
 
 auto parasols::b_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, false, false, false);
+    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, false, false, false, false);
 }
 
 auto parasols::bdds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, false);
+    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, false, false);
 }
 
 auto parasols::bnds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false);
+    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false, false);
 }
 
 auto parasols::bndsdds_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, false);
+    return select_graph_size<Apply2Bool<SGI, false, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, false, false);
 }
 
 auto parasols::bndsp3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, true, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false);
+    return select_graph_size<Apply2Bool<SGI, true, false>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false, false);
 }
 
 auto parasols::bndss_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, false, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false);
+    return select_graph_size<Apply2Bool<SGI, false, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false, false);
 }
 
 auto parasols::bndsp3s_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false);
+    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, false, false, false);
 }
 
 auto parasols::bndsrp3s_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, true, false);
+    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, true, false, false);
 }
 
 auto parasols::bndsrx2s_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, true, true);
+    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, true, true, false);
+}
+
+auto parasols::bndsrx22s_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply2Bool<SGI, true, true>::Type, SubgraphIsomorphismResult>(AllGraphSizes(), graphs.second, graphs.first, params, false, true, true, true, true);
 }
 
