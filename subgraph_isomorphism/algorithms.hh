@@ -22,6 +22,7 @@ namespace parasols
         std::make_pair( std::string{ "bndsrp3s" },   bndsrp3s_subgraph_isomorphism ),
         std::make_pair( std::string{ "bndsrx2s" },   bndsrx2s_subgraph_isomorphism ),
         std::make_pair( std::string{ "bndsrx22s" },  bndsrx22s_subgraph_isomorphism ),
+        std::make_pair( std::string{ "bndsrx22lv" }, bndsrx22lv_subgraph_isomorphism ),
     };
 }
 
