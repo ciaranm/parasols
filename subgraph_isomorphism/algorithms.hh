@@ -13,7 +13,9 @@ namespace parasols
     auto subgraph_isomorphism_algorithms = {
         std::make_pair( std::string{ "naive" },         naive_subgraph_isomorphism ),
         std::make_pair( std::string{ "blv" },           blv_subgraph_isomorphism ),
-        std::make_pair( std::string{ "blvc23" },        blvc23_subgraph_isomorphism )
+        std::make_pair( std::string{ "blvh" },          blvh_subgraph_isomorphism ),
+        std::make_pair( std::string{ "blvc23" },        blvc23_subgraph_isomorphism ),
+        std::make_pair( std::string{ "blvc23h" },       blvc23h_subgraph_isomorphism )
     };
 }
 

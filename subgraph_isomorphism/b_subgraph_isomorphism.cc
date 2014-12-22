@@ -4,7 +4,7 @@
 
 #include <graph/bit_graph.hh>
 #include <graph/template_voodoo.hh>
-#include <graph/kneighbours.hh>
+#include <graph/degree_sort.hh>
 
 #include <algorithm>
 #include <limits>
@@ -29,11 +29,14 @@ namespace
     {
         using Domains = std::vector<Domain<target_size_> >;
 
-        const Graph & target;
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
 
+        const bool value_heuristic;
+
         FixedBitGraph<target_size_> target_bitgraph;
+
+        std::vector<int> order;
 
         Graph pattern_paths2;
         FixedBitGraph<target_size_> target_paths2_bitgraph;
@@ -44,15 +47,21 @@ namespace
         Graph pattern_paths3m;
         FixedBitGraph<target_size_> target_paths3m_bitgraph;
 
-        SGI(const Graph & t, const Graph & p, const SubgraphIsomorphismParams & a) :
-            target(t),
+        SGI(const Graph & target, const Graph & p, const SubgraphIsomorphismParams & a, bool h) :
             pattern(p),
-            params(a)
+            params(a),
+            value_heuristic(h),
+            order(target.size())
         {
             target_bitgraph.resize(target.size());
+
+            std::iota(order.begin(), order.end(), 0);
+            if (value_heuristic)
+                degree_sort(target, order, false);
+
             for (int i = 0 ; i < target.size() ; ++i)
                 for (int j = 0 ; j < target.size() ; ++j)
-                    if (target.adjacent(i, j))
+                    if (target.adjacent(order.at(i), order.at(j)))
                         target_bitgraph.add_edge(i, j);
         }
 
@@ -213,7 +222,7 @@ namespace
                 domains.at(branch_on).values.unset(v);
 
                 auto new_domains = domains;
-                for (int w = 0 ; w < target.size() ; ++w) {
+                for (int w = 0 ; w < target_bitgraph.size() ; ++w) {
                     new_domains.at(branch_on).values.unset_all();
                     new_domains.at(branch_on).values.set(v);
                     new_domains.at(branch_on).uncommitted_singleton = true;
@@ -232,7 +241,7 @@ namespace
         {
             SubgraphIsomorphismResult result;
 
-            if (pattern.size() > target.size()) {
+            if (pattern.size() > target_bitgraph.size()) {
                 /* some of our fixed size data structures will throw a hissy
                  * fit. check this early. */
                 return result;
@@ -240,22 +249,22 @@ namespace
 
             Domains domains(pattern.size());
 
-            unsigned remaining_target_vertices = target.size();
+            unsigned remaining_target_vertices = target_bitgraph.size();
             FixedBitSet<target_size_> allowed_target_vertices;
-            allowed_target_vertices.resize(target.size());
+            allowed_target_vertices.resize(target_bitgraph.size());
             allowed_target_vertices.set_all();
 
             while (true) {
-                std::vector<int> pattern_degrees(pattern.size()), target_degrees(target.size());
+                std::vector<int> pattern_degrees(pattern.size()), target_degrees(target_bitgraph.size());
                 for (int i = 0 ; i < pattern.size() ; ++i)
                     pattern_degrees.at(i) = pattern.degree(i);
-                for (int i = 0 ; i < target.size() ; ++i) {
+                for (int i = 0 ; i < target_bitgraph.size() ; ++i) {
                     FixedBitSet<target_size_> remaining = allowed_target_vertices;
                     target_bitgraph.intersect_with_row(i, remaining);
                     target_degrees.at(i) = remaining.popcount();
                 }
 
-                std::vector<std::vector<int> > pattern_ndss(pattern.size()), target_ndss(target.size());
+                std::vector<std::vector<int> > pattern_ndss(pattern.size()), target_ndss(target_bitgraph.size());
                 for (int i = 0 ; i < pattern.size() ; ++i) {
                     for (int j = 0 ; j < pattern.size() ; ++j) {
                         if (pattern.adjacent(i, j))
@@ -264,9 +273,9 @@ namespace
                     std::sort(pattern_ndss.at(i).begin(), pattern_ndss.at(i).end(), std::greater<int>());
                 }
 
-                for (int i = 0 ; i < target.size() ; ++i) {
-                    for (int j = 0 ; j < target.size() ; ++j) {
-                        if (target.adjacent(i, j))
+                for (int i = 0 ; i < target_bitgraph.size() ; ++i) {
+                    for (int j = 0 ; j < target_bitgraph.size() ; ++j) {
+                        if (target_bitgraph.adjacent(i, j))
                             target_ndss.at(i).push_back(target_degrees.at(j));
                     }
                     std::sort(target_ndss.at(i).begin(), target_ndss.at(i).end(), std::greater<int>());
@@ -274,14 +283,14 @@ namespace
 
                 for (int i = 0 ; i < pattern.size() ; ++i) {
                     domains.at(i).values.unset_all();
-                    domains.at(i).values.resize(target.size());
+                    domains.at(i).values.resize(target_bitgraph.size());
 
-                    for (int j = 0 ; j < target.size() ; ++j) {
+                    for (int j = 0 ; j < target_bitgraph.size() ; ++j) {
                         if (! allowed_target_vertices.test(j)) {
                         }
-                        else if (pattern.adjacent(i, i) && ! target.adjacent(j, j)) {
+                        else if (pattern.adjacent(i, i) && ! target_bitgraph.adjacent(j, j)) {
                         }
-                        else if (params.induced && target.adjacent(j, j) && ! pattern.adjacent(i, i)) {
+                        else if (params.induced && target_bitgraph.adjacent(j, j) && ! pattern.adjacent(i, i)) {
                         }
                         else if (target_ndss.at(j).size() >= pattern_ndss.at(i).size()) {
                             bool ok = true;
@@ -350,16 +359,16 @@ namespace
                     }
                 }
 
-                target_paths2_bitgraph.resize(target.size());
-                target_paths2m_bitgraph.resize(target.size());
-                target_paths3_bitgraph.resize(target.size());
-                target_paths3m_bitgraph.resize(target.size());
+                target_paths2_bitgraph.resize(target_bitgraph.size());
+                target_paths2m_bitgraph.resize(target_bitgraph.size());
+                target_paths3_bitgraph.resize(target_bitgraph.size());
+                target_paths3m_bitgraph.resize(target_bitgraph.size());
 
-                for (int v = 0 ; v < target.size() ; ++v) {
-                    for (int c = 0 ; c < target.size() ; ++c) {
-                        if (target.adjacent(c, v)) {
+                for (int v = 0 ; v < target_bitgraph.size() ; ++v) {
+                    for (int c = 0 ; c < target_bitgraph.size() ; ++c) {
+                        if (target_bitgraph.adjacent(c, v)) {
                             for (int w = 0 ; w < v ; ++w) {
-                                if (target.adjacent(c, w)) {
+                                if (target_bitgraph.adjacent(c, w)) {
                                     if (target_paths2_bitgraph.adjacent(v, w))
                                         target_paths2m_bitgraph.add_edge(v, w);
                                     else
@@ -370,13 +379,13 @@ namespace
                     }
                 }
 
-                for (int v = 0 ; v < target.size() ; ++v) {
-                    for (int c = 0 ; c < target.size() ; ++c) {
-                        if (target.adjacent(c, v)) {
-                            for (int d = 0 ; d < target.size() ; ++d) {
-                                if (d != v && target.adjacent(c, d)) {
+                for (int v = 0 ; v < target_bitgraph.size() ; ++v) {
+                    for (int c = 0 ; c < target_bitgraph.size() ; ++c) {
+                        if (target_bitgraph.adjacent(c, v)) {
+                            for (int d = 0 ; d < target_bitgraph.size() ; ++d) {
+                                if (d != v && target_bitgraph.adjacent(c, d)) {
                                     for (int w = 0 ; w < v ; ++w) {
-                                        if (w != c && target.adjacent(d, w)) {
+                                        if (w != c && target_bitgraph.adjacent(d, w)) {
                                             if (target_paths3_bitgraph.adjacent(v, w))
                                                 target_paths3m_bitgraph.add_edge(v, w);
                                             else
@@ -393,7 +402,7 @@ namespace
 
             if (expand(domains, -1, result.nodes)) {
                 for (int i = 0 ; i < pattern.size() ; ++i)
-                    result.isomorphism.emplace(i, domains.at(i).values.first_set_bit());
+                    result.isomorphism.emplace(i, order.at(domains.at(i).values.first_set_bit()));
             }
 
             return result;
@@ -410,13 +419,24 @@ namespace
 auto parasols::blv_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, false>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::blvh_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply1Bool<SGI, false>::Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::blvc23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
 
+auto parasols::blvc23h_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
