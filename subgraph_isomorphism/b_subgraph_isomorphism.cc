@@ -9,6 +9,10 @@
 #include <algorithm>
 #include <limits>
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/max_cardinality_matching.hpp>
+#include <boost/graph/graph_utility.hpp>
+
 using namespace parasols;
 
 namespace
@@ -32,7 +36,7 @@ namespace
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
 
-        const bool value_heuristic;
+        const bool value_heuristic, all_diff;
 
         FixedBitGraph<target_size_> target_bitgraph;
 
@@ -47,10 +51,11 @@ namespace
         Graph pattern_paths3m;
         FixedBitGraph<target_size_> target_paths3m_bitgraph;
 
-        SGI(const Graph & target, const Graph & p, const SubgraphIsomorphismParams & a, bool h) :
+        SGI(const Graph & target, const Graph & p, const SubgraphIsomorphismParams & a, bool h, bool d) :
             pattern(p),
             params(a),
             value_heuristic(h),
+            all_diff(d),
             order(target.size())
         {
             target_bitgraph.resize(target.size());
@@ -323,6 +328,28 @@ namespace
                 remaining_target_vertices = allowed_target_vertices.popcount();
             }
 
+            if (all_diff) {
+                boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> match(pattern.size() + target_bitgraph.size());
+
+                for (int i = 0 ; i < pattern.size() ; ++i) {
+                    for (int j = 0 ; j < target_bitgraph.size() ; ++j) {
+                        if (domains.at(i).values.test(j))
+                            boost::add_edge(i, pattern.size() + j, match);
+                    }
+                }
+
+                std::vector<boost::graph_traits<decltype(match)>::vertex_descriptor> mate(pattern.size() + target_bitgraph.size());
+                boost::edmonds_maximum_cardinality_matching(match, &mate[0]);
+
+                unsigned count = 0;
+                for (auto vi = vertices(match) ; vi.first != vi.second ; ++vi.first)
+                    if (mate[*vi.first] != boost::graph_traits<decltype(match)>::null_vertex() && *vi.first < mate[*vi.first])
+                        ++count;
+
+                if (count != unsigned(pattern.size()))
+                    return result;
+            }
+
             if (paths_) {
                 pattern_paths2.resize(pattern.size());
                 pattern_paths2m.resize(pattern.size());
@@ -419,24 +446,30 @@ namespace
 auto parasols::blv_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, false>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, false);
 }
 
 auto parasols::blvh_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, false>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false);
 }
 
 auto parasols::blvc23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, false);
 }
 
 auto parasols::blvc23h_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false);
+}
+
+auto parasols::badlvc23h_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true);
 }
 
