@@ -67,7 +67,7 @@ namespace
             if (value_heuristic == ValueHeuristic::Degree)
                 degree_sort(target, order, false);
             else if (value_heuristic == ValueHeuristic::InverseDegree)
-                degree_sort(target, order, false);
+                degree_sort(target, order, true);
 
             for (int i = 0 ; i < target.size() ; ++i)
                 for (int j = 0 ; j < target.size() ; ++j)
