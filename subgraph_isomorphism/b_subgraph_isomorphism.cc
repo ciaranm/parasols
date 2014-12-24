@@ -12,6 +12,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/max_cardinality_matching.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <boost/graph/strong_components.hpp>
 
 using namespace parasols;
 
@@ -346,13 +347,73 @@ namespace
                 std::vector<boost::graph_traits<decltype(match)>::vertex_descriptor> mate(pattern.size() + target_bitgraph.size());
                 boost::edmonds_maximum_cardinality_matching(match, &mate[0]);
 
+                std::set<int> free;
+                for (int j = 0 ; j < target_bitgraph.size() ; ++j)
+                    free.insert(pattern.size() + j);
+
                 unsigned count = 0;
-                for (auto vi = vertices(match) ; vi.first != vi.second ; ++vi.first)
-                    if (mate[*vi.first] != boost::graph_traits<decltype(match)>::null_vertex() && *vi.first < mate[*vi.first])
+                for (int i = 0 ; i < pattern.size() ; ++i)
+                    if (mate[i] != boost::graph_traits<decltype(match)>::null_vertex()) {
                         ++count;
+                        free.erase(mate[i]);
+                    }
 
                 if (count != unsigned(pattern.size()))
                     return result;
+
+                boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> match_o(pattern.size() + target_bitgraph.size());
+                std::set<std::pair<unsigned, unsigned> > unused;
+                for (int i = 0 ; i < pattern.size() ; ++i) {
+                    for (int j = 0 ; j < target_bitgraph.size() ; ++j) {
+                        if (domains.at(i).values.test(j)) {
+                            unused.emplace(i, j);
+                            if (mate[i] == unsigned(j + pattern.size()))
+                                boost::add_edge(i, pattern.size() + j, match_o);
+                            else
+                                boost::add_edge(pattern.size() + j, i, match_o);
+                        }
+                    }
+                }
+
+                std::set<int> pending = free, seen;
+                while (! pending.empty()) {
+                    unsigned v = *pending.begin();
+                    pending.erase(pending.begin());
+                    if (! seen.count(v)) {
+                        seen.insert(v);
+                        auto w = boost::adjacent_vertices(v, match_o);
+                        for ( ; w.first != w.second ; ++w.first) {
+                            if (*w.first >= unsigned(pattern.size()))
+                                unused.erase(std::make_pair(v, *w.first - pattern.size()));
+                            else
+                                unused.erase(std::make_pair(*w.first, v - pattern.size()));
+                            pending.insert(*w.first);
+                        }
+                    }
+                }
+
+                std::vector<int> component(num_vertices(match_o)), discover_time(num_vertices(match_o));
+                std::vector<boost::default_color_type> color(num_vertices(match_o));
+                std::vector<boost::graph_traits<decltype(match_o)>::vertex_descriptor> root(num_vertices(match_o));
+                boost::strong_components(match_o,
+                        make_iterator_property_map(component.begin(), get(boost::vertex_index, match_o)),
+                        root_map(make_iterator_property_map(root.begin(), get(boost::vertex_index, match_o))).
+                        color_map(make_iterator_property_map(color.begin(), get(boost::vertex_index, match_o))).
+                        discover_time_map(make_iterator_property_map(discover_time.begin(), get(boost::vertex_index, match_o))));
+
+                for (auto e = unused.begin(), e_end = unused.end() ; e != e_end ; ) {
+                    if (component[e->first] == component[e->second + pattern.size()])
+                        unused.erase(e++);
+                    else
+                        ++e;
+                }
+
+                unsigned deletions = 0;
+                for (auto & u : unused)
+                    if (mate[u.first] != u.second + pattern.size()) {
+                        ++deletions;
+                        domains.at(u.first).values.unset(u.second - pattern.size());
+                    }
             }
 
             if (paths_) {
