@@ -345,7 +345,7 @@ namespace
                 }
 
                 std::vector<boost::graph_traits<decltype(match)>::vertex_descriptor> mate(pattern.size() + target_bitgraph.size());
-                boost::edmonds_maximum_cardinality_matching(match, &mate[0]);
+                boost::edmonds_maximum_cardinality_matching(match, &mate.at(0));
 
                 std::set<int> free;
                 for (int j = 0 ; j < target_bitgraph.size() ; ++j)
@@ -353,9 +353,9 @@ namespace
 
                 unsigned count = 0;
                 for (int i = 0 ; i < pattern.size() ; ++i)
-                    if (mate[i] != boost::graph_traits<decltype(match)>::null_vertex()) {
+                    if (mate.at(i) != boost::graph_traits<decltype(match)>::null_vertex()) {
                         ++count;
-                        free.erase(mate[i]);
+                        free.erase(mate.at(i));
                     }
 
                 if (count != unsigned(pattern.size()))
@@ -367,7 +367,7 @@ namespace
                     for (int j = 0 ; j < target_bitgraph.size() ; ++j) {
                         if (domains.at(i).values.test(j)) {
                             unused.emplace(i, j);
-                            if (mate[i] == unsigned(j + pattern.size()))
+                            if (mate.at(i) == unsigned(j + pattern.size()))
                                 boost::add_edge(i, pattern.size() + j, match_o);
                             else
                                 boost::add_edge(pattern.size() + j, i, match_o);
@@ -402,7 +402,7 @@ namespace
                         discover_time_map(make_iterator_property_map(discover_time.begin(), get(boost::vertex_index, match_o))));
 
                 for (auto e = unused.begin(), e_end = unused.end() ; e != e_end ; ) {
-                    if (component[e->first] == component[e->second + pattern.size()])
+                    if (component.at(e->first) == component.at(e->second + pattern.size()))
                         unused.erase(e++);
                     else
                         ++e;
@@ -410,9 +410,9 @@ namespace
 
                 unsigned deletions = 0;
                 for (auto & u : unused)
-                    if (mate[u.first] != u.second + pattern.size()) {
+                    if (mate.at(u.first) != u.second + pattern.size()) {
                         ++deletions;
-                        domains.at(u.first).values.unset(u.second - pattern.size());
+                        domains.at(u.first).values.unset(u.second);
                     }
             }
 
