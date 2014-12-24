@@ -28,6 +28,8 @@ namespace
         FixedBitSet<target_size_> values;
     };
 
+    enum class ValueHeuristic { None, Degree, InverseDegree };
+
     template <unsigned target_size_, typename, bool paths_>
     struct SGI
     {
@@ -36,7 +38,8 @@ namespace
         const Graph & pattern;
         const SubgraphIsomorphismParams & params;
 
-        const bool value_heuristic, all_diff;
+        const ValueHeuristic value_heuristic;
+        const bool all_diff;
 
         FixedBitGraph<target_size_> target_bitgraph;
 
@@ -51,7 +54,7 @@ namespace
         Graph pattern_paths3m;
         FixedBitGraph<target_size_> target_paths3m_bitgraph;
 
-        SGI(const Graph & target, const Graph & p, const SubgraphIsomorphismParams & a, bool h, bool d) :
+        SGI(const Graph & target, const Graph & p, const SubgraphIsomorphismParams & a, ValueHeuristic h, bool d) :
             pattern(p),
             params(a),
             value_heuristic(h),
@@ -61,7 +64,9 @@ namespace
             target_bitgraph.resize(target.size());
 
             std::iota(order.begin(), order.end(), 0);
-            if (value_heuristic)
+            if (value_heuristic == ValueHeuristic::Degree)
+                degree_sort(target, order, false);
+            else if (value_heuristic == ValueHeuristic::InverseDegree)
                 degree_sort(target, order, false);
 
             for (int i = 0 ; i < target.size() ; ++i)
@@ -446,30 +451,36 @@ namespace
 auto parasols::blv_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, false>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, ValueHeuristic::None, false);
 }
 
 auto parasols::blvh_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, false>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, ValueHeuristic::Degree, false);
 }
 
 auto parasols::blvc23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, ValueHeuristic::None, false);
 }
 
 auto parasols::blvc23h_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, ValueHeuristic::Degree, false);
+}
+
+auto parasols::blvc23i_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, ValueHeuristic::InverseDegree, false);
 }
 
 auto parasols::badlvc23h_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply1Bool<SGI, true>::Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, ValueHeuristic::Degree, true);
 }
 
