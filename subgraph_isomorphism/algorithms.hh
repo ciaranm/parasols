@@ -5,6 +5,7 @@
 
 #include <subgraph_isomorphism/naive_subgraph_isomorphism.hh>
 #include <subgraph_isomorphism/b_subgraph_isomorphism.hh>
+#include <subgraph_isomorphism/mb_subgraph_isomorphism.hh>
 
 #include <utility>
 
@@ -17,7 +18,9 @@ namespace parasols
         std::make_pair( std::string{ "blvc23" },        blvc23_subgraph_isomorphism ),
         std::make_pair( std::string{ "blvc23h" },       blvc23h_subgraph_isomorphism ),
         std::make_pair( std::string{ "blvc23i" },       blvc23i_subgraph_isomorphism ),
-        std::make_pair( std::string{ "badlvc23h" },     badlvc23h_subgraph_isomorphism )
+        std::make_pair( std::string{ "badlvc23h" },     badlvc23h_subgraph_isomorphism ),
+
+        std::make_pair( std::string{ "mb" },            mb_subgraph_isomorphism )
     };
 }
 
