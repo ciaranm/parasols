@@ -226,12 +226,19 @@ namespace
         {
             boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> match(pattern_size + target_size);
 
+            unsigned consider = 0;
             for (unsigned i = 0 ; i < pattern_size ; ++i) {
+                if (domains.at(i).values.popcount() < pattern_size)
+                    ++consider;
+
                 for (unsigned j = 0 ; j < target_size ; ++j) {
                     if (domains.at(i).values.test(j))
                         boost::add_edge(i, pattern_size + j, match);
                 }
             }
+
+            if (0 == consider)
+                return true;
 
             std::vector<boost::graph_traits<decltype(match)>::vertex_descriptor> mate(pattern_size + target_size);
             boost::edmonds_maximum_cardinality_matching(match, &mate.at(0));
