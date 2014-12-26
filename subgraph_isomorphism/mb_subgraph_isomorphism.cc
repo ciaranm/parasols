@@ -209,11 +209,9 @@ namespace
                 domains.at(branch_on).values.unset(v);
 
                 auto new_domains = domains;
-                for (unsigned w = 0 ; w < target_size ; ++w) {
-                    new_domains.at(branch_on).values.unset_all();
-                    new_domains.at(branch_on).values.set(v);
-                    new_domains.at(branch_on).uncommitted_singleton = true;
-                }
+                new_domains.at(branch_on).values.unset_all();
+                new_domains.at(branch_on).values.set(v);
+                new_domains.at(branch_on).uncommitted_singleton = true;
 
                 if (expand(new_domains, branch_on, nodes)) {
                     domains = std::move(new_domains);
