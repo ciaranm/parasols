@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <chrono>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/max_cardinality_matching.hpp>
@@ -15,6 +16,10 @@
 #include <boost/graph/strong_components.hpp>
 
 using namespace parasols;
+
+using std::chrono::milliseconds;
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
 
 namespace
 {
@@ -66,7 +71,7 @@ namespace
                         target_graphs.at(0).add_edge(i, j);
         }
 
-        auto filter(Domains & domains, int branch_point) -> bool
+        auto filter(Domains & domains, int branch_point, int g_end) -> bool
         {
             /* really a vector, but memory allocation is expensive. only needs
              * room for pattern_size elements, but target_size_ will do. */
@@ -109,7 +114,7 @@ namespace
                 std::fill(unassigned_neighbours.begin(), unassigned_neighbours.end(), 0);
 
                 std::array<FixedBitSet<target_size_>, max_graphs> unassigned_neighbours_domains_union;
-                for (int g = 0 ; g < max_graphs ; ++g)
+                for (int g = 0 ; g < g_end ; ++g)
                     unassigned_neighbours_domains_union.at(g).resize(target_size);
 
                 /* for each other domain... */
@@ -125,7 +130,7 @@ namespace
                         w_domain_potentially_changed = true;
                     }
 
-                    for (int g = 0 ; g < max_graphs ; ++g) {
+                    for (int g = 0 ; g < g_end ; ++g) {
                         if (pattern_graphs.at(g).adjacent(v, w)) {
                             /* v is adjacent to w, so w can only be mapped to things adjacent to f_v */
                             target_graphs.at(g).intersect_with_row(f_v, domains.at(w).values);
@@ -159,7 +164,7 @@ namespace
                 }
 
                 /* enough values left in neighbourhood domains? */
-                for (int g = 0 ; g < max_graphs ; ++g) {
+                for (int g = 0 ; g < g_end ; ++g) {
                     if (0 != unassigned_neighbours.at(g)) {
                         if (unassigned_neighbours.at(g) > unassigned_neighbours_domains_union.at(g).popcount())
                             return false;
@@ -178,13 +183,17 @@ namespace
             return true;
         }
 
-        auto expand(Domains & domains, int branch_point, unsigned long long & nodes) -> bool
+        auto expand(Domains & domains, int branch_point, unsigned long long & nodes, int g_end, unsigned long long nodes_limit) -> bool
         {
             ++nodes;
+
+            if (0 != nodes_limit && nodes > nodes_limit)
+                return false;
+
             if (params.abort->load())
                 return false;
 
-            if (! filter(domains, branch_point))
+            if (! filter(domains, branch_point, g_end))
                 return false;
 
             int branch_on = -1;
@@ -213,7 +222,7 @@ namespace
                 new_domains.at(branch_on).values.set(v);
                 new_domains.at(branch_on).uncommitted_singleton = true;
 
-                if (expand(new_domains, branch_on, nodes)) {
+                if (expand(new_domains, branch_on, nodes, g_end, nodes_limit)) {
                     domains = std::move(new_domains);
                     return true;
                 }
@@ -518,6 +527,15 @@ namespace
             if (! nds_filter(domains, 1))
                 return result;
 
+            {
+                auto domains_copy = domains;
+                if (expand(domains_copy, -1, result.nodes, 1, pattern_size * pattern_size)) {
+                    for (unsigned i = 0 ; i < pattern_size ; ++i)
+                        result.isomorphism.emplace(i, order.at(domains_copy.at(i).values.first_set_bit()));
+                    return result;
+                }
+            }
+
             build_path_graphs();
 
             if (! nds_filter(domains, max_graphs))
@@ -526,7 +544,7 @@ namespace
             if (! regin_all_different(domains))
                 return result;
 
-            if (expand(domains, -1, result.nodes)) {
+            if (expand(domains, -1, result.nodes, max_graphs, 0)) {
                 for (unsigned i = 0 ; i < pattern_size ; ++i)
                     result.isomorphism.emplace(i, order.at(domains.at(i).values.first_set_bit()));
             }
