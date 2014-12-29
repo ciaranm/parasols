@@ -23,6 +23,13 @@ using std::chrono::duration_cast;
 
 namespace
 {
+    enum class Result
+    {
+        Success,
+        Fail,
+        Abort
+    };
+
     template <unsigned target_size_>
     struct Domain
     {
@@ -183,18 +190,18 @@ namespace
             return true;
         }
 
-        auto expand(Domains & domains, int branch_point, unsigned long long & nodes, int g_end, unsigned long long nodes_limit) -> bool
+        auto expand(Domains & domains, int branch_point, unsigned long long & nodes, int g_end, unsigned long long nodes_limit) -> Result
         {
             ++nodes;
 
             if (0 != nodes_limit && nodes > nodes_limit)
-                return false;
+                return Result::Abort;
 
             if (params.abort->load())
-                return false;
+                return Result::Abort;
 
             if (! filter(domains, branch_point, g_end))
-                return false;
+                return Result::Fail;
 
             int branch_on = -1;
             unsigned branch_on_popcount = 0;
@@ -211,7 +218,7 @@ namespace
             }
 
             if (-1 == branch_on)
-                return true;
+                return Result::Success;
 
             int v;
             while (((v = domains.at(branch_on).values.first_set_bit())) != -1) {
@@ -222,13 +229,20 @@ namespace
                 new_domains.at(branch_on).values.set(v);
                 new_domains.at(branch_on).uncommitted_singleton = true;
 
-                if (expand(new_domains, branch_on, nodes, g_end, nodes_limit)) {
-                    domains = std::move(new_domains);
-                    return true;
+                switch (expand(new_domains, branch_on, nodes, g_end, nodes_limit)) {
+                    case Result::Abort:
+                        return Result::Abort;
+
+                    case Result::Fail:
+                        break;
+
+                    case Result::Success:
+                        domains = std::move(new_domains);
+                        return Result::Success;
                 }
             }
 
-            return false;
+            return Result::Fail;
         }
 
         auto regin_all_different(Domains & domains) -> bool
@@ -527,24 +541,39 @@ namespace
             if (! nds_filter(domains, 1))
                 return result;
 
+            // result.times.push_back(duration_cast<milliseconds>(steady_clock::now() - params.start_time));
+
             {
                 auto domains_copy = domains;
-                if (expand(domains_copy, -1, result.nodes, 1, pattern_size * pattern_size)) {
-                    for (unsigned i = 0 ; i < pattern_size ; ++i)
-                        result.isomorphism.emplace(i, order.at(domains_copy.at(i).values.first_set_bit()));
-                    return result;
+                switch (expand(domains_copy, -1, result.nodes, 1, pattern_size * pattern_size)) {
+                    case Result::Success:
+                        for (unsigned i = 0 ; i < pattern_size ; ++i)
+                            result.isomorphism.emplace(i, order.at(domains_copy.at(i).values.first_set_bit()));
+                        return result;
+
+                    case Result::Fail:
+                        return result;
+
+                    case Result::Abort:
+                        break;
                 }
             }
+
+            // result.times.push_back(duration_cast<milliseconds>(steady_clock::now() - params.start_time));
 
             build_path_graphs();
 
             if (! nds_filter(domains, max_graphs))
                 return result;
 
+            // result.times.push_back(duration_cast<milliseconds>(steady_clock::now() - params.start_time));
+
             if (! regin_all_different(domains))
                 return result;
 
-            if (expand(domains, -1, result.nodes, max_graphs, 0)) {
+            // result.times.push_back(duration_cast<milliseconds>(steady_clock::now() - params.start_time));
+
+            if (Result::Success == expand(domains, -1, result.nodes, max_graphs, 0)) {
                 for (unsigned i = 0 ; i < pattern_size ; ++i)
                     result.isomorphism.emplace(i, order.at(domains.at(i).values.first_set_bit()));
             }
