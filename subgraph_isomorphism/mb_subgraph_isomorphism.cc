@@ -458,7 +458,7 @@ namespace
             for (unsigned v = 0 ; v < pattern_size ; ++v)
                 for (unsigned c = 0 ; c < pattern_size ; ++c)
                     if (pattern_graphs.at(0).adjacent(c, v))
-                        for (unsigned w = 0 ; w < v ; ++w)
+                        for (unsigned w = 0 ; w <= v ; ++w)
                             if (pattern_graphs.at(0).adjacent(c, w)) {
                                 if (pattern_graphs.at(1).adjacent(v, w))
                                     pattern_graphs.at(2).add_edge(v, w);
@@ -471,7 +471,7 @@ namespace
                     if (pattern_graphs.at(0).adjacent(c, v)) {
                         for (unsigned d = 0 ; d < pattern_size ; ++d) {
                             if (d != v && pattern_graphs.at(0).adjacent(c, d)) {
-                                for (unsigned w = 0 ; w < v ; ++w) {
+                                for (unsigned w = 0 ; w <= v ; ++w) {
                                     if (w != c && pattern_graphs.at(0).adjacent(d, w)) {
                                         if (pattern_graphs.at(3).adjacent(v, w))
                                             pattern_graphs.at(4).add_edge(v, w);
@@ -493,7 +493,7 @@ namespace
             for (unsigned v = 0 ; v < target_size ; ++v) {
                 for (unsigned c = 0 ; c < target_size ; ++c) {
                     if (target_graphs.at(0).adjacent(c, v)) {
-                        for (unsigned w = 0 ; w < v ; ++w) {
+                        for (unsigned w = 0 ; w <= v ; ++w) {
                             if (target_graphs.at(0).adjacent(c, w)) {
                                 if (target_graphs.at(1).adjacent(v, w))
                                     target_graphs.at(2).add_edge(v, w);
@@ -510,7 +510,7 @@ namespace
                     if (target_graphs.at(0).adjacent(c, v)) {
                         for (unsigned d = 0 ; d < target_size ; ++d) {
                             if (d != v && target_graphs.at(0).adjacent(c, d)) {
-                                for (unsigned w = 0 ; w < v ; ++w) {
+                                for (unsigned w = 0 ; w <= v ; ++w) {
                                     if (w != c && target_graphs.at(0).adjacent(d, w)) {
                                         if (target_graphs.at(3).adjacent(v, w))
                                             target_graphs.at(4).add_edge(v, w);
