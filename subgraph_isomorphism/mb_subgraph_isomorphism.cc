@@ -559,6 +559,8 @@ namespace
                 }
             }
 
+            result.nodes = 0;
+
             // result.times.push_back(duration_cast<milliseconds>(steady_clock::now() - params.start_time));
 
             build_path_graphs();
