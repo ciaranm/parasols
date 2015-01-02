@@ -26,12 +26,14 @@ namespace
             unsigned v;
             unsigned popcount;
             FixedBitSet<n_words_> values;
+            FixedBitSet<n_words_> conflicts;
         };
 
         using Domains = std::vector<Domain>;
         using Assignments = std::vector<unsigned>;
 
         const SubgraphIsomorphismParams & params;
+        const bool backjump;
 
         static constexpr int max_graphs = 5;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -41,8 +43,9 @@ namespace
 
         unsigned pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, const bool j) :
             params(a),
+            backjump(j),
             order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
@@ -63,7 +66,7 @@ namespace
                         target_graphs.at(0).add_edge(i, j);
         }
 
-        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v) -> bool
+        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v) -> Domain *
         {
             /* how many unassigned neighbours do we have, and what is their domain? */
             std::array<unsigned, max_graphs> unassigned_neighbours;
@@ -85,20 +88,26 @@ namespace
                         /* enough values remaining between all our neighbours we've seen so far? */
                         unassigned_neighbours_domains_union.at(g).union_with(d.values);
                         if (++unassigned_neighbours.at(g) > unassigned_neighbours_domains_union.at(g).popcount())
-                            return false;
+                            return &d;
 
                         // todo: something clever with singletons
                         // todo: fast path if we've got lots of values
                     }
 
                 // todo: avoid recalculating this sometimes
+                unsigned old_popcount = d.popcount;
                 d.popcount = d.values.popcount();
+                if (d.popcount != old_popcount)
+                    d.conflicts.set(branch_v);
+
+                if (0 == d.popcount)
+                    return &d;
             }
 
-            return true;
+            return nullptr;
         }
 
-        auto search(Assignments & assignments, Domains & domains, unsigned long long & nodes) -> bool
+        auto search(Assignments & assignments, Domains & domains, unsigned long long & nodes, FixedBitSet<n_words_> & conflicts) -> bool
         {
             if (params.abort->load())
                 return false;
@@ -115,6 +124,8 @@ namespace
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
+            conflicts.union_with(branch_domain->conflicts);
+
             for (unsigned n = 0, n_end = branch_domain->popcount ; n < n_end ; ++n) {
                 /* try assigning f_v to v */
                 unsigned f_v = remaining.first_set_bit();
@@ -135,11 +146,23 @@ namespace
                             new_domains.push_back(d);
                 }
 
-                if (! propagate(new_domains, branch_v, f_v))
+                /* propagate */
+                Domain * fail_domain = propagate(new_domains, branch_v, f_v);
+                if (fail_domain) {
+                    /* analyse failure */
+                    conflicts.union_with(fail_domain->conflicts);
                     continue;
+                }
 
-                if (search(assignments, new_domains, nodes))
+                FixedBitSet<n_words_> search_conflicts;
+                search_conflicts.resize(pattern_size);
+                if (search(assignments, new_domains, nodes, search_conflicts))
                     return true;
+
+                conflicts.union_with(search_conflicts);
+
+                if (backjump && ! search_conflicts.test(branch_v))
+                    return false;
             }
 
             return false;
@@ -429,6 +452,14 @@ namespace
             return true;
         }
 
+        auto prepare_for_search(Domains & domains) -> void
+        {
+            for (auto & d : domains) {
+                d.conflicts.resize(pattern_size);
+                d.popcount = d.values.popcount();
+            }
+        }
+
         auto run() -> SubgraphIsomorphismResult
         {
             SubgraphIsomorphismResult result;
@@ -449,8 +480,12 @@ namespace
             if (! regin_all_different(domains))
                 return result;
 
+            prepare_for_search(domains);
+
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
-            if (search(assignments, domains, result.nodes))
+            FixedBitSet<n_words_> search_conflicts;
+            search_conflicts.resize(pattern_size);
+            if (search(assignments, domains, result.nodes, search_conflicts))
                 for (unsigned v = 0 ; v < pattern_size ; ++v)
                     result.isomorphism.emplace(v, order.at(assignments.at(v)));
 
@@ -462,6 +497,12 @@ namespace
 auto parasols::cb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<CBSGI, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::cbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<CBSGI, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
