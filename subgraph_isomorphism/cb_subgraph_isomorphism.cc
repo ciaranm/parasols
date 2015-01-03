@@ -286,16 +286,15 @@ namespace
                             else if (params.induced && target_graphs.at(g).adjacent(j, j) && ! pattern_graphs.at(g).adjacent(i, i)) {
                                 ok = false;
                             }
-                            else if (targets_ndss.at(g).at(j).size() >= patterns_ndss.at(g).at(i).size()) {
-                                for (unsigned x = 0 ; x < patterns_ndss.at(g).at(i).size() ; ++x) {
-                                    if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x)) {
+                            else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
+                                ok = false;
+                            }
+                            else {
+                                for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
+                                    if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
                                         ok = false;
-                                        break;
-                                    }
                                 }
                             }
-                            else
-                                ok = false;
 
                             if (! ok)
                                 break;
