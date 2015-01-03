@@ -79,7 +79,7 @@ namespace
 
         const SubgraphIsomorphismParams & params;
 
-        static constexpr int max_graphs = 5;
+        static constexpr int max_graphs = 7;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
@@ -123,7 +123,8 @@ namespace
 
             for (auto & d : new_domains) {
                 d.values.unset(f_v);
-                for (int g = 0 ; g < max_graphs ; ++g)
+
+                for (int g = 0 ; g < max_graphs ; ++g) {
                     if (pattern_graphs.at(g).adjacent(branch_v, d.v)) {
                         /* knock out values */
                         target_graphs.at(g).intersect_with_row(f_v, d.values);
@@ -132,12 +133,9 @@ namespace
                         unassigned_neighbours_domains_union.at(g).union_with(d.values);
                         if (++unassigned_neighbours.at(g) > unassigned_neighbours_domains_union.at(g).popcount())
                             return &d;
-
-                        // todo: something clever with singletons
-                        // todo: fast path if we've got lots of values
                     }
+                }
 
-                // todo: avoid recalculating this sometimes
                 unsigned old_popcount = d.popcount;
                 d.popcount = d.values.popcount();
                 if (d.popcount != old_popcount)
@@ -335,32 +333,48 @@ namespace
             pattern_graphs.at(2).resize(pattern_size);
             pattern_graphs.at(3).resize(pattern_size);
             pattern_graphs.at(4).resize(pattern_size);
-
-            for (unsigned v = 0 ; v < pattern_size ; ++v)
-                for (unsigned c = 0 ; c < pattern_size ; ++c)
-                    if (pattern_graphs.at(0).adjacent(c, v))
-                        for (unsigned w = 0 ; w <= v ; ++w)
-                            if (pattern_graphs.at(0).adjacent(c, w)) {
-                                if (pattern_graphs.at(1).adjacent(v, w))
-                                    pattern_graphs.at(2).add_edge(v, w);
-                                else
-                                    pattern_graphs.at(1).add_edge(v, w);
-                            }
+            pattern_graphs.at(5).resize(pattern_size);
+            pattern_graphs.at(6).resize(pattern_size);
 
             for (unsigned v = 0 ; v < pattern_size ; ++v) {
-                for (unsigned c = 0 ; c < pattern_size ; ++c) {
-                    if (pattern_graphs.at(0).adjacent(c, v)) {
-                        for (unsigned d = 0 ; d < pattern_size ; ++d) {
-                            if (d != v && pattern_graphs.at(0).adjacent(c, d)) {
-                                for (unsigned w = 0 ; w <= v ; ++w) {
-                                    if (w != c && pattern_graphs.at(0).adjacent(d, w)) {
-                                        if (pattern_graphs.at(3).adjacent(v, w))
-                                            pattern_graphs.at(4).add_edge(v, w);
-                                        else
-                                            pattern_graphs.at(3).add_edge(v, w);
-                                    }
-                                }
-                            }
+                auto nv = pattern_graphs.at(0).neighbourhood(v);
+                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                    nv.unset(c);
+                    auto nc = pattern_graphs.at(0).neighbourhood(c);
+                    for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
+                        nc.unset(w);
+                        if (pattern_graphs.at(2).adjacent(v, w))
+                            pattern_graphs.at(3).add_edge(v, w);
+                        else if (pattern_graphs.at(1).adjacent(v, w))
+                            pattern_graphs.at(2).add_edge(v, w);
+                        else
+                            pattern_graphs.at(1).add_edge(v, w);
+                    }
+                }
+            }
+
+            for (unsigned v = 0 ; v < pattern_size ; ++v) {
+                auto nv = pattern_graphs.at(0).neighbourhood(v);
+                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                    nv.unset(c);
+                    auto nc = pattern_graphs.at(0).neighbourhood(c);
+                    for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
+                        nc.unset(d);
+                        if (unsigned(d) == v)
+                            continue;
+
+                        auto nd = pattern_graphs.at(0).neighbourhood(d);
+                        for (int w = nd.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nd.first_set_bit()) {
+                            nd.unset(w);
+                            if (w == c)
+                                continue;
+
+                            if (pattern_graphs.at(5).adjacent(v, w))
+                                pattern_graphs.at(6).add_edge(v, w);
+                            else if (pattern_graphs.at(4).adjacent(v, w))
+                                pattern_graphs.at(5).add_edge(v, w);
+                            else
+                                pattern_graphs.at(4).add_edge(v, w);
                         }
                     }
                 }
@@ -370,41 +384,52 @@ namespace
             target_graphs.at(2).resize(target_size);
             target_graphs.at(3).resize(target_size);
             target_graphs.at(4).resize(target_size);
+            target_graphs.at(5).resize(target_size);
+            target_graphs.at(6).resize(target_size);
 
             for (unsigned v = 0 ; v < target_size ; ++v) {
-                for (unsigned c = 0 ; c < target_size ; ++c) {
-                    if (target_graphs.at(0).adjacent(c, v)) {
-                        for (unsigned w = 0 ; w <= v ; ++w) {
-                            if (target_graphs.at(0).adjacent(c, w)) {
-                                if (target_graphs.at(1).adjacent(v, w))
-                                    target_graphs.at(2).add_edge(v, w);
-                                else
-                                    target_graphs.at(1).add_edge(v, w);
-                            }
-                        }
+                auto nv = target_graphs.at(0).neighbourhood(v);
+                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                    nv.unset(c);
+                    auto nc = target_graphs.at(0).neighbourhood(c);
+                    for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
+                        nc.unset(w);
+                        if (target_graphs.at(2).adjacent(v, w))
+                            target_graphs.at(3).add_edge(v, w);
+                        else if (target_graphs.at(1).adjacent(v, w))
+                            target_graphs.at(2).add_edge(v, w);
+                        else
+                            target_graphs.at(1).add_edge(v, w);
                     }
                 }
             }
 
             for (unsigned v = 0 ; v < target_size ; ++v) {
-                for (unsigned c = 0 ; c < target_size ; ++c) {
-                    if (target_graphs.at(0).adjacent(c, v)) {
-                        for (unsigned d = 0 ; d < target_size ; ++d) {
-                            if (d != v && target_graphs.at(0).adjacent(c, d)) {
-                                for (unsigned w = 0 ; w <= v ; ++w) {
-                                    if (w != c && target_graphs.at(0).adjacent(d, w)) {
-                                        if (target_graphs.at(3).adjacent(v, w))
-                                            target_graphs.at(4).add_edge(v, w);
-                                        else
-                                            target_graphs.at(3).add_edge(v, w);
-                                    }
-                                }
-                            }
+                auto nv = target_graphs.at(0).neighbourhood(v);
+                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                    nv.unset(c);
+                    auto nc = target_graphs.at(0).neighbourhood(c);
+                    for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
+                        nc.unset(d);
+                        if (unsigned(d) == v)
+                            continue;
+
+                        auto nd = target_graphs.at(0).neighbourhood(d);
+                        for (int w = nd.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nd.first_set_bit()) {
+                            nd.unset(w);
+                            if (w == c)
+                                continue;
+
+                            if (target_graphs.at(5).adjacent(v, w))
+                                target_graphs.at(6).add_edge(v, w);
+                            else if (target_graphs.at(4).adjacent(v, w))
+                                target_graphs.at(5).add_edge(v, w);
+                            else
+                                target_graphs.at(4).add_edge(v, w);
                         }
                     }
                 }
             }
-
         }
 
         auto regin_all_different(Domains & domains) -> bool
