@@ -109,7 +109,9 @@ namespace
                         target_graphs.at(0).add_edge(i, j);
         }
 
-        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v) -> Domain *
+        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v,
+                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts
+                ) -> bool
         {
             /* how many unassigned neighbours do we have, and what is their domain? */
             std::array<unsigned, max_graphs> unassigned_neighbours;
@@ -131,21 +133,31 @@ namespace
 
                         /* enough values remaining between all our neighbours we've seen so far? */
                         unassigned_neighbours_domains_union.at(g).union_with(d.values);
-                        if (++unassigned_neighbours.at(g) > unassigned_neighbours_domains_union.at(g).popcount())
-                            return &d;
+                        unsigned unassigned_neighbours_domains_popcount = unassigned_neighbours_domains_union.at(g).popcount();
+                        if (++unassigned_neighbours.at(g) > unassigned_neighbours_domains_popcount) {
+                            if (0 == unassigned_neighbours_domains_popcount || 0 == d.values.popcount())
+                                conflicts = d.conflicts;
+                            else
+                                merge_conflicts(conflicts, d.conflicts);
+                            return false;
+                        }
                     }
                 }
 
                 unsigned old_popcount = d.popcount;
                 d.popcount = d.values.popcount();
-                if (d.popcount != old_popcount)
-                    add_conflict(d.conflicts, branch_v);
 
-                if (0 == d.popcount)
-                    return &d;
+                if (0 == d.popcount) {
+                    conflicts = d.conflicts;
+                    return false;
+                }
+
+                if (d.popcount != old_popcount) {
+                    add_conflict(d.conflicts, branch_v);
+                }
             }
 
-            return nullptr;
+            return true;
         }
 
         auto search(
@@ -192,10 +204,11 @@ namespace
                 }
 
                 /* propagate */
-                Domain * fail_domain = propagate(new_domains, branch_v, f_v);
-                if (fail_domain) {
+                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type propagate_conflicts;
+                initialise_conflicts(propagate_conflicts, pattern_size);
+                if (! propagate(new_domains, branch_v, f_v, propagate_conflicts)) {
                     /* analyse failure */
-                    merge_conflicts(conflicts, fail_domain->conflicts);
+                    merge_conflicts(conflicts, propagate_conflicts);
                     continue;
                 }
 
