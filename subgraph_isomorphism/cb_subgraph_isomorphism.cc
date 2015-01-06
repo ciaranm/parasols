@@ -109,9 +109,6 @@ namespace
                 for (unsigned j = 0 ; j < target_size ; ++j)
                     if (target.adjacent(order.at(i), order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
-
-            if (domination_)
-                initialise_dominations();
         }
 
         auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v,
@@ -606,6 +603,7 @@ namespace
                         auto n_w = pattern_graphs.at(0).neighbourhood(w);
                         n_v.unset(w);
                         n_w.unset(v);
+
                         if (n_v == n_w) {
                             ++pattern_count;
                             pattern_dominations.at(w).set(v);
@@ -633,8 +631,6 @@ namespace
                     }
                 }
             }
-
-            std::cerr << "Dom " << pattern_count << " " << target_count << std::endl;
         }
 
         auto prepare_for_search(Domains & domains) -> void
@@ -664,6 +660,9 @@ namespace
 
             if (! regin_all_different(domains))
                 return result;
+
+            if (domination_)
+                initialise_dominations();
 
             prepare_for_search(domains);
 

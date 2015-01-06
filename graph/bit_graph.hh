@@ -174,9 +174,11 @@ namespace parasols
             {
                 if (_bits.size() != other._bits.size())
                     return false;
-                for (int i = 0 ; i < _size ; ++i)
+
+                for (typename Bits::size_type i = 0 ; i < _bits.size() ; ++i)
                     if (_bits[i] != other._bits[i])
                         return false;
+
                 return true;
             }
     };
