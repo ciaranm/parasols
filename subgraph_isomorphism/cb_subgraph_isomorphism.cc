@@ -118,9 +118,11 @@ namespace
             std::fill(unassigned_neighbours.begin(), unassigned_neighbours.end(), 0);
 
             std::array<FixedBitSet<n_words_>, max_graphs> unassigned_neighbours_domains_union;
+            std::array<typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type, max_graphs> unassigned_neighbours_conflicts;
             for (int g = 0 ; g < max_graphs ; ++g) {
                 unassigned_neighbours_domains_union.at(g).resize(target_size);
                 unassigned_neighbours_domains_union.at(g).unset_all();
+                initialise_conflicts(unassigned_neighbours_conflicts.at(g), target_size);
             }
 
             for (auto & d : new_domains) {
@@ -137,8 +139,10 @@ namespace
                         if (++unassigned_neighbours.at(g) > unassigned_neighbours_domains_popcount) {
                             if (0 == unassigned_neighbours_domains_popcount || 0 == d.values.popcount())
                                 conflicts = d.conflicts;
-                            else
+                            else {
+                                merge_conflicts(conflicts, unassigned_neighbours_conflicts.at(g));
                                 merge_conflicts(conflicts, d.conflicts);
+                            }
                             return false;
                         }
                     }
