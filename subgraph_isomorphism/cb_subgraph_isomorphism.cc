@@ -119,11 +119,13 @@ namespace
 
             std::array<FixedBitSet<n_words_>, max_graphs> unassigned_neighbours_domains_union;
             std::array<typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type, max_graphs> unassigned_neighbours_conflicts;
+            FixedBitSet<n_words_> unassigned_neighbours_domains_mask;
             for (int g = 0 ; g < max_graphs ; ++g) {
                 unassigned_neighbours_domains_union.at(g).resize(target_size);
                 unassigned_neighbours_domains_union.at(g).unset_all();
                 initialise_conflicts(unassigned_neighbours_conflicts.at(g), target_size);
             }
+             unassigned_neighbours_domains_mask.resize(target_size);
 
             std::array<int, n_words_ * bits_per_word> domains_order;
             std::iota(domains_order.begin(), domains_order.begin() + new_domains.size(), 0);
@@ -137,15 +139,21 @@ namespace
                 auto & d = new_domains.at(domains_order.at(i));
                 d.values.unset(f_v);
 
+                FixedBitSet<n_words_> future_hall_set;
+                bool has_future_hall_set = false;
+
                 for (int g = 0 ; g < max_graphs ; ++g) {
                     if (pattern_graphs.at(g).adjacent(branch_v, d.v)) {
                         /* knock out values */
                         target_graphs.at(g).intersect_with_row(f_v, d.values);
 
+                        d.values.intersect_with_complement(unassigned_neighbours_domains_mask);
+
                         /* enough values remaining between all our neighbours we've seen so far? */
                         unassigned_neighbours_domains_union.at(g).union_with(d.values);
                         unsigned unassigned_neighbours_domains_popcount = unassigned_neighbours_domains_union.at(g).popcount();
-                        if (++unassigned_neighbours.at(g) > unassigned_neighbours_domains_popcount) {
+                        ++unassigned_neighbours.at(g);
+                        if (unassigned_neighbours.at(g) > unassigned_neighbours_domains_popcount) {
                             if (0 == unassigned_neighbours_domains_popcount || 0 == d.values.popcount())
                                 conflicts = d.conflicts;
                             else {
@@ -154,6 +162,18 @@ namespace
                             }
                             return false;
                         }
+                        else if (unassigned_neighbours.at(g) == unassigned_neighbours_domains_popcount) {
+                            future_hall_set = unassigned_neighbours_domains_union.at(g);
+                            has_future_hall_set = true;
+                        }
+                    }
+                }
+
+                if (has_future_hall_set) {
+                    unassigned_neighbours_domains_mask.union_with(future_hall_set);
+                    for (int g = 0 ; g < max_graphs ; ++g) {
+                        unassigned_neighbours.at(g) = 0;
+                        unassigned_neighbours_domains_union.at(g).unset_all();
                     }
                 }
 
