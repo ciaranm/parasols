@@ -87,14 +87,14 @@ namespace
 
         unsigned pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, const bool invert) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
             params(a),
             order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
         {
             std::iota(order.begin(), order.end(), 0);
-            degree_sort(target, order, invert);
+            degree_sort(target, order, false);
 
             pattern_graphs.at(0).resize(pattern_size);
             for (unsigned i = 0 ; i < pattern_size ; ++i)
@@ -620,24 +620,12 @@ namespace
 auto parasols::cb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
 auto parasols::cbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
-}
-
-auto parasols::cbi_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, false>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
-}
-
-auto parasols::cbji_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
