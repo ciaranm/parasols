@@ -125,7 +125,16 @@ namespace
                 initialise_conflicts(unassigned_neighbours_conflicts.at(g), target_size);
             }
 
-            for (auto & d : new_domains) {
+            std::array<int, n_words_ * bits_per_word> domains_order;
+            std::iota(domains_order.begin(), domains_order.begin() + new_domains.size(), 0);
+
+            std::sort(domains_order.begin(), domains_order.begin() + new_domains.size(),
+                    [&] (int a, int b) {
+                    return new_domains.at(a).popcount < new_domains.at(b).popcount;
+                    });
+
+            for (int i = 0, i_end = new_domains.size() ; i != i_end ; ++i) {
+                auto & d = new_domains.at(domains_order.at(i));
                 d.values.unset(f_v);
 
                 for (int g = 0 ; g < max_graphs ; ++g) {
