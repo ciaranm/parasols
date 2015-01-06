@@ -79,6 +79,8 @@ namespace
 
         const SubgraphIsomorphismParams & params;
 
+        std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
+
         static constexpr int max_graphs = 7;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
@@ -86,8 +88,6 @@ namespace
         std::vector<int> order;
 
         unsigned pattern_size, target_size;
-
-        std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
         CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
             params(a),
@@ -109,6 +109,9 @@ namespace
                 for (unsigned j = 0 ; j < target_size ; ++j)
                     if (target.adjacent(order.at(i), order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
+
+            if (domination_)
+                initialise_dominations();
         }
 
         auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v,
@@ -597,14 +600,15 @@ namespace
                 d.resize(pattern_size);
 
             for (unsigned v = 0 ; v < pattern_size ; ++v) {
-                auto n_v = pattern_graphs.at(0).neighbourhood(v);
                 for (unsigned w = 0 ; w < pattern_size ; ++w) {
                     if (v != w) {
+                        auto n_v = pattern_graphs.at(0).neighbourhood(v);
                         auto n_w = pattern_graphs.at(0).neighbourhood(w);
-                        n_w.intersect_with_complement(n_v);
-                        if (n_w.empty()) {
+                        n_v.unset(w);
+                        n_w.unset(v);
+                        if (n_v == n_w) {
                             ++pattern_count;
-                            pattern_dominations.at(v).set(w);
+                            pattern_dominations.at(w).set(v);
                         }
                     }
                 }
@@ -629,6 +633,8 @@ namespace
                     }
                 }
             }
+
+            std::cerr << "Dom " << pattern_count << " " << target_count << std::endl;
         }
 
         auto prepare_for_search(Domains & domains) -> void
@@ -658,9 +664,6 @@ namespace
 
             if (! regin_all_different(domains))
                 return result;
-
-            if (domination_)
-                initialise_dominations();
 
             prepare_for_search(domains);
 

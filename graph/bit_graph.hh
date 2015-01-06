@@ -169,6 +169,16 @@ namespace parasols
                 }
                 return -1;
             }
+
+            auto operator== (const FixedBitSet<words_> & other) const -> bool
+            {
+                if (_bits.size() != other._bits.size())
+                    return false;
+                for (int i = 0 ; i < _size ; ++i)
+                    if (_bits[i] != other._bits[i])
+                        return false;
+                return true;
+            }
     };
 
     /**
