@@ -78,6 +78,7 @@ namespace
         using Assignments = std::vector<unsigned>;
 
         const SubgraphIsomorphismParams & params;
+        const bool all_different;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -89,8 +90,9 @@ namespace
 
         unsigned pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d) :
             params(a),
+            all_different(d),
             order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
@@ -658,7 +660,7 @@ namespace
             if (! initialise_domains(domains, max_graphs))
                 return result;
 
-            if (! regin_all_different(domains))
+            if (all_different && ! regin_all_different(domains))
                 return result;
 
             if (domination_)
@@ -687,24 +689,29 @@ namespace
 auto parasols::cb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, false>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, true>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbjd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
+auto parasols::cbjdnoalldiff_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
