@@ -63,7 +63,7 @@ namespace
         return c.test(n);
     }
 
-    template <unsigned n_words_, bool backjump_, bool domination_>
+    template <unsigned n_words_, bool backjump_, bool domination_, int k_, int l_>
     struct CBSGI
     {
         struct Domain
@@ -82,7 +82,7 @@ namespace
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
-        static constexpr int max_graphs = 7;
+        static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
@@ -395,103 +395,103 @@ namespace
 
         auto build_path_graphs() -> void
         {
-            pattern_graphs.at(1).resize(pattern_size);
-            pattern_graphs.at(2).resize(pattern_size);
-            pattern_graphs.at(3).resize(pattern_size);
-            pattern_graphs.at(4).resize(pattern_size);
-            pattern_graphs.at(5).resize(pattern_size);
-            pattern_graphs.at(6).resize(pattern_size);
+            for (int g = 1 ; g < max_graphs ; ++g)
+                pattern_graphs.at(g).resize(pattern_size);
 
-            for (unsigned v = 0 ; v < pattern_size ; ++v) {
-                auto nv = pattern_graphs.at(0).neighbourhood(v);
-                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
-                    nv.unset(c);
-                    auto nc = pattern_graphs.at(0).neighbourhood(c);
-                    for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
-                        nc.unset(w);
-                        if (pattern_graphs.at(2).adjacent(v, w))
-                            pattern_graphs.at(3).add_edge(v, w);
-                        else if (pattern_graphs.at(1).adjacent(v, w))
-                            pattern_graphs.at(2).add_edge(v, w);
-                        else
-                            pattern_graphs.at(1).add_edge(v, w);
-                    }
-                }
-            }
-
-            for (unsigned v = 0 ; v < pattern_size ; ++v) {
-                auto nv = pattern_graphs.at(0).neighbourhood(v);
-                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
-                    nv.unset(c);
-                    auto nc = pattern_graphs.at(0).neighbourhood(c);
-                    for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
-                        nc.unset(d);
-                        if (unsigned(d) == v)
-                            continue;
-
-                        auto nd = pattern_graphs.at(0).neighbourhood(d);
-                        for (int w = nd.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nd.first_set_bit()) {
-                            nd.unset(w);
-                            if (w == c)
-                                continue;
-
-                            if (pattern_graphs.at(5).adjacent(v, w))
-                                pattern_graphs.at(6).add_edge(v, w);
-                            else if (pattern_graphs.at(4).adjacent(v, w))
-                                pattern_graphs.at(5).add_edge(v, w);
-                            else
-                                pattern_graphs.at(4).add_edge(v, w);
+            if (l_ >= 2) {
+                for (unsigned v = 0 ; v < pattern_size ; ++v) {
+                    auto nv = pattern_graphs.at(0).neighbourhood(v);
+                    for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                        nv.unset(c);
+                        auto nc = pattern_graphs.at(0).neighbourhood(c);
+                        for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
+                            nc.unset(w);
+                            if (k_ >= 3 && pattern_graphs.at(2).adjacent(v, w))
+                                pattern_graphs.at(3).add_edge(v, w);
+                            else if (k_ >= 2 && pattern_graphs.at(1).adjacent(v, w))
+                                pattern_graphs.at(2).add_edge(v, w);
+                            else if (k_ >= 1)
+                                pattern_graphs.at(1).add_edge(v, w);
                         }
                     }
                 }
             }
 
-            target_graphs.at(1).resize(target_size);
-            target_graphs.at(2).resize(target_size);
-            target_graphs.at(3).resize(target_size);
-            target_graphs.at(4).resize(target_size);
-            target_graphs.at(5).resize(target_size);
-            target_graphs.at(6).resize(target_size);
+            if (l_ >= 3) {
+                for (unsigned v = 0 ; v < pattern_size ; ++v) {
+                    auto nv = pattern_graphs.at(0).neighbourhood(v);
+                    for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                        nv.unset(c);
+                        auto nc = pattern_graphs.at(0).neighbourhood(c);
+                        for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
+                            nc.unset(d);
+                            if (unsigned(d) == v)
+                                continue;
 
-            for (unsigned v = 0 ; v < target_size ; ++v) {
-                auto nv = target_graphs.at(0).neighbourhood(v);
-                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
-                    nv.unset(c);
-                    auto nc = target_graphs.at(0).neighbourhood(c);
-                    for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
-                        nc.unset(w);
-                        if (target_graphs.at(2).adjacent(v, w))
-                            target_graphs.at(3).add_edge(v, w);
-                        else if (target_graphs.at(1).adjacent(v, w))
-                            target_graphs.at(2).add_edge(v, w);
-                        else
-                            target_graphs.at(1).add_edge(v, w);
+                            auto nd = pattern_graphs.at(0).neighbourhood(d);
+                            for (int w = nd.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nd.first_set_bit()) {
+                                nd.unset(w);
+                                if (w == c)
+                                    continue;
+
+                                if (k_ >= 3 && pattern_graphs.at(k_ + 2).adjacent(v, w))
+                                    pattern_graphs.at(k_ + 3).add_edge(v, w);
+                                else if (k_ >= 2 && pattern_graphs.at(k_ + 1).adjacent(v, w))
+                                    pattern_graphs.at(k_ + 2).add_edge(v, w);
+                                else if (k_ >= 1)
+                                    pattern_graphs.at(k_ + 1).add_edge(v, w);
+                            }
+                        }
                     }
                 }
             }
 
-            for (unsigned v = 0 ; v < target_size ; ++v) {
-                auto nv = target_graphs.at(0).neighbourhood(v);
-                for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
-                    nv.unset(c);
-                    auto nc = target_graphs.at(0).neighbourhood(c);
-                    for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
-                        nc.unset(d);
-                        if (unsigned(d) == v)
-                            continue;
+            for (int g = 1 ; g < max_graphs ; ++g)
+                target_graphs.at(g).resize(target_size);
 
-                        auto nd = target_graphs.at(0).neighbourhood(d);
-                        for (int w = nd.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nd.first_set_bit()) {
-                            nd.unset(w);
-                            if (w == c)
+            if (l_ >= 2) {
+                for (unsigned v = 0 ; v < target_size ; ++v) {
+                    auto nv = target_graphs.at(0).neighbourhood(v);
+                    for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                        nv.unset(c);
+                        auto nc = target_graphs.at(0).neighbourhood(c);
+                        for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
+                            nc.unset(w);
+                            if (k_ >= 3 && target_graphs.at(2).adjacent(v, w))
+                                target_graphs.at(3).add_edge(v, w);
+                            else if (k_ >= 2 && target_graphs.at(1).adjacent(v, w))
+                                target_graphs.at(2).add_edge(v, w);
+                            else if (k_ >= 1)
+                                target_graphs.at(1).add_edge(v, w);
+                        }
+                    }
+                }
+            }
+
+            if (l_ >= 3) {
+                for (unsigned v = 0 ; v < target_size ; ++v) {
+                    auto nv = target_graphs.at(0).neighbourhood(v);
+                    for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
+                        nv.unset(c);
+                        auto nc = target_graphs.at(0).neighbourhood(c);
+                        for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
+                            nc.unset(d);
+                            if (unsigned(d) == v)
                                 continue;
 
-                            if (target_graphs.at(5).adjacent(v, w))
-                                target_graphs.at(6).add_edge(v, w);
-                            else if (target_graphs.at(4).adjacent(v, w))
-                                target_graphs.at(5).add_edge(v, w);
-                            else
-                                target_graphs.at(4).add_edge(v, w);
+                            auto nd = target_graphs.at(0).neighbourhood(d);
+                            for (int w = nd.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nd.first_set_bit()) {
+                                nd.unset(w);
+                                if (w == c)
+                                    continue;
+
+                                if (k_ >= 3 && target_graphs.at(k_ + 2).adjacent(v, w))
+                                    target_graphs.at(k_ + 3).add_edge(v, w);
+                                else if (k_ >= 3 && target_graphs.at(k_ + 1).adjacent(v, w))
+                                    target_graphs.at(k_ + 2).add_edge(v, w);
+                                else if (k_ >= 1)
+                                    target_graphs.at(k_ + 1).add_edge(v, w);
+                            }
                         }
                     }
                 }
@@ -679,39 +679,64 @@ namespace
         }
     };
 
-    template <template <unsigned, bool, bool> class SGI_, bool v_, bool w_>
+    template <template <unsigned, bool, bool, int, int> class SGI_, bool v_, bool w_, int n_, int m_>
     struct Apply
     {
-        template <unsigned size_, typename> using Type = SGI_<size_, v_, w_>;
+        template <unsigned size_, typename> using Type = SGI_<size_, v_, w_, n_, m_>;
     };
 }
 
 auto parasols::cb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, false, false>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, false, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, true, false>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, false, true>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, false, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbjd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, true, true>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::cbjdnoalldiff_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, true, true>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false);
 }
+
+auto parasols::cbjdnom3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 2, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::cbjdnom23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 1, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::cbjdnod3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 2>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::cbjdnod23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
