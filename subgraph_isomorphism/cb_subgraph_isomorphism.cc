@@ -18,6 +18,13 @@ using namespace parasols;
 
 namespace
 {
+    enum class Search
+    {
+        Aborted,
+        Unsatisfiable,
+        Satisfiable
+    };
+
     struct Empty
     {
     };
@@ -79,6 +86,7 @@ namespace
 
         const SubgraphIsomorphismParams & params;
         const bool all_different;
+        const int probe;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -90,9 +98,10 @@ namespace
 
         unsigned pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, int p) :
             params(a),
             all_different(d),
+            probe(p),
             order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
@@ -114,7 +123,8 @@ namespace
         }
 
         auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v,
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts
+                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts,
+                int g_end
                 ) -> bool
         {
             /* how many unassigned neighbours do we have, and what is their domain? */
@@ -124,7 +134,7 @@ namespace
             std::array<FixedBitSet<n_words_>, max_graphs> unassigned_neighbours_domains_union;
             std::array<typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type, max_graphs> unassigned_neighbours_conflicts;
             FixedBitSet<n_words_> unassigned_neighbours_domains_mask;
-            for (int g = 0 ; g < max_graphs ; ++g) {
+            for (int g = 0 ; g < g_end ; ++g) {
                 unassigned_neighbours_domains_union.at(g).resize(target_size);
                 unassigned_neighbours_domains_union.at(g).unset_all();
                 initialise_conflicts(unassigned_neighbours_conflicts.at(g), target_size);
@@ -146,7 +156,7 @@ namespace
                 FixedBitSet<n_words_> future_hall_set;
                 bool has_future_hall_set = false;
 
-                for (int g = 0 ; g < max_graphs ; ++g) {
+                for (int g = 0 ; g < g_end ; ++g) {
                     if (pattern_graphs.at(g).adjacent(branch_v, d.v)) {
                         /* knock out values */
                         target_graphs.at(g).intersect_with_row(f_v, d.values);
@@ -175,7 +185,7 @@ namespace
 
                 if (has_future_hall_set) {
                     unassigned_neighbours_domains_mask.union_with(future_hall_set);
-                    for (int g = 0 ; g < max_graphs ; ++g) {
+                    for (int g = 0 ; g < g_end ; ++g) {
                         unassigned_neighbours.at(g) = 0;
                         unassigned_neighbours_domains_union.at(g).unset_all();
                     }
@@ -201,12 +211,17 @@ namespace
                 Assignments & assignments,
                 Domains & domains,
                 unsigned long long & nodes,
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts) -> bool
+                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts,
+                unsigned long long probe_limit,
+                int g_end) -> Search
         {
             if (params.abort->load())
-                return false;
+                return Search::Aborted;
 
             ++nodes;
+
+            if (0 != probe_limit && nodes > probe_limit)
+                return Search::Aborted;
 
             Domain * branch_domain = nullptr;
             for (auto & d : domains)
@@ -214,7 +229,7 @@ namespace
                     branch_domain = &d;
 
             if (! branch_domain)
-                return true;
+                return Search::Satisfiable;
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
@@ -250,7 +265,7 @@ namespace
                 /* propagate */
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type propagate_conflicts;
                 initialise_conflicts(propagate_conflicts, pattern_size);
-                if (! propagate(new_domains, branch_v, f_v, propagate_conflicts)) {
+                if (! propagate(new_domains, branch_v, f_v, propagate_conflicts, g_end)) {
                     /* analyse failure */
                     merge_conflicts(conflicts, propagate_conflicts);
                     continue;
@@ -258,13 +273,16 @@ namespace
 
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
                 initialise_conflicts(search_conflicts, pattern_size);
-                if (search(assignments, new_domains, nodes, search_conflicts))
-                    return true;
+                switch (search(assignments, new_domains, nodes, search_conflicts, probe_limit, g_end)) {
+                    case Search::Satisfiable:    return Search::Satisfiable;
+                    case Search::Aborted:        return Search::Aborted;
+                    case Search::Unsatisfiable:  break;
+                }
 
                 merge_conflicts(conflicts, search_conflicts);
 
                 if (! caused_conflict(search_conflicts, branch_v))
-                    return false;
+                    return Search::Unsatisfiable;
 
                 if (domination_) {
                     /* if v cannot take f_v, no v' that is dominated by v can
@@ -277,7 +295,7 @@ namespace
                 }
             }
 
-            return false;
+            return Search::Unsatisfiable;
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
@@ -653,6 +671,33 @@ namespace
                 return result;
             }
 
+            if (domination_)
+                initialise_dominations();
+
+            if (probe > 0) {
+                Domains probe_domains(pattern_size);
+                if (! initialise_domains(probe_domains, 1))
+                    return result;
+
+                Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
+                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
+                initialise_conflicts(search_conflicts, pattern_size);
+
+                switch (search(assignments, probe_domains, result.nodes, search_conflicts,
+                            1 == probe ? pattern_size * pattern_size : target_size * target_size, 1)) {
+                    case Search::Satisfiable:
+                        for (unsigned v = 0 ; v < pattern_size ; ++v)
+                            result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                        return result;
+
+                    case Search::Unsatisfiable:
+                        return result;
+
+                    case Search::Aborted:
+                        break;
+                }
+            }
+
             Domains domains(pattern_size);
 
             build_path_graphs();
@@ -663,17 +708,21 @@ namespace
             if (all_different && ! regin_all_different(domains))
                 return result;
 
-            if (domination_)
-                initialise_dominations();
-
             prepare_for_search(domains);
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
             typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
             initialise_conflicts(search_conflicts, pattern_size);
-            if (search(assignments, domains, result.nodes, search_conflicts))
-                for (unsigned v = 0 ; v < pattern_size ; ++v)
-                    result.isomorphism.emplace(v, order.at(assignments.at(v)));
+            switch (search(assignments, domains, result.nodes, search_conflicts, 0, max_graphs)) {
+                case Search::Satisfiable:
+                    for (unsigned v = 0 ; v < pattern_size ; ++v)
+                        result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                    break;
+
+                case Search::Unsatisfiable:
+                case Search::Aborted:
+                    break;
+            }
 
             return result;
         }
@@ -689,78 +738,90 @@ namespace
 auto parasols::cb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbjd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbjdnoalldiff_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
 }
 
 auto parasols::cbjdnom3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 2, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbjdnom23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 1, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbjdnod3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 2>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbjdnod23_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::cbfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, false, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
 }
 
 auto parasols::cbjfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
 }
 
 auto parasols::cbdfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
 }
 
 auto parasols::cbjdfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
+}
+
+auto parasols::cbjdprobe1_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 1);
+}
+
+auto parasols::cbjdprobe2_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 2);
 }
 
