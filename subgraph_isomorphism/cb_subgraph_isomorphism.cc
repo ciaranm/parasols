@@ -208,11 +208,13 @@ namespace
         }
 
         auto search(
+                int depth,
                 Assignments & assignments,
                 Domains & domains,
                 unsigned long long & nodes,
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts,
                 unsigned long long probe_limit,
+                int discrepancies_above,
                 int g_end) -> Search
         {
             if (params.abort->load())
@@ -273,7 +275,7 @@ namespace
 
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
                 initialise_conflicts(search_conflicts, pattern_size);
-                switch (search(assignments, new_domains, nodes, search_conflicts, probe_limit, g_end)) {
+                switch (search(depth + 1, assignments, new_domains, nodes, search_conflicts, probe_limit, discrepancies_above, g_end)) {
                     case Search::Satisfiable:    return Search::Satisfiable;
                     case Search::Aborted:        return Search::Aborted;
                     case Search::Unsatisfiable:  break;
@@ -293,6 +295,9 @@ namespace
                             d.values.intersect_with_complement(target_dominations.at(f_v));
                         }
                 }
+
+                if (-1 != discrepancies_above && depth > discrepancies_above)
+                    return Search::Unsatisfiable;
             }
 
             return Search::Unsatisfiable;
@@ -674,7 +679,7 @@ namespace
             if (domination_)
                 initialise_dominations();
 
-            if (probe > 0) {
+            if (probe == 1 || probe == 3) {
                 Domains probe_domains(pattern_size);
                 if (! initialise_domains(probe_domains, 1))
                     return result;
@@ -683,8 +688,7 @@ namespace
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
                 initialise_conflicts(search_conflicts, pattern_size);
 
-                switch (search(assignments, probe_domains, result.nodes, search_conflicts,
-                            1 == probe ? pattern_size * pattern_size : target_size * target_size, 1)) {
+                switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, -1, 1)) {
                     case Search::Satisfiable:
                         for (unsigned v = 0 ; v < pattern_size ; ++v)
                             result.isomorphism.emplace(v, order.at(assignments.at(v)));
@@ -698,9 +702,9 @@ namespace
                 }
             }
 
-            Domains domains(pattern_size);
-
             build_path_graphs();
+
+            Domains domains(pattern_size);
 
             if (! initialise_domains(domains, max_graphs))
                 return result;
@@ -710,10 +714,33 @@ namespace
 
             prepare_for_search(domains);
 
+            if (probe == 2 || probe == 3) {
+                for (int i = 1, i_end = 4 ; i != i_end ; ++i) {
+                    Domains probe_domains = domains;
+
+                    Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
+                    typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
+                    initialise_conflicts(search_conflicts, pattern_size);
+
+                    switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, 0, i, max_graphs)) {
+                        case Search::Satisfiable:
+                            for (unsigned v = 0 ; v < pattern_size ; ++v)
+                                result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                            return result;
+
+                        case Search::Unsatisfiable:
+                            break; /* not a proof */
+
+                        case Search::Aborted:
+                            break;
+                    }
+                }
+            }
+
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
             typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
             initialise_conflicts(search_conflicts, pattern_size);
-            switch (search(assignments, domains, result.nodes, search_conflicts, 0, max_graphs)) {
+            switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, -1, max_graphs)) {
                 case Search::Satisfiable:
                     for (unsigned v = 0 ; v < pattern_size ; ++v)
                         result.isomorphism.emplace(v, order.at(assignments.at(v)));
@@ -823,5 +850,11 @@ auto parasols::cbjdprobe2_subgraph_isomorphism(const std::pair<Graph, Graph> & g
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, 2);
+}
+
+auto parasols::cbjdprobe3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 3);
 }
 
