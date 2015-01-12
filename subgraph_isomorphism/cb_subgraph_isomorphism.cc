@@ -250,15 +250,21 @@ namespace
                         return a.second < b.second || (a.second == b.second && a.first < b.first);
                     });
 
+            FixedBitSet<n_words_> skip;
+            skip.resize(target_size);
+
             for (unsigned x = 0 ; x < domains_order_end ; ++x) {
                 unsigned f_v = domains_order.at(x).first;
+
+                if (skip.test(f_v))
+                    continue;
 
                 /* try assigning f_v to v */
                 assignments.at(branch_v) = f_v;
 
                 if (domination_) {
                     /* if v cannot take f_v, it cannot take any f_v' that is dominated by f_v */
-                    remaining.intersect_with_complement(target_dominations.at(f_v));
+                    skip.union_with(target_dominations.at(f_v));
                 }
 
                 /* set up new domains */
