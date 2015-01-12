@@ -4,7 +4,6 @@
 
 #include <graph/bit_graph.hh>
 #include <graph/template_voodoo.hh>
-#include <graph/degree_sort.hh>
 
 #include <algorithm>
 #include <limits>
@@ -94,21 +93,15 @@ namespace
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
-        std::vector<int> order;
-
         unsigned pattern_size, target_size;
 
         CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, bool p) :
             params(a),
             all_different(d),
             probe(p),
-            order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
         {
-            std::iota(order.begin(), order.end(), 0);
-            degree_sort(target, order, false);
-
             pattern_graphs.at(0).resize(pattern_size);
             for (unsigned i = 0 ; i < pattern_size ; ++i)
                 for (unsigned j = 0 ; j < pattern_size ; ++j)
@@ -118,7 +111,7 @@ namespace
             target_graphs.at(0).resize(target_size);
             for (unsigned i = 0 ; i < target_size ; ++i)
                 for (unsigned j = 0 ; j < target_size ; ++j)
-                    if (target.adjacent(order.at(i), order.at(j)))
+                    if (target.adjacent(i, j))
                         target_graphs.at(0).add_edge(i, j);
         }
 
@@ -237,8 +230,28 @@ namespace
             auto branch_v = branch_domain->v;
             merge_conflicts(conflicts, branch_domain->conflicts);
 
+            FixedBitSet<n_words_> support;
+            support.resize(target_size);
+            for (auto & o : domains)
+                if (o.v != branch_v)
+                    support.union_with(o.values);
+
+            std::array<std::pair<int, int>, n_words_ * bits_per_word> domains_order;
+            unsigned domains_order_end = 0;
             for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
+                auto remaining_neighbourhood = support;
+                target_graphs.at(0).intersect_with_row(f_v, remaining_neighbourhood);
+                domains_order.at(domains_order_end++) = std::make_pair(f_v, remaining_neighbourhood.popcount());
+            }
+
+            std::sort(domains_order.begin(), domains_order.begin() + domains_order_end,
+                    [] (const std::pair<int, int> & a, const std::pair<int, int> & b) {
+                        return a.second < b.second || (a.second == b.second && a.first < b.first);
+                    });
+
+            for (unsigned x = 0 ; x < domains_order_end ; ++x) {
+                unsigned f_v = domains_order.at(x).first;
 
                 /* try assigning f_v to v */
                 assignments.at(branch_v) = f_v;
@@ -682,7 +695,7 @@ namespace
                 switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, -1, 1)) {
                     case Search::Satisfiable:
                         for (unsigned v = 0 ; v < pattern_size ; ++v)
-                            result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                            result.isomorphism.emplace(v, assignments.at(v));
                         return result;
 
                     case Search::Unsatisfiable:
@@ -711,7 +724,7 @@ namespace
             switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, -1, max_graphs)) {
                 case Search::Satisfiable:
                     for (unsigned v = 0 ; v < pattern_size ; ++v)
-                        result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                        result.isomorphism.emplace(v, assignments.at(v));
                     break;
 
                 case Search::Unsatisfiable:
