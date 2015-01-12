@@ -86,7 +86,7 @@ namespace
 
         const SubgraphIsomorphismParams & params;
         const bool all_different;
-        const int probe;
+        const bool probe;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -98,7 +98,7 @@ namespace
 
         unsigned pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, int p) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, bool p) :
             params(a),
             all_different(d),
             probe(p),
@@ -670,7 +670,7 @@ namespace
             if (domination_)
                 initialise_dominations();
 
-            if (probe == 1 || probe == 3) {
+            if (probe) {
                 Domains probe_domains(pattern_size);
                 if (! initialise_domains(probe_domains, 1))
                     return result;
@@ -704,29 +704,6 @@ namespace
                 return result;
 
             prepare_for_search(domains);
-
-            if (probe == 2 || probe == 3) {
-                for (int i = 1, i_end = 4 ; i != i_end ; ++i) {
-                    Domains probe_domains = domains;
-
-                    Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
-                    typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
-                    initialise_conflicts(search_conflicts, pattern_size);
-
-                    switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, 0, i, max_graphs)) {
-                        case Search::Satisfiable:
-                            for (unsigned v = 0 ; v < pattern_size ; ++v)
-                                result.isomorphism.emplace(v, order.at(assignments.at(v)));
-                            return result;
-
-                        case Search::Unsatisfiable:
-                            break; /* not a proof */
-
-                        case Search::Aborted:
-                            break;
-                    }
-                }
-            }
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
             typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
@@ -765,21 +742,9 @@ auto parasols::cbjdfast_subgraph_isomorphism(const std::pair<Graph, Graph> & gra
             AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
 }
 
-auto parasols::cbjdprobe1_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::cbjdprobe_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 1);
-}
-
-auto parasols::cbjdprobe2_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 2);
-}
-
-auto parasols::cbjdprobe3_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 3);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true);
 }
 

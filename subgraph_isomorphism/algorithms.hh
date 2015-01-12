@@ -15,9 +15,7 @@ namespace parasols
 
         std::make_pair( std::string{ "cbjd" },          cbjd_subgraph_isomorphism ),
         std::make_pair( std::string{ "cbjdfast" },      cbjdfast_subgraph_isomorphism ),
-        std::make_pair( std::string{ "cbjdprobe1" },    cbjdprobe1_subgraph_isomorphism ),
-        std::make_pair( std::string{ "cbjdprobe2" },    cbjdprobe2_subgraph_isomorphism ),
-        std::make_pair( std::string{ "cbjdprobe3" },    cbjdprobe3_subgraph_isomorphism ),
+        std::make_pair( std::string{ "cbjdprobe" },     cbjdprobe_subgraph_isomorphism ),
     };
 }
 
