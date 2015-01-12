@@ -237,7 +237,7 @@ namespace
             auto branch_v = branch_domain->v;
             merge_conflicts(conflicts, branch_domain->conflicts);
 
-            for (int f_v = remaining.first_set_bit(), next_f_v ; f_v != -1 ; f_v = next_f_v) {
+            for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
 
                 /* try assigning f_v to v */
@@ -247,8 +247,6 @@ namespace
                     /* if v cannot take f_v, it cannot take any f_v' that is dominated by f_v */
                     remaining.intersect_with_complement(target_dominations.at(f_v));
                 }
-
-                next_f_v = remaining.first_set_bit();
 
                 /* set up new domains */
                 Domains new_domains;
