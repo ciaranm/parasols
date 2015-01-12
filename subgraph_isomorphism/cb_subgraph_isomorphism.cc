@@ -139,7 +139,7 @@ namespace
 
             std::sort(domains_order.begin(), domains_order.begin() + new_domains.size(),
                     [&] (int a, int b) {
-                    return new_domains.at(a).popcount < new_domains.at(b).popcount;
+                    return new_domains.at(a).popcount > new_domains.at(b).popcount;
                     });
 
             for (int i = 0, i_end = new_domains.size() ; i != i_end ; ++i) {
