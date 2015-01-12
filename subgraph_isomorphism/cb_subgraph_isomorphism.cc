@@ -251,18 +251,11 @@ namespace
                 next_f_v = remaining.first_set_bit();
 
                 /* set up new domains */
-                bool elide_copy = next_f_v == -1;
-                Domains new_domains = (elide_copy ? std::move(domains) : Domains());
-                if (elide_copy) {
-                    *branch_domain = new_domains.at(new_domains.size() - 1);
-                    new_domains.pop_back();
-                }
-                else {
-                    new_domains.reserve(domains.size() - 1);
-                    for (auto & d : domains)
-                        if (d.v != branch_v)
-                            new_domains.push_back(d);
-                }
+                Domains new_domains;
+                new_domains.reserve(domains.size() - 1);
+                for (auto & d : domains)
+                    if (d.v != branch_v)
+                        new_domains.push_back(d);
 
                 /* propagate */
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type propagate_conflicts;
