@@ -4,6 +4,7 @@
 
 #include <graph/bit_graph.hh>
 #include <graph/template_voodoo.hh>
+#include <graph/degree_sort.hh>
 
 #include <algorithm>
 #include <limits>
@@ -87,13 +88,14 @@ namespace
         const bool all_different;
         const bool probe;
         const bool dom_over_deg;
-        const bool reverse_value;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
+
+        std::vector<int> order;
 
         unsigned pattern_size, target_size;
 
@@ -102,10 +104,13 @@ namespace
             all_different(d),
             probe(p),
             dom_over_deg(h),
-            reverse_value(r),
+            order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
         {
+            std::iota(order.begin(), order.end(), 0);
+            degree_sort(target, order, r);
+
             pattern_graphs.at(0).resize(pattern_size);
             for (unsigned i = 0 ; i < pattern_size ; ++i)
                 for (unsigned j = 0 ; j < pattern_size ; ++j)
@@ -115,7 +120,7 @@ namespace
             target_graphs.at(0).resize(target_size);
             for (unsigned i = 0 ; i < target_size ; ++i)
                 for (unsigned j = 0 ; j < target_size ; ++j)
-                    if (target.adjacent(i, j))
+                    if (target.adjacent(order.at(i), order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
         }
 
@@ -243,47 +248,15 @@ namespace
             auto branch_v = branch_domain->v;
             merge_conflicts(conflicts, branch_domain->conflicts);
 
-            FixedBitSet<n_words_> support;
-            support.resize(target_size);
-            for (auto & o : domains)
-                if (o.v != branch_v)
-                    support.union_with(o.values);
-
-            std::array<std::pair<int, int>, n_words_ * bits_per_word> domains_order;
-            unsigned domains_order_end = 0;
             for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
-                auto remaining_neighbourhood = support;
-                target_graphs.at(0).intersect_with_row(f_v, remaining_neighbourhood);
-                domains_order.at(domains_order_end++) = std::make_pair(f_v, remaining_neighbourhood.popcount());
-            }
-
-            if (reverse_value)
-                std::sort(domains_order.begin(), domains_order.begin() + domains_order_end,
-                        [] (const std::pair<int, int> & a, const std::pair<int, int> & b) {
-                            return a.second < b.second || (a.second == b.second && a.first < b.first);
-                        });
-            else
-                std::sort(domains_order.begin(), domains_order.begin() + domains_order_end,
-                        [] (const std::pair<int, int> & a, const std::pair<int, int> & b) {
-                            return a.second > b.second || (a.second == b.second && a.first < b.first);
-                        });
-
-            FixedBitSet<n_words_> skip;
-            skip.resize(target_size);
-
-            for (unsigned x = 0 ; x < domains_order_end ; ++x) {
-                unsigned f_v = domains_order.at(x).first;
-
-                if (skip.test(f_v))
-                    continue;
 
                 /* try assigning f_v to v */
                 assignments.at(branch_v) = f_v;
 
                 if (domination_) {
                     /* if v cannot take f_v, it cannot take any f_v' that is dominated by f_v */
-                    skip.union_with(target_dominations.at(f_v));
+                    remaining.intersect_with_complement(target_dominations.at(f_v));
                 }
 
                 /* set up new domains */
@@ -720,7 +693,7 @@ namespace
                 switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, -1, 1)) {
                     case Search::Satisfiable:
                         for (unsigned v = 0 ; v < pattern_size ; ++v)
-                            result.isomorphism.emplace(v, assignments.at(v));
+                            result.isomorphism.emplace(v, order.at(assignments.at(v)));
                         return result;
 
                     case Search::Unsatisfiable:
@@ -749,7 +722,7 @@ namespace
             switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, -1, max_graphs)) {
                 case Search::Satisfiable:
                     for (unsigned v = 0 ; v < pattern_size ; ++v)
-                        result.isomorphism.emplace(v, assignments.at(v));
+                        result.isomorphism.emplace(v, order.at(assignments.at(v)));
                     break;
 
                 case Search::Unsatisfiable:
@@ -774,6 +747,12 @@ auto parasols::cbjd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs,
             AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, false);
 }
 
+auto parasols::cbjdrev_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, true);
+}
+
 auto parasols::cbjdfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
@@ -786,19 +765,3 @@ auto parasols::cbjdprobe_subgraph_isomorphism(const std::pair<Graph, Graph> & gr
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, false);
 }
 
-auto parasols::cbjdover_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, true, false);
-}
-
-auto parasols::cbjdrev_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, true);
-}
-auto parasols::cbjdoverrev_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, true, true);
-}
