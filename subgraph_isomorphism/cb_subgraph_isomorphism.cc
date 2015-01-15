@@ -112,6 +112,8 @@ namespace
 
             if (! n)
                 degree_sort(target, order, r);
+            else if (r)
+                std::reverse(order.begin(), order.end());
 
             pattern_graphs.at(0).resize(pattern_size);
             for (unsigned i = 0 ; i < pattern_size ; ++i)
