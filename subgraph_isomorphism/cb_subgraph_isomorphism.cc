@@ -226,7 +226,6 @@ namespace
                 unsigned long long & nodes,
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts,
                 unsigned long long probe_limit,
-                int discrepancies_above,
                 int g_end) -> Search
         {
             if (params.abort->load())
@@ -278,7 +277,7 @@ namespace
 
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
                 initialise_conflicts(search_conflicts, pattern_size);
-                switch (search(depth + 1, assignments, new_domains, nodes, search_conflicts, probe_limit, discrepancies_above, g_end)) {
+                switch (search(depth + 1, assignments, new_domains, nodes, search_conflicts, probe_limit, g_end)) {
                     case Search::Satisfiable:    return Search::Satisfiable;
                     case Search::Aborted:        return Search::Aborted;
                     case Search::Unsatisfiable:  break;
@@ -298,9 +297,6 @@ namespace
                             d.values.intersect_with_complement(target_dominations.at(f_v));
                         }
                 }
-
-                if (-1 != discrepancies_above && depth > discrepancies_above)
-                    return Search::Unsatisfiable;
             }
 
             return Search::Unsatisfiable;
@@ -691,7 +687,7 @@ namespace
                 typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
                 initialise_conflicts(search_conflicts, pattern_size);
 
-                switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, -1, 1)) {
+                switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, 1)) {
                     case Search::Satisfiable:
                         for (unsigned v = 0 ; v < pattern_size ; ++v)
                             result.isomorphism.emplace(v, order.at(assignments.at(v)));
@@ -720,7 +716,7 @@ namespace
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
             typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
             initialise_conflicts(search_conflicts, pattern_size);
-            switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, -1, max_graphs)) {
+            switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, max_graphs)) {
                 case Search::Satisfiable:
                     for (unsigned v = 0 ; v < pattern_size ; ++v)
                         result.isomorphism.emplace(v, order.at(assignments.at(v)));
