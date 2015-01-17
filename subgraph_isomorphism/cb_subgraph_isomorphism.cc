@@ -89,6 +89,7 @@ namespace
         const bool all_different;
         const bool probe;
         const bool isolated;
+        const bool stronger_backjumping;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -101,11 +102,12 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool is) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool is, bool sb) :
             params(a),
             all_different(ad),
             probe(pr),
             isolated(is),
+            stronger_backjumping(sb),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -311,8 +313,11 @@ namespace
 
                 merge_conflicts(conflicts, search_conflicts);
 
-                if (! caused_conflict(search_conflicts, branch_v))
+                if (! caused_conflict(search_conflicts, branch_v)) {
+                    if (stronger_backjumping)
+                        conflicts = search_conflicts;
                     return Search::Unsatisfiable;
+                }
 
                 if (domination_) {
                     /* if v cannot take f_v, no v' that is dominated by v can
@@ -779,24 +784,36 @@ namespace
 auto parasols::cbjdp_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, false, false);
 }
 
 auto parasols::cbjdpi_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, true, false);
 }
 
 auto parasols::cbjdpi_rand_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, false, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, false, true, false);
 }
 
 auto parasols::cbjdpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false);
+}
+
+auto parasols::csbjdpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, true);
+}
+
+auto parasols::cdpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, false, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false);
 }
 
