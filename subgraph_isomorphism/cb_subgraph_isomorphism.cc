@@ -88,7 +88,6 @@ namespace
         const SubgraphIsomorphismParams & params;
         const bool all_different;
         const bool probe;
-        const bool dom_over_deg;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -100,11 +99,10 @@ namespace
 
         unsigned pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, bool p, bool h, bool r, bool n, bool s) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, bool p, bool r, bool n, bool s) :
             params(a),
             all_different(d),
             probe(p),
-            dom_over_deg(h),
             order(target.size()),
             pattern_size(pattern.size()),
             target_size(target.size())
@@ -156,19 +154,11 @@ namespace
             std::array<int, n_words_ * bits_per_word> domains_order;
             std::iota(domains_order.begin(), domains_order.begin() + new_domains.size(), 0);
 
-            if (dom_over_deg) {
-                std::sort(domains_order.begin(), domains_order.begin() + new_domains.size(),
-                        [&] (int a, int b) {
-                        return ((new_domains.at(a).popcount / (0.001 + target_graphs.at(0).degree(a))) < (new_domains.at(b).popcount / (0.001 + target_graphs.at(0).degree(b))));
-                        });
-            }
-            else {
-                std::sort(domains_order.begin(), domains_order.begin() + new_domains.size(),
-                        [&] (int a, int b) {
-                        return (new_domains.at(a).popcount < new_domains.at(b).popcount) ||
-                            (new_domains.at(a).popcount == new_domains.at(b).popcount && target_graphs.at(0).degree(a) > target_graphs.at(0).degree(b));
-                        });
-            }
+            std::sort(domains_order.begin(), domains_order.begin() + new_domains.size(),
+                    [&] (int a, int b) {
+                    return (new_domains.at(a).popcount < new_domains.at(b).popcount) ||
+                    (new_domains.at(a).popcount == new_domains.at(b).popcount && target_graphs.at(0).degree(a) > target_graphs.at(0).degree(b));
+                    });
 
             for (int i = 0, i_end = new_domains.size() ; i != i_end ; ++i) {
                 auto & d = new_domains.at(domains_order.at(i));
@@ -428,7 +418,7 @@ namespace
             return true;
         }
 
-        auto build_path_graphs() -> void
+        auto build_aux_graphs() -> void
         {
             for (int g = 1 ; g < max_graphs ; ++g)
                 pattern_graphs.at(g).resize(pattern_size);
@@ -714,7 +704,7 @@ namespace
                 }
             }
 
-            build_path_graphs();
+            build_aux_graphs();
 
             Domains domains(pattern_size);
 
@@ -754,42 +744,42 @@ namespace
 auto parasols::cbjd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, false, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, false, false);
 }
 
 auto parasols::cbjdrev_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, true, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, true, false, false);
 }
 
 auto parasols::cbjdfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, 0, false, false, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, false, false, false, false);
 }
 
 auto parasols::cbjdprobe_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, false, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, false, false);
 }
 
 auto parasols::cbjdnovo_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, false, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, true, false);
 }
 
 auto parasols::cbjdnovorev_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, true, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, true, true, false);
 }
 
 auto parasols::cbjdrand_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 0, false, false, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, true, true);
 }
 
