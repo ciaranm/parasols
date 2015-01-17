@@ -88,6 +88,7 @@ namespace
         const SubgraphIsomorphismParams & params;
         const bool all_different;
         const bool probe;
+        const bool isolated;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -95,38 +96,61 @@ namespace
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
-        std::vector<int> order;
+        std::vector<int> pattern_order, target_order, isolated_vertices;
         std::array<int, n_words_ * bits_per_word> domains_tiebreak;
 
-        unsigned pattern_size, target_size;
+        unsigned pattern_size, full_pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, bool p, bool s) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool d, bool p, bool s, bool i) :
             params(a),
             all_different(d),
             probe(p),
-            order(target.size()),
+            isolated(i),
+            target_order(target.size()),
             pattern_size(pattern.size()),
+            full_pattern_size(pattern.size()),
             target_size(target.size())
         {
-            std::iota(order.begin(), order.end(), 0);
+            if (isolated) {
+                for (unsigned v = 0 ; v < full_pattern_size ; ++v)
+                    if (0 == pattern.degree(v)) {
+                        isolated_vertices.push_back(v);
+                        --pattern_size;
+                    }
+                    else
+                        pattern_order.push_back(v);
+
+                pattern_graphs.at(0).resize(pattern_size);
+                for (unsigned i = 0 ; i < pattern_size ; ++i)
+                    for (unsigned j = 0 ; j < pattern_size ; ++j)
+                        if (pattern.adjacent(pattern_order.at(i), pattern_order.at(j)))
+                            pattern_graphs.at(0).add_edge(i, j);
+            }
+            else {
+                pattern_order.resize(pattern_size);
+                std::iota(pattern_order.begin(), pattern_order.end(), 0);
+
+                pattern_graphs.at(0).resize(pattern_size);
+                for (unsigned i = 0 ; i < pattern_size ; ++i)
+                    for (unsigned j = 0 ; j < pattern_size ; ++j)
+                        if (pattern.adjacent(i, j))
+                            pattern_graphs.at(0).add_edge(i, j);
+            }
+
+            std::iota(target_order.begin(), target_order.end(), 0);
 
             if (s) {
                 std::mt19937 g;
-                std::shuffle(order.begin(), order.end(), g);
+                std::shuffle(target_order.begin(), target_order.end(), g);
             }
             else
-                degree_sort(target, order, false);
+                degree_sort(target, target_order, false);
 
-            pattern_graphs.at(0).resize(pattern_size);
-            for (unsigned i = 0 ; i < pattern_size ; ++i)
-                for (unsigned j = 0 ; j < pattern_size ; ++j)
-                    if (pattern.adjacent(i, j))
-                        pattern_graphs.at(0).add_edge(i, j);
 
             target_graphs.at(0).resize(target_size);
             for (unsigned i = 0 ; i < target_size ; ++i)
                 for (unsigned j = 0 ; j < target_size ; ++j)
-                    if (target.adjacent(order.at(i), order.at(j)))
+                    if (target.adjacent(target_order.at(i), target_order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
 
             for (unsigned j = 0 ; j < target_size ; ++j)
@@ -665,11 +689,25 @@ namespace
             }
         }
 
+        auto save_result(Assignments & assignments, SubgraphIsomorphismResult & result) -> void
+        {
+            for (unsigned v = 0 ; v < pattern_size ; ++v)
+                result.isomorphism.emplace(pattern_order.at(v), target_order.at(assignments.at(v)));
+
+            int t = 0;
+            for (auto & v : isolated_vertices) {
+                while (result.isomorphism.end() != std::find_if(result.isomorphism.begin(), result.isomorphism.end(),
+                            [&t] (const std::pair<int, int> & p) { return p.second == t; }))
+                        ++t;
+                result.isomorphism.emplace(v, t);
+            }
+        }
+
         auto run() -> SubgraphIsomorphismResult
         {
             SubgraphIsomorphismResult result;
 
-            if (pattern_size > target_size) {
+            if (full_pattern_size > target_size) {
                 /* some of our fixed size data structures will throw a hissy
                  * fit. check this early. */
                 return result;
@@ -689,8 +727,7 @@ namespace
 
                 switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, 1)) {
                     case Search::Satisfiable:
-                        for (unsigned v = 0 ; v < pattern_size ; ++v)
-                            result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                        save_result(assignments, result);
                         return result;
 
                     case Search::Unsatisfiable:
@@ -718,8 +755,7 @@ namespace
             initialise_conflicts(search_conflicts, pattern_size);
             switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, max_graphs)) {
                 case Search::Satisfiable:
-                    for (unsigned v = 0 ; v < pattern_size ; ++v)
-                        result.isomorphism.emplace(v, order.at(assignments.at(v)));
+                    save_result(assignments, result);
                     break;
 
                 case Search::Unsatisfiable:
@@ -741,24 +777,30 @@ namespace
 auto parasols::cbjd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, false);
 }
 
 auto parasols::cbjdfast_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, false, false, false);
 }
 
 auto parasols::cbjdprobe_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, false);
 }
 
 auto parasols::cbjdrand_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, false, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, true, false);
+}
+
+auto parasols::cbjdisol_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, false, false, true);
 }
 
