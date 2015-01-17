@@ -96,6 +96,7 @@ namespace
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
         std::vector<int> order;
+        std::array<int, n_words_ * bits_per_word> domains_tiebreak;
 
         unsigned pattern_size, target_size;
 
@@ -130,6 +131,9 @@ namespace
                 for (unsigned j = 0 ; j < target_size ; ++j)
                     if (target.adjacent(order.at(i), order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
+
+            for (unsigned j = 0 ; j < target_size ; ++j)
+                domains_tiebreak.at(j) = target_graphs.at(0).degree(j);
         }
 
         auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v,
@@ -157,7 +161,7 @@ namespace
             std::sort(domains_order.begin(), domains_order.begin() + new_domains.size(),
                     [&] (int a, int b) {
                     return (new_domains.at(a).popcount < new_domains.at(b).popcount) ||
-                    (new_domains.at(a).popcount == new_domains.at(b).popcount && target_graphs.at(0).degree(a) > target_graphs.at(0).degree(b));
+                    (new_domains.at(a).popcount == new_domains.at(b).popcount && domains_tiebreak.at(a) > domains_tiebreak.at(b));
                     });
 
             for (int i = 0, i_end = new_domains.size() ; i != i_end ; ++i) {
