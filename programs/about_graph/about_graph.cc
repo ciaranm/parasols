@@ -96,16 +96,19 @@ auto main(int argc, char * argv[]) -> int
 
             unsigned edges = 0;
             unsigned loops = 0;
+            unsigned max_deg = 0;
             for (int i = 0 ; i < graph.size() ; ++i) {
                 if (graph.adjacent(i, i))
                     ++loops;
+
+                max_deg = std::max<unsigned>(max_deg, graph.degree(i));
 
                 for (int j = 0 ; j <= i ; ++j)
                     if (graph.adjacent(i, j))
                         ++edges;
             }
 
-            std::cout << graph.size() << " " << edges << " " << loops << std::endl;
+            std::cout << graph.size() << " " << edges << " " << loops << " " << max_deg << std::endl;
         }
 
         return EXIT_SUCCESS;
