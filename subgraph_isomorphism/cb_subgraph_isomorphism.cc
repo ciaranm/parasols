@@ -90,6 +90,7 @@ namespace
         const bool probe;
         const bool isolated;
         const bool stronger_backjumping;
+        const bool full_all_different;
 
         std::vector<FixedBitSet<n_words_> > pattern_dominations, target_dominations;
 
@@ -102,12 +103,13 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool is, bool sb) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool is, bool sb, bool fa) :
             params(a),
             all_different(ad),
             probe(pr),
             isolated(is),
             stronger_backjumping(sb),
+            full_all_different(fa),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -178,7 +180,7 @@ namespace
                 unassigned_neighbours_domains_union.at(g).unset_all();
                 initialise_conflicts(unassigned_neighbours_conflicts.at(g), target_size);
             }
-             unassigned_neighbours_domains_mask.resize(target_size);
+            unassigned_neighbours_domains_mask.resize(target_size);
 
             std::array<int, n_words_ * bits_per_word> domains_order;
             std::iota(domains_order.begin(), domains_order.begin() + new_domains.size(), 0);
@@ -241,6 +243,14 @@ namespace
 
                 if (d.popcount != old_popcount) {
                     add_conflict(d.conflicts, branch_v);
+                }
+            }
+
+            if (full_all_different) {
+                if (! regin_all_different(new_domains)) {
+                    for (auto & d : new_domains)
+                        merge_conflicts(conflicts, d.conflicts);
+                    return false;
                 }
             }
 
@@ -553,49 +563,49 @@ namespace
 
         auto regin_all_different(Domains & domains) -> bool
         {
-            boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> match(pattern_size + target_size);
+            boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> match(domains.size() + target_size);
 
             unsigned consider = 0;
-            for (unsigned i = 0 ; i < pattern_size ; ++i) {
-                if (domains.at(i).values.popcount() < pattern_size)
+            for (unsigned i = 0 ; i < domains.size() ; ++i) {
+                if (domains.at(i).values.popcount() < domains.size())
                     ++consider;
 
                 for (unsigned j = 0 ; j < target_size ; ++j) {
                     if (domains.at(i).values.test(j))
-                        boost::add_edge(i, pattern_size + j, match);
+                        boost::add_edge(i, domains.size() + j, match);
                 }
             }
 
             if (0 == consider)
                 return true;
 
-            std::vector<boost::graph_traits<decltype(match)>::vertex_descriptor> mate(pattern_size + target_size);
+            std::vector<boost::graph_traits<decltype(match)>::vertex_descriptor> mate(domains.size() + target_size);
             boost::edmonds_maximum_cardinality_matching(match, &mate.at(0));
 
             std::set<int> free;
             for (unsigned j = 0 ; j < target_size ; ++j)
-                free.insert(pattern_size + j);
+                free.insert(domains.size() + j);
 
             unsigned count = 0;
-            for (unsigned i = 0 ; i < pattern_size ; ++i)
+            for (unsigned i = 0 ; i < domains.size() ; ++i)
                 if (mate.at(i) != boost::graph_traits<decltype(match)>::null_vertex()) {
                     ++count;
                     free.erase(mate.at(i));
                 }
 
-            if (count != unsigned(pattern_size))
+            if (count != unsigned(domains.size()))
                 return false;
 
-            boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> match_o(pattern_size + target_size);
+            boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> match_o(domains.size() + target_size);
             std::set<std::pair<unsigned, unsigned> > unused;
-            for (unsigned i = 0 ; i < pattern_size ; ++i) {
+            for (unsigned i = 0 ; i < domains.size() ; ++i) {
                 for (unsigned j = 0 ; j < target_size ; ++j) {
                     if (domains.at(i).values.test(j)) {
                         unused.emplace(i, j);
-                        if (mate.at(i) == unsigned(j + pattern_size))
-                            boost::add_edge(i, pattern_size + j, match_o);
+                        if (mate.at(i) == unsigned(j + domains.size()))
+                            boost::add_edge(i, domains.size() + j, match_o);
                         else
-                            boost::add_edge(pattern_size + j, i, match_o);
+                            boost::add_edge(domains.size() + j, i, match_o);
                     }
                 }
             }
@@ -608,10 +618,10 @@ namespace
                     seen.insert(v);
                     auto w = boost::adjacent_vertices(v, match_o);
                     for ( ; w.first != w.second ; ++w.first) {
-                        if (*w.first >= unsigned(pattern_size))
-                            unused.erase(std::make_pair(v, *w.first - pattern_size));
+                        if (*w.first >= unsigned(domains.size()))
+                            unused.erase(std::make_pair(v, *w.first - domains.size()));
                         else
-                            unused.erase(std::make_pair(*w.first, v - pattern_size));
+                            unused.erase(std::make_pair(*w.first, v - domains.size()));
                         pending.insert(*w.first);
                     }
                 }
@@ -627,7 +637,7 @@ namespace
                     discover_time_map(make_iterator_property_map(discover_time.begin(), get(boost::vertex_index, match_o))));
 
             for (auto e = unused.begin(), e_end = unused.end() ; e != e_end ; ) {
-                if (component.at(e->first) == component.at(e->second + pattern_size))
+                if (component.at(e->first) == component.at(e->second + domains.size()))
                     unused.erase(e++);
                 else
                     ++e;
@@ -635,8 +645,9 @@ namespace
 
             unsigned deletions = 0;
             for (auto & u : unused)
-                if (mate.at(u.first) != u.second + pattern_size) {
+                if (mate.at(u.first) != u.second + domains.size()) {
                     ++deletions;
+                    // std::cerr << "delete " << u.first << " " << u.second << " " << domains.size() << " " << pattern_size << " " << target_size << std::endl;
                     domains.at(u.first).values.unset(u.second);
                 }
 
@@ -784,36 +795,42 @@ namespace
 auto parasols::cbjp_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, false, false, false);
 }
 
 auto parasols::cbjpi_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, true, false, false);
 }
 
 auto parasols::cbjpi_rand_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, false, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, false, true, false, false);
 }
 
 auto parasols::cbjpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false, false);
 }
 
 auto parasols::csbjpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, true, false);
 }
 
 auto parasols::cpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, false, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false, false);
+}
+
+auto parasols::csbjpi_randdeg_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<CBSGI, true, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, true, true);
 }
 
