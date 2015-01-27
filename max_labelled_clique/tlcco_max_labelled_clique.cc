@@ -160,8 +160,7 @@ namespace
                 std::array<VertexType_, size_ * bits_per_word> initial_colours;
                 {
                     FixedBitSet<size_> initial_p;
-                    initial_p.resize(graph.size());
-                    initial_p.set_all();
+                    initial_p.set_up_to(graph.size());
                     colour_class_order(SelectColourClassOrderOverload<perm_>(), initial_p, initial_p_order, initial_colours);
                 }
 
@@ -207,8 +206,7 @@ namespace
                                         c.reserve(graph.size());
 
                                         FixedBitSet<size_> p; // local potential additions
-                                        p.resize(graph.size());
-                                        p.set_all();
+                                        p.set_up_to(graph.size());
 
                                         std::vector<int> position;
                                         position.reserve(graph.size());

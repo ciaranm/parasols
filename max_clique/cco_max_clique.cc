@@ -41,8 +41,7 @@ namespace
             c.reserve(graph.size());
 
             FixedBitSet<size_> p; // potential additions
-            p.resize(graph.size());
-            p.set_all();
+            p.set_up_to(graph.size());
 
             std::vector<int> positions;
             positions.reserve(graph.size());

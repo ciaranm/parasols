@@ -101,7 +101,6 @@ namespace
                 c.reserve(graph.size());
 
                 FixedBitSet<size_> p; // potential additions
-                p.resize(graph.size());
                 for (int j = i ; j < graph.size() ; ++j)
                     p.set(j);
 

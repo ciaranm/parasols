@@ -152,10 +152,9 @@ namespace
             std::array<ConflictSet, max_graphs> unassigned_neighbours_conflicts;
             FixedBitSet<n_words_> unassigned_neighbours_domains_mask;
             for (int g = 0 ; g < g_end ; ++g) {
-                unassigned_neighbours_domains_union.at(g).resize(target_size);
                 unassigned_neighbours_domains_union.at(g).unset_all();
+                unassigned_neighbours_conflicts.at(g) = ConflictSet();
             }
-            unassigned_neighbours_domains_mask.resize(target_size);
 
             std::array<int, n_words_ * bits_per_word> domains_order;
             std::iota(domains_order.begin(), domains_order.begin() + new_domains.size(), 0);
@@ -304,8 +303,7 @@ namespace
         {
             unsigned remaining_target_vertices = target_size;
             FixedBitSet<n_words_> allowed_target_vertices;
-            allowed_target_vertices.resize(target_size);
-            allowed_target_vertices.set_all();
+            allowed_target_vertices.set_up_to(target_size);
 
             while (true) {
                 std::array<std::vector<int>, max_graphs> patterns_degrees;
@@ -358,7 +356,6 @@ namespace
                 for (unsigned i = 0 ; i < pattern_size ; ++i) {
                     domains.at(i).v = i;
                     domains.at(i).values.unset_all();
-                    domains.at(i).values.resize(target_size);
 
                     for (unsigned j = 0 ; j < target_size ; ++j) {
                         bool ok = true;
@@ -392,7 +389,6 @@ namespace
                 }
 
                 FixedBitSet<n_words_> domains_union;
-                domains_union.resize(pattern_size);
                 for (auto & d : domains)
                     domains_union.union_with(d.values);
 

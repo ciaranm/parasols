@@ -40,13 +40,10 @@ namespace
             cb.reserve(graph.size());
 
             FixedBitSet<size_> pa, pb; // potential additions
-            pa.resize(graph.size());
-            pa.set_all();
-            pb.resize(graph.size());
-            pb.set_all();
+            pa.set_up_to(graph.size());
+            pb.set_up_to(graph.size());
 
             FixedBitSet<size_> sym_skip;
-            sym_skip.resize(graph.size());
 
             std::vector<int> positions;
             positions.reserve(graph.size());

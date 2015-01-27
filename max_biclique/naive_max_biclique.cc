@@ -104,14 +104,10 @@ namespace
         result.size = params.initial_bound;
 
         FixedBitSet<size_> ca, cb; // current candidate clique
-        ca.resize(graph.size());
-        cb.resize(graph.size());
 
         FixedBitSet<size_> pa, pb; // potential additions
-        pa.resize(graph.size());
-        pa.set_all();
-        pb.resize(graph.size());
-        pb.set_all();
+        pa.set_up_to(graph.size());
+        pb.set_up_to(graph.size());
 
         std::vector<int> o(graph.size()); // vertex ordering
         std::iota(o.begin(), o.end(), 0);

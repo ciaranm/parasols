@@ -30,19 +30,9 @@ namespace parasols
         private:
             using Bits = std::array<BitWord, words_>;
 
-            int _size = 0;
             Bits _bits = {{ }};
 
         public:
-            /**
-             * We need to know how big we are so that set_all() doesn't set too
-             * many bits (doing so would break first_set_bit()).
-             **/
-            auto resize(int size) -> void
-            {
-                _size = size;
-            }
-
             /**
              * Set a given bit 'on'.
              */
@@ -65,12 +55,10 @@ namespace parasols
             /**
              * Set all bits on.
              */
-            auto set_all() -> void
+            auto set_up_to(int size) -> void
             {
-                // Could be more efficient, but we only do it once. We can't
-                // just set all the words to have all their bits on without
-                // breaking first_set_bit().
-                for (int i = 0 ; i < _size ; ++i)
+                unset_all();
+                for (int i = 0 ; i < size ; ++i)
                     set(i);
             }
 
@@ -215,8 +203,6 @@ namespace parasols
             {
                 _size = size;
                 _adjacency.resize(size);
-                for (auto & row : _adjacency)
-                    row.resize(size);
             }
 
             /**

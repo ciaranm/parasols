@@ -282,14 +282,10 @@ namespace
                     MaxBicliqueResult tr; // local result
 
                     FixedBitSet<size_> tca, tcb; // local candidate clique
-                    tca.resize(graph.size());
-                    tcb.resize(graph.size());
 
                     FixedBitSet<size_> tpa, tpb; // local potential additions
-                    tpa.resize(graph.size());
-                    tpa.set_all();
-                    tpb.resize(graph.size());
-                    tpb.set_all();
+                    tpa.set_up_to(graph.size());
+                    tpb.set_up_to(graph.size());
 
                     std::vector<int> position;
                     position.reserve(graph.size());

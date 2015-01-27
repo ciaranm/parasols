@@ -49,7 +49,6 @@ namespace parasols
         void preprocess(const MaxCliqueParams &, FixedBitGraph<size_> & g)
         {
             graph = &g;
-            unsets.resize(g.size());
         }
 
         void propagate_no_skip(VertexType_ v, FixedBitSet<size_> & p)
@@ -66,7 +65,6 @@ namespace parasols
         {
             if (! unsets[v].first) {
                 unsets[v].first = true;
-                unsets[v].second.resize(graph->size());
 
                 FixedBitSet<size_> nv = graph->neighbourhood(v);
 
