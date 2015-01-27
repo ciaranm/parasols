@@ -593,13 +593,9 @@ namespace
                     ++e;
             }
 
-            unsigned deletions = 0;
             for (auto & u : unused)
-                if (mate.at(u.first) != u.second + domains.size()) {
-                    ++deletions;
-                    // std::cerr << "delete " << u.first << " " << u.second << " " << domains.size() << " " << pattern_size << " " << target_size << std::endl;
+                if (mate.at(u.first) != u.second + domains.size())
                     domains.at(u.first).values.unset(u.second);
-                }
 
             return true;
         }
