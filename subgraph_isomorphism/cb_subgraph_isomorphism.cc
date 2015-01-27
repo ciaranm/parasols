@@ -65,7 +65,7 @@ namespace
     };
 
     template <unsigned n_words_, template <unsigned> class ConflictSet_, int k_, int l_>
-    struct CBSGI
+    struct SGI
     {
         using ConflictSet = ConflictSet_<n_words_>;
 
@@ -94,7 +94,7 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool fa) :
+        SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool fa) :
             params(a),
             all_different(ad),
             probe(pr),
@@ -104,6 +104,7 @@ namespace
             full_pattern_size(pattern.size()),
             target_size(target.size())
         {
+            // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
                 if (0 == pattern.degree(v)) {
                     isolated_vertices.push_back(v);
@@ -112,12 +113,14 @@ namespace
                 else
                     pattern_order.push_back(v);
 
+            // recode pattern to a bit graph
             pattern_graphs.at(0).resize(pattern_size);
             for (unsigned i = 0 ; i < pattern_size ; ++i)
                 for (unsigned j = 0 ; j < pattern_size ; ++j)
                     if (pattern.adjacent(pattern_order.at(i), pattern_order.at(j)))
                         pattern_graphs.at(0).add_edge(i, j);
 
+            // determine ordering for target graph vertices
             std::iota(target_order.begin(), target_order.end(), 0);
 
             if (sh) {
@@ -129,12 +132,14 @@ namespace
                 degree_sort(target, target_order, false);
             }
 
+            // recode target to a bit graph
             target_graphs.at(0).resize(target_size);
             for (unsigned i = 0 ; i < target_size ; ++i)
                 for (unsigned j = 0 ; j < target_size ; ++j)
                     if (target.adjacent(target_order.at(i), target_order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
 
+            // we tie-break on degree when picking a smallest domain
             for (unsigned j = 0 ; j < target_size ; ++j)
                 domains_tiebreak.at(j) = target_graphs.at(0).degree(j);
         }
@@ -144,18 +149,36 @@ namespace
                 int g_end
                 ) -> bool
         {
-            /* how many unassigned neighbours do we have, and what is their domain? */
-            std::array<unsigned, max_graphs> unassigned_neighbours;
-            std::fill(unassigned_neighbours.begin(), unassigned_neighbours.end(), 0);
+            // for each remaining domain...
+            for (auto & d : new_domains) {
+                // all different
+                d.values.unset(f_v);
 
-            std::array<FixedBitSet<n_words_>, max_graphs> unassigned_neighbours_domains_union;
-            std::array<ConflictSet, max_graphs> unassigned_neighbours_conflicts;
-            FixedBitSet<n_words_> unassigned_neighbours_domains_mask;
-            for (int g = 0 ; g < g_end ; ++g) {
-                unassigned_neighbours_domains_union.at(g).unset_all();
-                unassigned_neighbours_conflicts.at(g) = ConflictSet();
+                // for each graph pair...
+                for (int g = 0 ; g < g_end ; ++g) {
+                    // if we're adjacent...
+                    if (pattern_graphs.at(g).adjacent(branch_v, d.v)) {
+                        // we can only be mapped to adjacent vertices
+                        target_graphs.at(g).intersect_with_row(f_v, d.values);
+                    }
+                }
+
+                unsigned old_popcount = d.popcount;
+                d.popcount = d.values.popcount();
+
+                if (0 == d.popcount) {
+                    // wipeout, anything which removed a value from d is a culprit
+                    conflicts = d.conflicts;
+                    return false;
+                }
+
+                if (d.popcount != old_popcount) {
+                    // assigning f_v to branch_v resulted in d losing values
+                    d.conflicts.add(branch_v);
+                }
             }
 
+            // pick domains smallest first, with tiebreaking
             std::array<int, n_words_ * bits_per_word> domains_order;
             std::iota(domains_order.begin(), domains_order.begin() + new_domains.size(), 0);
 
@@ -165,58 +188,35 @@ namespace
                     (new_domains.at(a).popcount == new_domains.at(b).popcount && domains_tiebreak.at(a) > domains_tiebreak.at(b));
                     });
 
+            // counting all-different
+            FixedBitSet<n_words_> domains_so_far, hall;
+            unsigned neighbours_so_far = 0;
+            ConflictSet conflicts_so_far;
+
             for (int i = 0, i_end = new_domains.size() ; i != i_end ; ++i) {
                 auto & d = new_domains.at(domains_order.at(i));
-                d.values.unset(f_v);
 
-                FixedBitSet<n_words_> future_hall_set;
-                bool has_future_hall_set = false;
-
-                for (int g = 0 ; g < g_end ; ++g) {
-                    if (pattern_graphs.at(g).adjacent(branch_v, d.v)) {
-                        /* knock out values */
-                        target_graphs.at(g).intersect_with_row(f_v, d.values);
-
-                        d.values.intersect_with_complement(unassigned_neighbours_domains_mask);
-
-                        /* enough values remaining between all our neighbours we've seen so far? */
-                        unassigned_neighbours_domains_union.at(g).union_with(d.values);
-                        unsigned unassigned_neighbours_domains_popcount = unassigned_neighbours_domains_union.at(g).popcount();
-                        ++unassigned_neighbours.at(g);
-                        if (unassigned_neighbours.at(g) > unassigned_neighbours_domains_popcount) {
-                            if (0 == unassigned_neighbours_domains_popcount || 0 == d.values.popcount())
-                                conflicts = d.conflicts;
-                            else {
-                                conflicts.merge(unassigned_neighbours_conflicts.at(g));
-                                conflicts.merge(d.conflicts);
-                            }
-                            return false;
-                        }
-                        else if (unassigned_neighbours.at(g) == unassigned_neighbours_domains_popcount) {
-                            future_hall_set = unassigned_neighbours_domains_union.at(g);
-                            has_future_hall_set = true;
-                        }
-                    }
-                }
-
-                if (has_future_hall_set) {
-                    unassigned_neighbours_domains_mask.union_with(future_hall_set);
-                    for (int g = 0 ; g < g_end ; ++g) {
-                        unassigned_neighbours.at(g) = 0;
-                        unassigned_neighbours_domains_union.at(g).unset_all();
-                    }
-                }
-
-                unsigned old_popcount = d.popcount;
+                d.values.intersect_with_complement(hall);
                 d.popcount = d.values.popcount();
 
                 if (0 == d.popcount) {
-                    conflicts = d.conflicts;
+                    conflicts = conflicts_so_far;
                     return false;
                 }
 
-                if (d.popcount != old_popcount) {
-                    d.conflicts.add(branch_v);
+                domains_so_far.union_with(d.values);
+                ++neighbours_so_far;
+                conflicts_so_far.merge(d.conflicts);
+
+                unsigned domains_so_far_popcount = domains_so_far.popcount();
+                if (domains_so_far_popcount < neighbours_so_far) {
+                    conflicts = conflicts_so_far;
+                    return false;
+                }
+                else if (domains_so_far_popcount == neighbours_so_far) {
+                    neighbours_so_far = 0;
+                    hall.union_with(domains_so_far);
+                    domains_so_far.unset_all();
                 }
             }
 
@@ -686,21 +686,21 @@ namespace
     };
 }
 
-auto parasols::cpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::sb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, DummyConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<SGI, DummyConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false);
 }
 
-auto parasols::csbjpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::sbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, BitsetConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<SGI, BitsetConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false);
 }
 
-auto parasols::csbjpi_randdeg_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::sbbjfad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, BitsetConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<SGI, BitsetConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true);
 }
 

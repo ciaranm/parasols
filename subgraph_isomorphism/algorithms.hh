@@ -13,9 +13,9 @@ namespace parasols
     auto subgraph_isomorphism_algorithms = {
         std::make_pair( std::string{ "naive" },               naive_subgraph_isomorphism ),
 
-        std::make_pair( std::string{ "cpiranddeg" },          cpi_randdeg_subgraph_isomorphism ),
-        std::make_pair( std::string{ "csbjpiranddeg" },       csbjpi_randdeg_subgraph_isomorphism ),
-        std::make_pair( std::string{ "csbjpiranddegfad" },    csbjpi_randdeg_fad_subgraph_isomorphism ),
+        std::make_pair( std::string{ "sb" },                  sb_subgraph_isomorphism ),
+        std::make_pair( std::string{ "sbbj" },                sbbj_subgraph_isomorphism ),
+        std::make_pair( std::string{ "sbbjfad" },             sbbjfad_subgraph_isomorphism ),
     };
 }
 
