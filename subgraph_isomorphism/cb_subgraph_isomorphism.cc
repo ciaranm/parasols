@@ -26,60 +26,55 @@ namespace
         Satisfiable
     };
 
-    struct Empty
+    template <unsigned n_words_>
+    struct BitsetConflictSet
     {
+        FixedBitSet<n_words_> c;
+
+        void add(unsigned v)
+        {
+            c.set(v);
+        }
+
+        void merge(const BitsetConflictSet & other)
+        {
+            c.union_with(other.c);
+        }
+
+        bool caused_conflict(unsigned n)
+        {
+            return c.test(n);
+        }
     };
 
-    inline void add_conflict(Empty &, unsigned)
-    {
-    }
-
-    inline void merge_conflicts(Empty &, const Empty &)
-    {
-    }
-
-    inline void initialise_conflicts(Empty &, unsigned)
-    {
-    }
-
-    inline bool caused_conflict(Empty &, unsigned)
-    {
-        return true;
-    }
-
     template <unsigned n_words_>
-    inline void add_conflict(FixedBitSet<n_words_> & c, unsigned v)
+    struct DummyConflictSet
     {
-        c.set(v);
-    }
+        void add(unsigned)
+        {
+        }
 
-    template <unsigned n_words_>
-    inline void merge_conflicts(FixedBitSet<n_words_> & c, const FixedBitSet<n_words_> & d)
-    {
-        c.union_with(d);
-    }
+        void merge(const DummyConflictSet &)
+        {
+        }
 
-    template <unsigned n_words_>
-    inline void initialise_conflicts(FixedBitSet<n_words_> & c, unsigned n)
-    {
-        c.resize(n);
-    }
+        bool caused_conflict(unsigned)
+        {
+            return true;
+        }
+    };
 
-    template <unsigned n_words_>
-    inline bool caused_conflict(FixedBitSet<n_words_> & c, unsigned n)
-    {
-        return c.test(n);
-    }
-
-    template <unsigned n_words_, bool backjump_, int k_, int l_>
+    template <unsigned n_words_, template <unsigned> class ConflictSet_, int k_, int l_>
     struct CBSGI
     {
+        using ConflictSet = ConflictSet_<n_words_>;
+
         struct Domain
         {
             unsigned v;
             unsigned popcount;
             FixedBitSet<n_words_> values;
-            typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type conflicts;
+            ConflictSet conflicts;
         };
 
         using Domains = std::vector<Domain>;
@@ -145,7 +140,7 @@ namespace
         }
 
         auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v,
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts,
+                ConflictSet & conflicts,
                 int g_end
                 ) -> bool
         {
@@ -154,12 +149,11 @@ namespace
             std::fill(unassigned_neighbours.begin(), unassigned_neighbours.end(), 0);
 
             std::array<FixedBitSet<n_words_>, max_graphs> unassigned_neighbours_domains_union;
-            std::array<typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type, max_graphs> unassigned_neighbours_conflicts;
+            std::array<ConflictSet, max_graphs> unassigned_neighbours_conflicts;
             FixedBitSet<n_words_> unassigned_neighbours_domains_mask;
             for (int g = 0 ; g < g_end ; ++g) {
                 unassigned_neighbours_domains_union.at(g).resize(target_size);
                 unassigned_neighbours_domains_union.at(g).unset_all();
-                initialise_conflicts(unassigned_neighbours_conflicts.at(g), target_size);
             }
             unassigned_neighbours_domains_mask.resize(target_size);
 
@@ -194,8 +188,8 @@ namespace
                             if (0 == unassigned_neighbours_domains_popcount || 0 == d.values.popcount())
                                 conflicts = d.conflicts;
                             else {
-                                merge_conflicts(conflicts, unassigned_neighbours_conflicts.at(g));
-                                merge_conflicts(conflicts, d.conflicts);
+                                conflicts.merge(unassigned_neighbours_conflicts.at(g));
+                                conflicts.merge(d.conflicts);
                             }
                             return false;
                         }
@@ -223,14 +217,14 @@ namespace
                 }
 
                 if (d.popcount != old_popcount) {
-                    add_conflict(d.conflicts, branch_v);
+                    d.conflicts.add(branch_v);
                 }
             }
 
             if (full_all_different) {
                 if (! regin_all_different(new_domains)) {
                     for (auto & d : new_domains)
-                        merge_conflicts(conflicts, d.conflicts);
+                        conflicts.merge(d.conflicts);
                     return false;
                 }
             }
@@ -243,7 +237,7 @@ namespace
                 Assignments & assignments,
                 Domains & domains,
                 unsigned long long & nodes,
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type & conflicts,
+                ConflictSet & conflicts,
                 unsigned long long probe_limit,
                 int g_end) -> Search
         {
@@ -265,7 +259,7 @@ namespace
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
-            merge_conflicts(conflicts, branch_domain->conflicts);
+            conflicts.merge(branch_domain->conflicts);
 
             for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
@@ -281,25 +275,23 @@ namespace
                         new_domains.push_back(d);
 
                 /* propagate */
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type propagate_conflicts;
-                initialise_conflicts(propagate_conflicts, pattern_size);
+                ConflictSet propagate_conflicts;
                 if (! propagate(new_domains, branch_v, f_v, propagate_conflicts, g_end)) {
                     /* analyse failure */
-                    merge_conflicts(conflicts, propagate_conflicts);
+                    conflicts.merge(propagate_conflicts);
                     continue;
                 }
 
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
-                initialise_conflicts(search_conflicts, pattern_size);
+                ConflictSet search_conflicts;
                 switch (search(depth + 1, assignments, new_domains, nodes, search_conflicts, probe_limit, g_end)) {
                     case Search::Satisfiable:    return Search::Satisfiable;
                     case Search::Aborted:        return Search::Aborted;
                     case Search::Unsatisfiable:  break;
                 }
 
-                merge_conflicts(conflicts, search_conflicts);
+                conflicts.merge(search_conflicts);
 
-                if (! caused_conflict(search_conflicts, branch_v)) {
+                if (! search_conflicts.caused_conflict(branch_v)) {
                     conflicts = search_conflicts;
                     return Search::Unsatisfiable;
                 }
@@ -618,10 +610,8 @@ namespace
 
         auto prepare_for_search(Domains & domains) -> void
         {
-            for (auto & d : domains) {
-                initialise_conflicts(d.conflicts, pattern_size);
+            for (auto & d : domains)
                 d.popcount = d.values.popcount();
-            }
         }
 
         auto save_result(Assignments & assignments, SubgraphIsomorphismResult & result) -> void
@@ -654,8 +644,7 @@ namespace
                     return result;
 
                 Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
-                typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
-                initialise_conflicts(search_conflicts, pattern_size);
+                ConflictSet search_conflicts;
 
                 switch (search(0, assignments, probe_domains, result.nodes, search_conflicts, pattern_size * pattern_size, 1)) {
                     case Search::Satisfiable:
@@ -683,8 +672,7 @@ namespace
             prepare_for_search(domains);
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
-            typename std::conditional<backjump_, FixedBitSet<n_words_>, Empty>::type search_conflicts;
-            initialise_conflicts(search_conflicts, pattern_size);
+            ConflictSet search_conflicts;
             switch (search(0, assignments, domains, result.nodes, search_conflicts, 0, max_graphs)) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
@@ -699,28 +687,28 @@ namespace
         }
     };
 
-    template <template <unsigned, bool, int, int> class SGI_, bool v_, int n_, int m_>
+    template <template <unsigned, template <unsigned> class, int, int> class SGI_, template <unsigned> class CS_, int n_, int m_>
     struct Apply
     {
-        template <unsigned size_, typename> using Type = SGI_<size_, v_, n_, m_>;
+        template <unsigned size_, typename> using Type = SGI_<size_, CS_, n_, m_>;
     };
 }
 
 auto parasols::cpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, DummyConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false);
 }
 
 auto parasols::csbjpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, BitsetConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false);
 }
 
 auto parasols::csbjpi_randdeg_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<CBSGI, BitsetConflictSet, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true);
 }
 
