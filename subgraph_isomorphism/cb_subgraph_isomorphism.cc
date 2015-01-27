@@ -88,7 +88,6 @@ namespace
         const SubgraphIsomorphismParams & params;
         const bool all_different;
         const bool probe;
-        const bool stronger_backjumping;
         const bool full_all_different;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
@@ -100,11 +99,10 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool sb, bool fa) :
+        CBSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool ad, bool pr, bool sh, bool ds, bool fa) :
             params(a),
             all_different(ad),
             probe(pr),
-            stronger_backjumping(sb),
             full_all_different(fa),
             target_order(target.size()),
             pattern_size(pattern.size()),
@@ -302,8 +300,7 @@ namespace
                 merge_conflicts(conflicts, search_conflicts);
 
                 if (! caused_conflict(search_conflicts, branch_v)) {
-                    if (stronger_backjumping)
-                        conflicts = search_conflicts;
+                    conflicts = search_conflicts;
                     return Search::Unsatisfiable;
                 }
             }
@@ -709,39 +706,21 @@ namespace
     };
 }
 
-auto parasols::cbjpi_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::cpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false, true, false, false);
-}
-
-auto parasols::cbjpi_rand_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, false, false, false);
-}
-
-auto parasols::cbjpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false, false);
+    return select_graph_size<Apply<CBSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false);
 }
 
 auto parasols::csbjpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, false);
-}
-
-auto parasols::cpi_randdeg_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    return select_graph_size<Apply<CBSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, false);
 }
 
 auto parasols::csbjpi_randdeg_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<CBSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, true, true, true);
 }
 
