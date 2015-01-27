@@ -418,7 +418,7 @@ namespace
             return true;
         }
 
-        auto build_aux_graphs() -> void
+        auto build_supplemental_graphs() -> void
         {
             for (int g = 1 ; g < max_graphs ; ++g)
                 pattern_graphs.at(g).resize(pattern_size);
@@ -670,7 +670,7 @@ namespace
                 }
             }
 
-            build_aux_graphs();
+            build_supplemental_graphs();
 
             Domains domains(pattern_size);
 
