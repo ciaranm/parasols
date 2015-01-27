@@ -32,7 +32,6 @@ auto main(int argc, char * argv[]) -> int
             ("threads",            po::value<int>(),  "Number of threads to use (where relevant)")
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("format",             po::value<std::string>(), "Specify the format of the input")
-            ("induced",                               "Look for an induced (proper) isomorphism")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
             ;
 
@@ -112,8 +111,6 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
-        params.induced = options_vars.count("induced");
-
         /* Read in the graphs */
         auto graphs = std::make_pair(
             std::get<1>(*format)(options_vars["pattern-file"].as<std::string>(), GraphOptions::AllowLoops),
@@ -152,12 +149,6 @@ auto main(int argc, char * argv[]) -> int
                 for (int j = 0 ; j < graphs.first.size() ; ++j) {
                     if (graphs.first.adjacent(i, j)) {
                         if (! graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
-                            std::cerr << "Oops! not an isomorphism" << std::endl;
-                            return EXIT_FAILURE;
-                        }
-                    }
-                    else if (params.induced) {
-                        if (graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
                             std::cerr << "Oops! not an isomorphism" << std::endl;
                             return EXIT_FAILURE;
                         }

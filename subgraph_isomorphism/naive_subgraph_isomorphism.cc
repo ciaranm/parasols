@@ -48,15 +48,6 @@ namespace
                                 }
                             }
                         }
-                        else if (params.induced) {
-                            // induced && i-/-j => f(i)-/-f(j)
-                            for (int v = 0 ; v < target.size() ; ++v) {
-                                if (domains.at(j).at(v) && target.adjacent(f_i, v)) {
-                                    domains.at(j).at(v) = false;
-                                    revise = true;
-                                }
-                            }
-                        }
                     }
                 }
                 else if (-1 == branch_on || popcount < branch_on_popcount) {
@@ -104,8 +95,6 @@ auto parasols::naive_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs
         for (int j = 0 ; j < target.size() ; ++j)
             if (target_degrees.at(j) >= pattern_degrees.at(i)) {
                 if (pattern.adjacent(i, i) && ! target.adjacent(j, j)) {
-                }
-                else if (params.induced && target.adjacent(j, j) && ! pattern.adjacent(i, i)) {
                 }
                 else
                     domains.at(i).at(j) = true;

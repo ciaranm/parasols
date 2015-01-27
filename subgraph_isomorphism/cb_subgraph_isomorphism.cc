@@ -381,9 +381,6 @@ namespace
                             else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
                                 ok = false;
                             }
-                            else if (params.induced && target_graphs.at(g).adjacent(j, j) && ! pattern_graphs.at(g).adjacent(i, i)) {
-                                ok = false;
-                            }
                             else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
                                 ok = false;
                             }
