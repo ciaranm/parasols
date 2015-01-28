@@ -167,9 +167,9 @@ namespace
                 }
             }
 
-            if (! cheap_all_different(new_domains)) {
-                for (auto & d : new_domains)
-                    failed_variables.add(d);
+            FailedVariables all_different_failed_variables;
+            if (! cheap_all_different(new_domains, all_different_failed_variables)) {
+                failed_variables.add(all_different_failed_variables);
                 return false;
             }
 
@@ -452,7 +452,7 @@ namespace
             }
         }
 
-        auto cheap_all_different(Domains & domains) -> bool
+        auto cheap_all_different(Domains & domains, FailedVariables & failed_variables) -> bool
         {
             // pick domains smallest first, with tiebreaking
             std::array<int, n_words_ * bits_per_word> domains_order;
@@ -470,6 +470,8 @@ namespace
 
             for (int i = 0, i_end = domains.size() ; i != i_end ; ++i) {
                 auto & d = domains.at(domains_order.at(i));
+
+                failed_variables.add(d);
 
                 d.values.intersect_with_complement(hall);
                 d.popcount = d.values.popcount();
@@ -620,7 +622,8 @@ namespace
             if (! initialise_domains(domains, max_graphs))
                 return result;
 
-            if (! cheap_all_different(domains))
+            FailedVariables dummy_failed_variables;
+            if (! cheap_all_different(domains, dummy_failed_variables))
                 return result;
 
             if (full_all_different && ! regin_all_different(domains))
