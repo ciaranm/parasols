@@ -5,6 +5,7 @@
 
 #include <subgraph_isomorphism/naive_subgraph_isomorphism.hh>
 #include <subgraph_isomorphism/cb_subgraph_isomorphism.hh>
+#include <subgraph_isomorphism/vb_subgraph_isomorphism.hh>
 
 #include <utility>
 
@@ -16,6 +17,8 @@ namespace parasols
         std::make_pair( std::string{ "sb" },                  sb_subgraph_isomorphism ),
         std::make_pair( std::string{ "sbbj" },                sbbj_subgraph_isomorphism ),
         std::make_pair( std::string{ "sbbjfad" },             sbbjfad_subgraph_isomorphism ),
+
+        std::make_pair( std::string{ "vb" },                  vb_subgraph_isomorphism ),
     };
 }
 
