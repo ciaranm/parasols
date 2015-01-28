@@ -26,7 +26,7 @@ namespace
         Satisfiable
     };
 
-    template <unsigned n_words_, int k_, int l_>
+    template <unsigned n_words_, bool backjump_, int k_, int l_>
     struct SGI
     {
         struct Domain
@@ -38,6 +38,55 @@ namespace
 
         using Domains = std::vector<Domain>;
         using Assignments = std::vector<unsigned>;
+
+        struct DummyFailedVariables
+        {
+            auto independent_of(const Domains &, const Domains &) -> bool
+            {
+                return false;
+            }
+
+            auto add(const Domain &) -> void
+            {
+            }
+
+            auto add(const DummyFailedVariables &) -> void
+            {
+            }
+        };
+
+        struct RealFailedVariables
+        {
+            FixedBitSet<n_words_> variables;
+
+            auto independent_of(const Domains & old_domains, const Domains & new_domains) -> bool
+            {
+                auto vc = variables;
+                for (int v = vc.first_set_bit() ; v != -1 ; v = vc.first_set_bit()) {
+                    vc.unset(v);
+
+                    auto & o = *std::find_if(old_domains.begin(), old_domains.end(), [v] (const Domain & d) { return d.v == unsigned(v); });
+                    auto & n = *std::find_if(new_domains.begin(), new_domains.end(), [v] (const Domain & d) { return d.v == unsigned(v); });
+
+                    if (o.popcount != n.popcount)
+                        return false;
+                }
+
+                return true;
+            }
+
+            auto add(const Domain & d) -> void
+            {
+                variables.set(d.v);
+            }
+
+            auto add(const RealFailedVariables & d) -> void
+            {
+                variables.union_with(d.variables);
+            }
+        };
+
+        using FailedVariables = typename std::conditional<backjump_, RealFailedVariables, DummyFailedVariables>::type;
 
         const SubgraphIsomorphismParams & params;
         const bool full_all_different;
@@ -94,7 +143,7 @@ namespace
                 domains_tiebreak.at(j) = target_graphs.at(0).degree(j);
         }
 
-        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end) -> bool
+        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end, FailedVariables & failed_variables) -> bool
         {
             // for each remaining domain...
             for (auto & d : new_domains) {
@@ -112,15 +161,23 @@ namespace
 
                 // we might have removed values
                 d.popcount = d.values.popcount();
-                if (0 == d.popcount)
+                if (0 == d.popcount) {
+                    failed_variables.add(d);
                     return false;
+                }
             }
 
-            if (! cheap_all_different(new_domains))
+            if (! cheap_all_different(new_domains)) {
+                for (auto & d : new_domains)
+                    failed_variables.add(d);
                 return false;
+            }
 
-            if (full_all_different && ! regin_all_different(new_domains))
+            if (full_all_different && ! regin_all_different(new_domains)) {
+                for (auto & d : new_domains)
+                    failed_variables.add(d);
                 return false;
+            }
 
             return true;
         }
@@ -129,10 +186,10 @@ namespace
                 Assignments & assignments,
                 Domains & domains,
                 unsigned long long & nodes,
-                int g_end) -> Search
+                int g_end) -> std::pair<Search, FailedVariables>
         {
             if (params.abort->load())
-                return Search::Aborted;
+                return std::make_pair(Search::Aborted, FailedVariables());
 
             ++nodes;
 
@@ -142,10 +199,13 @@ namespace
                     branch_domain = &d;
 
             if (! branch_domain)
-                return Search::Satisfiable;
+                return std::make_pair(Search::Satisfiable, FailedVariables());
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
+
+            FailedVariables shared_failed_variables;
+            shared_failed_variables.add(*branch_domain);
 
             for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
@@ -161,18 +221,23 @@ namespace
                         new_domains.push_back(d);
 
                 /* propagate */
-                if (! propagate(new_domains, branch_v, f_v, g_end)) {
+                if (! propagate(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                     continue;
-                }
 
-                switch (search(assignments, new_domains, nodes, g_end)) {
-                    case Search::Satisfiable:    return Search::Satisfiable;
-                    case Search::Aborted:        return Search::Aborted;
+                auto search_result = search(assignments, new_domains, nodes, g_end);
+                switch (search_result.first) {
+                    case Search::Satisfiable:    return std::make_pair(Search::Satisfiable, FailedVariables());
+                    case Search::Aborted:        return std::make_pair(Search::Aborted, FailedVariables());
                     case Search::Unsatisfiable:  break;
                 }
+
+                if (search_result.second.independent_of(domains, new_domains))
+                    return search_result;
+
+                shared_failed_variables.add(search_result.second);
             }
 
-            return Search::Unsatisfiable;
+            return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
@@ -564,7 +629,7 @@ namespace
             prepare_for_search(domains);
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
-            switch (search(assignments, domains, result.nodes, max_graphs)) {
+            switch (search(assignments, domains, result.nodes, max_graphs).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
                     break;
@@ -578,16 +643,28 @@ namespace
         }
     };
 
-    template <template <unsigned, int, int> class SGI_, int n_, int m_>
+    template <template <unsigned, bool, int, int> class SGI_, bool b_, int n_, int m_>
     struct Apply
     {
-        template <unsigned size_, typename> using Type = SGI_<size_, n_, m_>;
+        template <unsigned size_, typename> using Type = SGI_<size_, b_, n_, m_>;
     };
 }
 
 auto parasols::vb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
-    return select_graph_size<Apply<SGI, 3, 3>::template Type, SubgraphIsomorphismResult>(
+    return select_graph_size<Apply<SGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::vbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::vbbjfad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
