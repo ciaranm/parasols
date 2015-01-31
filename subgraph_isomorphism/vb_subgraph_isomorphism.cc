@@ -665,6 +665,12 @@ auto parasols::vbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs,
             AllGraphSizes(), graphs.second, graphs.first, params, false);
 }
 
+auto parasols::vbbjnosup_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<SGI, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
 auto parasols::vbbjfad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
