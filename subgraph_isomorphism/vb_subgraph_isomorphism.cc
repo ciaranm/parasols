@@ -89,7 +89,7 @@ namespace
         using FailedVariables = typename std::conditional<backjump_, RealFailedVariables, DummyFailedVariables>::type;
 
         const SubgraphIsomorphismParams & params;
-        const bool full_all_different;
+        const bool use_full_all_different, use_cheap_all_different;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -100,9 +100,10 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool fa) :
+        SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool fa, bool ca) :
             params(a),
-            full_all_different(fa),
+            use_full_all_different(fa),
+            use_cheap_all_different(ca),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -167,13 +168,15 @@ namespace
                 }
             }
 
-            FailedVariables all_different_failed_variables;
-            if (! cheap_all_different(new_domains, all_different_failed_variables)) {
-                failed_variables.add(all_different_failed_variables);
-                return false;
+            if (use_cheap_all_different) {
+                FailedVariables all_different_failed_variables;
+                if (! cheap_all_different(new_domains, all_different_failed_variables)) {
+                    failed_variables.add(all_different_failed_variables);
+                    return false;
+                }
             }
 
-            if (full_all_different && ! regin_all_different(new_domains)) {
+            if (use_full_all_different && ! regin_all_different(new_domains)) {
                 for (auto & d : new_domains)
                     failed_variables.add(d);
                 return false;
@@ -626,7 +629,7 @@ namespace
             if (! cheap_all_different(domains, dummy_failed_variables))
                 return result;
 
-            if (full_all_different && ! regin_all_different(domains))
+            if (use_full_all_different && ! regin_all_different(domains))
                 return result;
 
             prepare_for_search(domains);
@@ -656,24 +659,30 @@ namespace
 auto parasols::vb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
 }
 
 auto parasols::vbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
 }
 
 auto parasols::vbbjnosup_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
+}
+
+auto parasols::vbbjnocad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false, false);
 }
 
 auto parasols::vbbjfad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true);
 }
 
