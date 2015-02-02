@@ -144,7 +144,7 @@ namespace
                 domains_tiebreak.at(j) = target_graphs.at(0).degree(j);
         }
 
-        auto propagate(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end, FailedVariables & failed_variables) -> bool
+        auto assign(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end, FailedVariables & failed_variables) -> bool
         {
             // for each remaining domain...
             for (auto & d : new_domains) {
@@ -223,8 +223,8 @@ namespace
                     if (d.v != branch_v)
                         new_domains.push_back(d);
 
-                /* propagate */
-                if (! propagate(new_domains, branch_v, f_v, g_end, shared_failed_variables))
+                /* assign and propagate */
+                if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                     continue;
 
                 auto search_result = search(assignments, new_domains, nodes, g_end);
