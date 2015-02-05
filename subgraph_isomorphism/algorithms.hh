@@ -24,6 +24,7 @@ namespace parasols
         std::make_pair( std::string{ "vbbjnocad" },           vbbjnocad_subgraph_isomorphism ),
         std::make_pair( std::string{ "vbbjfad" },             vbbjfad_subgraph_isomorphism ),
         std::make_pair( std::string{ "vbbj4" },               vbbj4_subgraph_isomorphism ),
+        std::make_pair( std::string{ "vbbjdpd" },             vbbj_dpd_subgraph_isomorphism ),
     };
 }
 

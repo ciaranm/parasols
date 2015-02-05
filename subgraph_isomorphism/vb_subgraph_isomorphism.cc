@@ -89,7 +89,7 @@ namespace
         using FailedVariables = typename std::conditional<backjump_, RealFailedVariables, DummyFailedVariables>::type;
 
         const SubgraphIsomorphismParams & params;
-        const bool use_full_all_different, use_cheap_all_different;
+        const bool use_full_all_different, use_cheap_all_different, dom_plus_deg;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -100,10 +100,11 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool fa, bool ca) :
+        SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool fa, bool ca, bool dpd) :
             params(a),
             use_full_all_different(fa),
             use_cheap_all_different(ca),
+            dom_plus_deg(dpd),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -197,9 +198,18 @@ namespace
             ++nodes;
 
             Domain * branch_domain = nullptr;
-            for (auto & d : domains)
-                if ((! branch_domain) || d.popcount < branch_domain->popcount || (d.popcount == branch_domain->popcount && d.v < branch_domain->v))
-                    branch_domain = &d;
+            if (dom_plus_deg) {
+                for (auto & d : domains)
+                    if ((! branch_domain) ||
+                            d.popcount < branch_domain->popcount ||
+                            (d.popcount == branch_domain->popcount && domains_tiebreak.at(d.v) > domains_tiebreak.at(branch_domain->v)))
+                        branch_domain = &d;
+            }
+            else {
+                for (auto & d : domains)
+                    if ((! branch_domain) || d.popcount < branch_domain->popcount || (d.popcount == branch_domain->popcount && d.v < branch_domain->v))
+                        branch_domain = &d;
+            }
 
             if (! branch_domain)
                 return std::make_pair(Search::Satisfiable, FailedVariables());
@@ -731,36 +741,42 @@ namespace
 auto parasols::vb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true, false);
 }
 
 auto parasols::vbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true, false);
 }
 
 auto parasols::vbbjnosup_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true, false);
 }
 
 auto parasols::vbbjnocad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, false, false);
 }
 
 auto parasols::vbbjfad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, true, false);
 }
 
 auto parasols::vbbj4_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     return select_graph_size<Apply<SGI, true, 3, 4>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true, false);
+}
+
+auto parasols::vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
