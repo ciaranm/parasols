@@ -46,7 +46,7 @@ namespace
                 return false;
             }
 
-            auto add(const Domain &) -> void
+            auto add(unsigned) -> void
             {
             }
 
@@ -65,19 +65,21 @@ namespace
                 for (int v = vc.first_set_bit() ; v != -1 ; v = vc.first_set_bit()) {
                     vc.unset(v);
 
-                    auto & o = *std::find_if(old_domains.begin(), old_domains.end(), [v] (const Domain & d) { return d.v == unsigned(v); });
-                    auto & n = *std::find_if(new_domains.begin(), new_domains.end(), [v] (const Domain & d) { return d.v == unsigned(v); });
+                    auto o = std::find_if(old_domains.begin(), old_domains.end(), [v] (const Domain & d) { return d.v == unsigned(v); });
+                    auto n = std::find_if(new_domains.begin(), new_domains.end(), [v] (const Domain & d) { return d.v == unsigned(v); });
 
-                    if (o.popcount != n.popcount)
+                    unsigned opc = (o == old_domains.end() ? 1 : o->popcount);
+                    unsigned npc = (n == new_domains.end() ? 1 : n->popcount);
+                    if (opc != npc)
                         return false;
                 }
 
                 return true;
             }
 
-            auto add(const Domain & d) -> void
+            auto add(unsigned dv) -> void
             {
-                variables.set(d.v);
+                variables.set(dv);
             }
 
             auto add(const RealFailedVariables & d) -> void
@@ -100,6 +102,10 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
+        unsigned n_solutions;
+
+        FailedVariables all_variables_failed;
+
         SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool fa, bool ca, bool dpd) :
             params(a),
             use_full_all_different(fa),
@@ -108,11 +114,12 @@ namespace
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
-            target_size(target.size())
+            target_size(target.size()),
+            n_solutions(0)
         {
             // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
-                if (0 == pattern.degree(v)) {
+                if ((! params.enumerate) && (0 == pattern.degree(v))) {
                     isolated_vertices.push_back(v);
                     --pattern_size;
                 }
@@ -143,6 +150,10 @@ namespace
             // we tie-break on degree when picking a smallest domain
             for (unsigned j = 0 ; j < target_size ; ++j)
                 domains_tiebreak.at(j) = target_graphs.at(0).degree(j);
+
+            // used if we enumerate
+            for (unsigned i = 0 ; i < pattern_size ; ++i)
+                all_variables_failed.add(i);
         }
 
         auto assign(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end, FailedVariables & failed_variables) -> bool
@@ -164,7 +175,7 @@ namespace
                 // we might have removed values
                 d.popcount = d.values.popcount();
                 if (0 == d.popcount) {
-                    failed_variables.add(d);
+                    failed_variables.add(d.v);
                     return false;
                 }
             }
@@ -179,7 +190,7 @@ namespace
 
             if (use_full_all_different && ! regin_all_different(new_domains)) {
                 for (auto & d : new_domains)
-                    failed_variables.add(d);
+                    failed_variables.add(d.v);
                 return false;
             }
 
@@ -211,14 +222,19 @@ namespace
                         branch_domain = &d;
             }
 
-            if (! branch_domain)
-                return std::make_pair(Search::Satisfiable, FailedVariables());
+            if (! branch_domain) {
+                ++n_solutions;
+                if (params.enumerate)
+                    return std::make_pair(Search::Unsatisfiable, all_variables_failed);
+                else
+                    return std::make_pair(Search::Satisfiable, FailedVariables());
+            }
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
 
             FailedVariables shared_failed_variables;
-            shared_failed_variables.add(*branch_domain);
+            shared_failed_variables.add(branch_domain->v);
 
             for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
@@ -556,7 +572,7 @@ namespace
             for (int i = 0, i_end = domains.size() ; i != i_end ; ++i) {
                 auto & d = domains.at(domains_order.at(i));
 
-                failed_variables.add(d);
+                failed_variables.add(d.v);
 
                 d.values.intersect_with_complement(hall);
                 d.popcount = d.values.popcount();
@@ -723,9 +739,13 @@ namespace
                     break;
 
                 case Search::Unsatisfiable:
+                    break;
+
                 case Search::Aborted:
                     break;
             }
+
+            result.result_count = n_solutions;
 
             return result;
         }

@@ -33,6 +33,7 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("format",             po::value<std::string>(), "Specify the format of the input")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
+            ("enumerate",                             "Enumerate solutions")
             ;
 
         po::options_description all_options{ "All options" };
@@ -95,6 +96,9 @@ auto main(int argc, char * argv[]) -> int
         else
             params.n_threads = std::thread::hardware_concurrency();
 
+        if (options_vars.count("enumerate"))
+            params.enumerate = true;
+
         /* Turn a format name into a runnable function. */
         auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
         if (options_vars.count("format"))
@@ -129,6 +133,10 @@ auto main(int argc, char * argv[]) -> int
 
         /* Display the results. */
         std::cout << std::boolalpha << ! result.isomorphism.empty() << " " << result.nodes;
+
+        if (options_vars.count("enumerate"))
+            std::cout << " " << result.result_count;
+
         if (aborted)
             std::cout << " aborted";
         std::cout << std::endl;
