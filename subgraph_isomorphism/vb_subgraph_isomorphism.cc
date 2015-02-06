@@ -98,7 +98,7 @@ namespace
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
         std::vector<int> pattern_order, target_order, isolated_vertices;
-        std::array<int, n_words_ * bits_per_word> domains_tiebreak;
+        std::array<int, n_words_ * bits_per_word> pattern_degree_tiebreak;
 
         unsigned pattern_size, full_pattern_size, target_size;
 
@@ -147,9 +147,8 @@ namespace
                     if (target.adjacent(target_order.at(i), target_order.at(j)))
                         target_graphs.at(0).add_edge(i, j);
 
-            // we tie-break on degree when picking a smallest domain
-            for (unsigned j = 0 ; j < target_size ; ++j)
-                domains_tiebreak.at(j) = target_graphs.at(0).degree(j);
+            for (unsigned j = 0 ; j < pattern_size ; ++j)
+                pattern_degree_tiebreak.at(j) = pattern_graphs.at(0).degree(j);
 
             // used if we enumerate
             for (unsigned i = 0 ; i < pattern_size ; ++i)
@@ -213,7 +212,7 @@ namespace
                 for (auto & d : domains)
                     if ((! branch_domain) ||
                             d.popcount < branch_domain->popcount ||
-                            (d.popcount == branch_domain->popcount && domains_tiebreak.at(d.v) > domains_tiebreak.at(branch_domain->v)))
+                            (d.popcount == branch_domain->popcount && pattern_degree_tiebreak.at(d.v) > pattern_degree_tiebreak.at(branch_domain->v)))
                         branch_domain = &d;
             }
             else {
@@ -562,7 +561,7 @@ namespace
             std::sort(domains_order.begin(), domains_order.begin() + domains.size(),
                     [&] (int a, int b) {
                     return (domains.at(a).popcount < domains.at(b).popcount) ||
-                    (domains.at(a).popcount == domains.at(b).popcount && domains_tiebreak.at(domains.at(a).v) > domains_tiebreak.at(domains.at(b).v));
+                    (domains.at(a).popcount == domains.at(b).popcount && pattern_degree_tiebreak.at(domains.at(a).v) > pattern_degree_tiebreak.at(domains.at(b).v));
                     });
 
             // counting all-different
