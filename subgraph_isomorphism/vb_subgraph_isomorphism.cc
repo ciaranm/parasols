@@ -759,30 +759,40 @@ namespace
 
 auto parasols::vb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<SGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
 auto parasols::vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
 auto parasols::vbbj_dpd_nosup_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<SGI, true, 1, 1>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
 auto parasols::vbbj_dpd_nocad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false, false, true);
 }
 
 auto parasols::vbbj_dpd_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<SGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, true, true, true);
 }
