@@ -4,7 +4,6 @@
 #define PARASOLS_GUARD_SUBGRAPH_ISOMORPHISM_ALGORITHMS_HH 1
 
 #include <subgraph_isomorphism/naive_subgraph_isomorphism.hh>
-#include <subgraph_isomorphism/cb_subgraph_isomorphism.hh>
 #include <subgraph_isomorphism/vb_subgraph_isomorphism.hh>
 
 #include <utility>
@@ -13,10 +12,6 @@ namespace parasols
 {
     auto subgraph_isomorphism_algorithms = {
         std::make_pair( std::string{ "naive" },               naive_subgraph_isomorphism ),
-
-        std::make_pair( std::string{ "sb" },                  sb_subgraph_isomorphism ),
-        std::make_pair( std::string{ "sbbj" },                sbbj_subgraph_isomorphism ),
-        std::make_pair( std::string{ "sbbjfad" },             sbbjfad_subgraph_isomorphism ),
 
         std::make_pair( std::string{ "vbdpd" },               vb_dpd_subgraph_isomorphism ),
         std::make_pair( std::string{ "vbbjdpd" },             vbbj_dpd_subgraph_isomorphism ),
