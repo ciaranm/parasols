@@ -15,8 +15,8 @@ extra 10% performance.
 Compiling
 =========
 
-You will need a C++11 compiler, such as GCC 4.8, to compile this. You will also
-need Boost.
+You will need a full C++11 compiler, such as GCC 4.9, to compile this. You will
+also need Boost.
 
 We use boilermake for compilation:
 
