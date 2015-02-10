@@ -5,6 +5,7 @@
 
 #include <subgraph_isomorphism/naive_subgraph_isomorphism.hh>
 #include <subgraph_isomorphism/vb_subgraph_isomorphism.hh>
+#include <subgraph_isomorphism/tvb_subgraph_isomorphism.hh>
 
 #include <utility>
 
@@ -18,6 +19,8 @@ namespace parasols
         std::make_pair( std::string{ "vbbjdpdnosup" },        vbbj_dpd_nosup_subgraph_isomorphism ),
         std::make_pair( std::string{ "vbbjdpdnocad" },        vbbj_dpd_nocad_subgraph_isomorphism ),
         std::make_pair( std::string{ "vbbjdpdfad" },          vbbj_dpd_fad_subgraph_isomorphism ),
+
+        std::make_pair( std::string{ "tvbbjdpd" },            tvbbj_dpd_subgraph_isomorphism ),
     };
 }
 
