@@ -537,7 +537,7 @@ namespace
             prepare_for_search(domains);
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
-            std::atomic<unsigned long long> nodes;
+            std::atomic<unsigned long long> nodes{ 0 };
             switch (search(assignments, domains, nodes, max_graphs, true).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
