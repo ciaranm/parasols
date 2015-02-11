@@ -6,5 +6,6 @@ SOURCES := \
 	tvb_subgraph_isomorphism.cc \
 	subgraph_isomorphism_params.cc \
 	subgraph_isomorphism_result.cc \
+	supplemental_graphs.cc \
 	algorithms.cc
 
