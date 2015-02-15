@@ -571,3 +571,11 @@ auto parasols::tvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & gr
             AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
+auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
+    return select_graph_size<Apply<TSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params);
+}
+
