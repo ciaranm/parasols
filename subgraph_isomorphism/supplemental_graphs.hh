@@ -67,42 +67,6 @@ namespace parasols
                 }
             }
 
-            if (l_ >= 4) {
-                for (unsigned v = 0 ; v < pattern_size ; ++v) {
-                    auto nv = pattern_graphs.at(0).neighbourhood(v);
-                    for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
-                        nv.unset(c);
-                        auto nc = pattern_graphs.at(0).neighbourhood(c);
-                        for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
-                            nc.unset(d);
-                            if (unsigned(d) == v)
-                                continue;
-
-                            auto nd = pattern_graphs.at(0).neighbourhood(d);
-                            for (int e = nd.first_set_bit() ; e != -1 ; e = nd.first_set_bit()) {
-                                nd.unset(e);
-                                if (e == c)
-                                    continue;
-
-                                auto ne = pattern_graphs.at(0).neighbourhood(e);
-                                for (int w = ne.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = ne.first_set_bit()) {
-                                    ne.unset(w);
-                                    if (w == d)
-                                        continue;
-
-                                    if (k_ >= 3 && pattern_graphs.at(k_ + k_ + 2).adjacent(v, w))
-                                        pattern_graphs.at(k_ + k_ + 3).add_edge(v, w);
-                                    else if (k_ >= 2 && pattern_graphs.at(k_ + k_ + 1).adjacent(v, w))
-                                        pattern_graphs.at(k_ + k_ + 2).add_edge(v, w);
-                                    else if (k_ >= 1)
-                                        pattern_graphs.at(k_ + k_ + 1).add_edge(v, w);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             for (int g = 1 ; g < max_graphs ; ++g)
                 target_graphs.at(g).resize(target_size);
 
@@ -148,42 +112,6 @@ namespace parasols
                                     target_graphs.at(k_ + 2).add_edge(v, w);
                                 else if (k_ >= 1)
                                     target_graphs.at(k_ + 1).add_edge(v, w);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (l_ >= 4) {
-                for (unsigned v = 0 ; v < target_size ; ++v) {
-                    auto nv = target_graphs.at(0).neighbourhood(v);
-                    for (int c = nv.first_set_bit() ; c != -1 ; c = nv.first_set_bit()) {
-                        nv.unset(c);
-                        auto nc = target_graphs.at(0).neighbourhood(c);
-                        for (int d = nc.first_set_bit() ; d != -1 ; d = nc.first_set_bit()) {
-                            nc.unset(d);
-                            if (unsigned(d) == v)
-                                continue;
-
-                            auto nd = target_graphs.at(0).neighbourhood(d);
-                            for (int e = nd.first_set_bit() ; e != -1 ; e = nd.first_set_bit()) {
-                                nd.unset(e);
-                                if (e == c)
-                                    continue;
-
-                                auto ne = target_graphs.at(0).neighbourhood(e);
-                                for (int w = ne.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = ne.first_set_bit()) {
-                                    ne.unset(w);
-                                    if (w == d)
-                                        continue;
-
-                                    if (k_ >= 3 && target_graphs.at(k_ + k_ + 2).adjacent(v, w))
-                                        target_graphs.at(k_ + k_ + 3).add_edge(v, w);
-                                    else if (k_ >= 2 && target_graphs.at(k_ + k_ + 1).adjacent(v, w))
-                                        target_graphs.at(k_ + k_ + 2).add_edge(v, w);
-                                    else if (k_ >= 1)
-                                        target_graphs.at(k_ + k_ + 1).add_edge(v, w);
-                                }
                             }
                         }
                     }
