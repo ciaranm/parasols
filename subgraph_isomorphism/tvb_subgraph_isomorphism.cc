@@ -103,7 +103,7 @@ namespace
         };
 
         const SubgraphIsomorphismParams & params;
-        const bool parallel_supplemental_graphs;
+        const bool parallel_for_loops;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -120,7 +120,7 @@ namespace
 
         TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool tt) :
             params(a),
-            parallel_supplemental_graphs(tt),
+            parallel_for_loops(tt),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -401,39 +401,87 @@ namespace
                     }
                 }
 
-                for (unsigned i = 0 ; i < pattern_size ; ++i) {
-                    domains.at(i).v = i;
-                    domains.at(i).values.unset_all();
+                if (parallel_for_loops) {
+                    std::atomic<unsigned> posi;
+                    posi = 0;
+                    std::vector<std::thread> threads;
+                    for (unsigned t = 0 ; t < params.n_threads ; ++t) {
+                        threads.emplace_back([&] {
+                            for (unsigned i ; ((i = posi++)) < pattern_size ; ) {
+                                domains.at(i).v = i;
+                                domains.at(i).values.unset_all();
 
-                    for (unsigned j = 0 ; j < target_size ; ++j) {
-                        bool ok = true;
+                                for (unsigned j = 0 ; j < target_size ; ++j) {
+                                    bool ok = true;
 
-                        for (int g = 0 ; g < g_end ; ++g) {
-                            if (! allowed_target_vertices.test(j)) {
-                                ok = false;
-                            }
-                            else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
-                                ok = false;
-                            }
-                            else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
-                                ok = false;
-                            }
-                            else {
-                                for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
-                                    if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
-                                        ok = false;
+                                    for (int g = 0 ; g < g_end ; ++g) {
+                                        if (! allowed_target_vertices.test(j)) {
+                                            ok = false;
+                                        }
+                                        else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
+                                            ok = false;
+                                        }
+                                        else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
+                                            ok = false;
+                                        }
+                                        else {
+                                            for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
+                                                if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
+                                                    ok = false;
+                                            }
+                                        }
+
+                                        if (! ok)
+                                            break;
+                                    }
+
+                                    if (ok)
+                                        domains.at(i).values.set(j);
                                 }
+
+                                domains.at(i).popcount = domains.at(i).values.popcount();
                             }
-
-                            if (! ok)
-                                break;
-                        }
-
-                        if (ok)
-                            domains.at(i).values.set(j);
+                        });
                     }
 
-                    domains.at(i).popcount = domains.at(i).values.popcount();
+                    for (auto & t : threads)
+                        t.join();
+                }
+                else {
+                    for (unsigned i = 0 ; i < pattern_size ; ++i) {
+                        domains.at(i).v = i;
+                        domains.at(i).values.unset_all();
+
+                        for (unsigned j = 0 ; j < target_size ; ++j) {
+                            bool ok = true;
+
+                            for (int g = 0 ; g < g_end ; ++g) {
+                                if (! allowed_target_vertices.test(j)) {
+                                    ok = false;
+                                }
+                                else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
+                                    ok = false;
+                                }
+                                else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
+                                    ok = false;
+                                }
+                                else {
+                                    for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
+                                        if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
+                                            ok = false;
+                                    }
+                                }
+
+                                if (! ok)
+                                    break;
+                            }
+
+                            if (ok)
+                                domains.at(i).values.set(j);
+                        }
+
+                        domains.at(i).popcount = domains.at(i).values.popcount();
+                    }
                 }
 
                 FixedBitSet<n_words_> domains_union;
@@ -526,7 +574,7 @@ namespace
                 return result;
             }
 
-            if (parallel_supplemental_graphs)
+            if (parallel_for_loops)
                 parallel_build_supplemental_graphs(params.n_threads);
             else
                 build_supplemental_graphs();
