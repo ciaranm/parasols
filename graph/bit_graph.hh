@@ -45,6 +45,15 @@ namespace parasols
             }
 
             /**
+             * Set a given bit 'on'.
+             */
+            auto set_atomic(int a) -> void
+            {
+                // we don't have std::atomic_concurrent_view yet...
+                __sync_or_and_fetch(&_bits[a / bits_per_word], (BitWord{ 1 } << (a % bits_per_word)));
+            }
+
+            /**
              * Set a given bit 'off'.
              */
             auto unset(int a) -> void
@@ -212,6 +221,15 @@ namespace parasols
             {
                 _adjacency[a].set(b);
                 _adjacency[b].set(a);
+            }
+
+            /**
+             * Add an edge from a to b (and from b to a).
+             */
+            auto add_edge_atomic(int a, int b) -> void
+            {
+                _adjacency[a].set_atomic(b);
+                _adjacency[b].set_atomic(a);
             }
 
             /**

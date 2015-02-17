@@ -33,6 +33,7 @@ namespace
         SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_>
     {
         using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_>::build_supplemental_graphs;
+        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_>::parallel_build_supplemental_graphs;
 
         struct Domain
         {
@@ -102,6 +103,7 @@ namespace
         };
 
         const SubgraphIsomorphismParams & params;
+        const bool parallel_supplemental_graphs;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -116,8 +118,9 @@ namespace
 
         SubgraphIsomorphismResult result;
 
-        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
+        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool tt) :
             params(a),
+            parallel_supplemental_graphs(tt),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -523,7 +526,10 @@ namespace
                 return result;
             }
 
-            build_supplemental_graphs();
+            if (parallel_supplemental_graphs)
+                parallel_build_supplemental_graphs(params.n_threads);
+            else
+                build_supplemental_graphs();
 
             Domains domains(pattern_size);
 
@@ -563,12 +569,20 @@ namespace
     };
 }
 
+auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
+    return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
+}
+
 auto parasols::tvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
 }
 
 auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
@@ -576,6 +590,6 @@ auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & grap
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
 }
 
