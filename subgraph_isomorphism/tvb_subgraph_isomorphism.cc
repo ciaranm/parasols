@@ -62,8 +62,12 @@ namespace
 
         ~Tasks()
         {
-            finish = true;
-            cv.notify_all();
+            {
+                std::unique_lock<std::mutex> guard(mutex);
+                finish = true;
+                cv.notify_all();
+            }
+
             for (auto & t : threads)
                 t.join();
         }
