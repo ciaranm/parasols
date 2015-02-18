@@ -447,25 +447,36 @@ namespace
                     targets_ndss.at(g).resize(target_size);
                 }
 
-                for (int g = 0 ; g < g_end ; ++g) {
-                    for (unsigned i = 0 ; i < pattern_size ; ++i) {
-                        for (unsigned j = 0 ; j < pattern_size ; ++j) {
-                            if (pattern_graphs.at(g).adjacent(i, j))
-                                patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
-                        }
-                        std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
-                    }
-
-                    for (unsigned i = 0 ; i < target_size ; ++i) {
-                        for (unsigned j = 0 ; j < target_size ; ++j) {
-                            if (target_graphs.at(g).adjacent(i, j))
-                                targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
-                        }
-                        std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
-                    }
-                }
-
                 if (parallel_for_loops) {
+                    std::atomic<unsigned> posi1, posi2;
+                    posi1 = 0, posi2 = 0;
+
+                    for (unsigned t = 0 ; t < params.n_threads ; ++t) {
+                        tasks.add([&] {
+                            for (unsigned i ; ((i = posi1++)) < pattern_size ; ) {
+                                for (int g = 0 ; g < g_end ; ++g) {
+                                    for (unsigned j = 0 ; j < pattern_size ; ++j) {
+                                        if (pattern_graphs.at(g).adjacent(i, j))
+                                            patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
+                                    }
+                                    std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
+                                }
+                            }
+
+                            for (unsigned i ; ((i = posi2++)) < target_size ; ) {
+                                for (int g = 0 ; g < g_end ; ++g) {
+                                    for (unsigned j = 0 ; j < target_size ; ++j) {
+                                        if (target_graphs.at(g).adjacent(i, j))
+                                            targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
+                                    }
+                                    std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
+                                }
+                            }
+                        });
+                    }
+
+                    tasks.complete();
+
                     std::atomic<unsigned> posi;
                     posi = 0;
 
@@ -511,6 +522,24 @@ namespace
                     tasks.complete();
                 }
                 else {
+                    for (int g = 0 ; g < g_end ; ++g) {
+                        for (unsigned i = 0 ; i < pattern_size ; ++i) {
+                            for (unsigned j = 0 ; j < pattern_size ; ++j) {
+                                if (pattern_graphs.at(g).adjacent(i, j))
+                                    patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
+                            }
+                            std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
+                        }
+
+                        for (unsigned i = 0 ; i < target_size ; ++i) {
+                            for (unsigned j = 0 ; j < target_size ; ++j) {
+                                if (target_graphs.at(g).adjacent(i, j))
+                                    targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
+                            }
+                            std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
+                        }
+                    }
+
                     for (unsigned i = 0 ; i < pattern_size ; ++i) {
                         domains.at(i).v = i;
                         domains.at(i).values.unset_all();
