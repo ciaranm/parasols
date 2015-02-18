@@ -153,11 +153,11 @@ namespace parasols
                                 for (int w = nc.first_set_bit() ; w != -1 && unsigned(w) <= v ; w = nc.first_set_bit()) {
                                     nc.unset(w);
                                     if (k_ >= 3 && pattern_graphs.at(2).adjacent(v, w))
-                                        pattern_graphs.at(3).add_edge(v, w);
+                                        pattern_graphs.at(3).add_edge_atomic(v, w);
                                     else if (k_ >= 2 && pattern_graphs.at(1).adjacent(v, w))
-                                        pattern_graphs.at(2).add_edge(v, w);
+                                        pattern_graphs.at(2).add_edge_atomic(v, w);
                                     else if (k_ >= 1)
-                                        pattern_graphs.at(1).add_edge(v, w);
+                                        pattern_graphs.at(1).add_edge_atomic(v, w);
                                 }
                             }
                         }
@@ -181,11 +181,11 @@ namespace parasols
                                             continue;
 
                                         if (k_ >= 3 && pattern_graphs.at(k_ + 2).adjacent(v, w))
-                                            pattern_graphs.at(k_ + 3).add_edge(v, w);
+                                            pattern_graphs.at(k_ + 3).add_edge_atomic(v, w);
                                         else if (k_ >= 2 && pattern_graphs.at(k_ + 1).adjacent(v, w))
-                                            pattern_graphs.at(k_ + 2).add_edge(v, w);
+                                            pattern_graphs.at(k_ + 2).add_edge_atomic(v, w);
                                         else if (k_ >= 1)
-                                            pattern_graphs.at(k_ + 1).add_edge(v, w);
+                                            pattern_graphs.at(k_ + 1).add_edge_atomic(v, w);
                                     }
                                 }
                             }
