@@ -21,6 +21,68 @@ using std::chrono::steady_clock;
 
 namespace
 {
+    struct Tasks
+    {
+        std::vector<std::thread> threads;
+        std::atomic<bool> finish;
+        std::atomic<int> busy;
+        std::list<std::function<void ()> > pending;
+        std::mutex mutex;
+        std::condition_variable cv;
+
+        Tasks(unsigned n_threads)
+        {
+            finish = false;
+            busy = 0;
+
+            for (unsigned t = 0 ; t < n_threads ; ++t)
+                threads.emplace_back([this] {
+                        while (true) {
+                            std::unique_lock<std::mutex> guard(mutex);
+                            if (finish.load())
+                                break;
+
+                            if (! pending.empty()) {
+                                auto f = std::move(*pending.begin());
+                                pending.pop_front();
+                                ++busy;
+                                guard.unlock();
+
+                                f();
+
+                                guard.lock();
+                                --busy;
+                                cv.notify_all();
+                            }
+                            else
+                                cv.wait(guard);
+                        }
+                    });
+        }
+
+        ~Tasks()
+        {
+            finish = true;
+            cv.notify_all();
+            for (auto & t : threads)
+                t.join();
+        }
+
+        void add(std::function<void ()> && f)
+        {
+            std::unique_lock<std::mutex> guard(mutex);
+            pending.push_back(std::move(f));
+            cv.notify_all();
+        }
+
+        void complete()
+        {
+            std::unique_lock<std::mutex> guard(mutex);
+            while ((! pending.empty()) || (busy > 0))
+                cv.wait(guard);
+        }
+    };
+
     enum class Search
     {
         Aborted,
@@ -118,13 +180,16 @@ namespace
 
         SubgraphIsomorphismResult result;
 
+        Tasks tasks;
+
         TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool tt) :
             params(a),
             parallel_for_loops(tt),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
-            target_size(target.size())
+            target_size(target.size()),
+            tasks(params.n_threads)
         {
             // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
@@ -200,7 +265,7 @@ namespace
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
                 int g_end,
-                bool parallel) -> std::pair<Search, FailedVariables>
+                int depth) -> std::pair<Search, FailedVariables>
         {
             if (params.abort->load())
                 return std::make_pair(Search::Aborted, FailedVariables());
@@ -229,7 +294,7 @@ namespace
             FailedVariables shared_failed_variables;
             shared_failed_variables.add(branch_domain->v);
 
-            if (! parallel) {
+            if (depth > 0) {
                 for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                     remaining.unset(f_v);
 
@@ -247,7 +312,7 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = search(assignments, new_domains, nodes, g_end, false);
+                    auto search_result = search(assignments, new_domains, nodes, g_end, depth + 1);
                     switch (search_result.first) {
                         case Search::Satisfiable:    return std::make_pair(Search::Satisfiable, FailedVariables());
                         case Search::Aborted:        return std::make_pair(Search::Aborted, FailedVariables());
@@ -281,7 +346,7 @@ namespace
                 std::list<std::thread> workers;
 
                 for (unsigned t = 0 ; t < params.n_threads ; ++t) {
-                    workers.emplace_back([&] {
+                    tasks.add([&] {
                         auto start_time = steady_clock::now(); // local start time
 
                         Subproblem subproblem;
@@ -302,7 +367,7 @@ namespace
                             if (! assign(new_domains, subproblem.branch_v, subproblem.f_v, g_end, worker_shared_failed_variables))
                                 continue;
 
-                            auto search_result = search(subproblem_assignments, new_domains, nodes, g_end, false);
+                            auto search_result = search(subproblem_assignments, new_domains, nodes, g_end, depth + 1);
                             switch (search_result.first) {
                                 case Search::Satisfiable:
                                     {
@@ -337,8 +402,7 @@ namespace
                         });
                 }
 
-                for (auto & w : workers)
-                    w.join();
+                tasks.complete();
 
                 if (someone_succeeded)
                     return std::make_pair(Search::Satisfiable, shared_failed_variables);
@@ -404,9 +468,9 @@ namespace
                 if (parallel_for_loops) {
                     std::atomic<unsigned> posi;
                     posi = 0;
-                    std::vector<std::thread> threads;
+
                     for (unsigned t = 0 ; t < params.n_threads ; ++t) {
-                        threads.emplace_back([&] {
+                        tasks.add([&] {
                             for (unsigned i ; ((i = posi++)) < pattern_size ; ) {
                                 domains.at(i).v = i;
                                 domains.at(i).values.unset_all();
@@ -444,8 +508,7 @@ namespace
                         });
                     }
 
-                    for (auto & t : threads)
-                        t.join();
+                    tasks.complete();
                 }
                 else {
                     for (unsigned i = 0 ; i < pattern_size ; ++i) {
@@ -592,7 +655,7 @@ namespace
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
             std::atomic<unsigned long long> nodes{ 0 };
-            switch (search(assignments, domains, nodes, max_graphs, true).first) {
+            switch (search(assignments, domains, nodes, max_graphs, 0).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
                     break;

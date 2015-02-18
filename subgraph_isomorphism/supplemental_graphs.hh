@@ -130,6 +130,7 @@ namespace parasols
             auto & target_size = static_cast<Parent_ *>(this)->target_size;
             auto & pattern_graphs = static_cast<Parent_ *>(this)->pattern_graphs;
             auto & target_graphs = static_cast<Parent_ *>(this)->target_graphs;
+            auto & tasks = static_cast<Parent_ *>(this)->tasks;
 
             for (int g = 1 ; g < max_graphs ; ++g)
                 pattern_graphs.at(g).resize(pattern_size);
@@ -137,13 +138,11 @@ namespace parasols
             for (int g = 1 ; g < max_graphs ; ++g)
                 target_graphs.at(g).resize(target_size);
 
-            std::vector<std::thread> threads;
             std::atomic<unsigned> pos2p, pos3p, pos2t, pos3t;
             pos2p = 0; pos3p = 0; pos2t = 0; pos3t = 0;
 
             for (int t = 0 ; t < n_threads ; ++t) {
-                threads.emplace_back([&] {
-
+                tasks.add([&] {
                     if (l_ >= 2) {
                         for (unsigned v ; ((v = pos2p++)) < pattern_size ; ) {
                             auto nv = pattern_graphs.at(0).neighbourhood(v);
@@ -242,8 +241,7 @@ namespace parasols
                 });
             }
 
-            for (auto & t : threads)
-                t.join();
+            tasks.complete();
         }
     };
 }
