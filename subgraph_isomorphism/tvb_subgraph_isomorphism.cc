@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <limits>
 #include <random>
+#include <future>
 
 using namespace parasols;
 
@@ -21,6 +22,19 @@ using std::chrono::steady_clock;
 
 namespace
 {
+    auto store_unless_already_less(std::atomic<int> & a, int v) -> void
+    {
+        while (true) {
+            int c = a.load();
+            if (v < c) {
+                if (a.compare_exchange_strong(c, v))
+                    break;
+            }
+            else
+                break;
+        }
+    }
+
     struct Tasks
     {
         std::vector<std::thread> threads;
@@ -92,6 +106,15 @@ namespace
         Aborted,
         Unsatisfiable,
         Satisfiable
+    };
+
+    enum class AssignAndSearch
+    {
+        Aborted,
+        Satisfiable,
+        AssignFailed,
+        Backjump,
+        TryNext
     };
 
     template <unsigned n_words_, bool backjump_, int k_, int l_>
@@ -180,8 +203,6 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        std::atomic<bool> kill_everything;
-
         SubgraphIsomorphismResult result;
 
         Tasks tasks;
@@ -227,8 +248,6 @@ namespace
 
             for (unsigned j = 0 ; j < pattern_size ; ++j)
                 pattern_degree_tiebreak.at(j) = pattern_graphs.at(0).degree(j);
-
-            kill_everything.store(false);
         }
 
         auto assign(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end, FailedVariables & failed_variables) -> bool
@@ -268,13 +287,15 @@ namespace
                 Assignments & assignments,
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
-                int g_end,
-                int depth) -> std::pair<Search, FailedVariables>
+                const int g_end,
+                const int depth,
+                const int cancel_after_pos,
+                std::atomic<int> & cancel_after_val) -> std::pair<Search, FailedVariables>
         {
             if (params.abort->load())
                 return std::make_pair(Search::Aborted, FailedVariables());
 
-            if (kill_everything.load())
+            if (cancel_after_pos >= cancel_after_val.load())
                 return std::make_pair(Search::Aborted, FailedVariables());
 
             ++nodes;
@@ -287,10 +308,8 @@ namespace
                         (d.popcount == branch_domain->popcount && pattern_degree_tiebreak.at(d.v) > pattern_degree_tiebreak.at(branch_domain->v)))
                     branch_domain = &d;
 
-            if (! branch_domain) {
-                kill_everything.store(true);
+            if (! branch_domain)
                 return std::make_pair(Search::Satisfiable, FailedVariables());
-            }
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
@@ -316,7 +335,7 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = search(assignments, new_domains, nodes, g_end, depth + 1);
+                    auto search_result = search(assignments, new_domains, nodes, g_end, depth + 1, cancel_after_pos, cancel_after_val);
                     switch (search_result.first) {
                         case Search::Satisfiable:    return std::make_pair(Search::Satisfiable, FailedVariables());
                         case Search::Aborted:        return std::make_pair(Search::Aborted, FailedVariables());
@@ -328,91 +347,104 @@ namespace
 
                     shared_failed_variables.add(search_result.second);
                 }
-
-                return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
             }
             else {
-                std::mutex shared_state_mutex;
-                bool someone_succeeded = false;
-                FailedVariables shared_failed_variables;
-                shared_failed_variables.add(branch_domain->v);
+                using SubproblemResult = std::tuple<AssignAndSearch, FailedVariables, Assignments>;
 
-                Queue<Subproblem> queue(params.n_threads, false);
+                std::list<std::packaged_task<SubproblemResult ()> > subproblem_tasks;
+                std::list<std::future<SubproblemResult> > subproblem_futures;
 
+                std::atomic<int> cancel_children_after; cancel_children_after = std::numeric_limits<int>::max();
+                int cancel_n = 0;
                 for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                     remaining.unset(f_v);
 
-                    queue.enqueue(Subproblem{ branch_v, f_v });
-                }
+                    subproblem_tasks.emplace_back([&, f_v, cancel_n, local_assignments = assignments, this] () mutable -> SubproblemResult {
+                        /* try assigning f_v to v */
+                        local_assignments.at(branch_v) = f_v;
 
-                queue.initial_producer_done();
+                        /* set up new domains */
+                        Domains new_domains;
+                        new_domains.reserve(domains.size() - 1);
+                        for (auto & d : domains)
+                            if (d.v != branch_v)
+                                new_domains.push_back(d);
 
-                std::list<std::thread> workers;
+                        /* assign and propagate */
+                        FailedVariables assign_failed_variables;
+                        if (! assign(new_domains, branch_v, f_v, g_end, assign_failed_variables))
+                            return std::make_tuple(AssignAndSearch::AssignFailed, assign_failed_variables, Assignments());
 
-                for (unsigned t = 0 ; t < params.n_threads ; ++t) {
-                    tasks.add([&] {
-                        auto start_time = steady_clock::now(); // local start time
+                        auto search_result = search(local_assignments, new_domains, nodes, g_end, depth + 1, cancel_n, cancel_children_after);
+                        switch (search_result.first) {
+                            case Search::Satisfiable:
+                                store_unless_already_less(cancel_children_after, 0);
+                                return std::make_tuple(AssignAndSearch::Satisfiable, FailedVariables(), std::move(local_assignments));
 
-                        Subproblem subproblem;
-                        FailedVariables worker_shared_failed_variables;
-                        bool stop = false;
-                        while ((! stop) && queue.dequeue_blocking(subproblem)) {
-                            /* set up new domains */
-                            Domains new_domains;
-                            new_domains.reserve(domains.size() - 1);
-                            for (auto & d : domains)
-                                if (d.v != subproblem.branch_v)
-                                    new_domains.push_back(d);
+                            case Search::Aborted:
+                                return std::make_tuple(AssignAndSearch::Aborted, FailedVariables(), Assignments());
 
-                            Assignments subproblem_assignments = assignments;
-
-                            /* try assigning f_v to v */
-                            subproblem_assignments.at(subproblem.branch_v) = subproblem.f_v;
-                            if (! assign(new_domains, subproblem.branch_v, subproblem.f_v, g_end, worker_shared_failed_variables))
-                                continue;
-
-                            auto search_result = search(subproblem_assignments, new_domains, nodes, g_end, depth + 1);
-                            switch (search_result.first) {
-                                case Search::Satisfiable:
-                                    {
-                                        std::unique_lock<std::mutex> guard(shared_state_mutex);
-                                        assignments = subproblem_assignments;
-                                        someone_succeeded = true;
-                                    }
-                                    stop = true;
-                                    break;
-
-                                case Search::Aborted:
-                                    stop = true;
-                                    break;
-
-                                case Search::Unsatisfiable:
-                                    break;
-                            }
-
-                            if (! stop) {
-                                if (search_result.second.independent_of(domains, new_domains)) {
-                                    kill_everything.store(true);
-                                    return;
-                                }
-                            }
+                            case Search::Unsatisfiable:
+                                break;
                         }
 
-                        auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);
+                        if (search_result.second.independent_of(domains, new_domains)) {
+                            store_unless_already_less(cancel_children_after, cancel_n);
+                            return std::make_tuple(AssignAndSearch::Backjump, search_result.second, Assignments());
+                        }
 
-                        std::unique_lock<std::mutex> guard(shared_state_mutex);
-                        shared_failed_variables.add(worker_shared_failed_variables);
-                        result.times.push_back(overall_time);
-                        });
+                        return std::make_tuple(AssignAndSearch::TryNext, search_result.second, Assignments());
+                    });
+
+                    ++cancel_n;
+                }
+
+                for (auto & s : subproblem_tasks)
+                    subproblem_futures.push_back(s.get_future());
+
+                for (auto & s : subproblem_tasks)
+                    tasks.add([&s] { s(); });
+
+                int cancel_pos = 0;
+                bool someone_aborted = false;
+                for (auto & s : subproblem_futures) {
+                    auto result = s.get();
+
+                    switch (std::get<0>(result)) {
+                        case AssignAndSearch::Satisfiable:
+                            assignments = std::move(std::get<2>(result));
+                            cancel_children_after.store(0);
+                            tasks.complete();
+                            return std::make_pair(Search::Satisfiable, std::get<1>(result));
+
+                        case AssignAndSearch::Aborted:
+                            someone_aborted = true;
+                            continue;
+
+                        case AssignAndSearch::Backjump:
+                            cancel_children_after.store(0);
+                            tasks.complete();
+                            return std::make_pair(Search::Unsatisfiable, std::get<1>(result));
+
+                        case AssignAndSearch::AssignFailed:
+                            shared_failed_variables.add(std::get<1>(result));
+                            break;
+
+                        case AssignAndSearch::TryNext:
+                            shared_failed_variables.add(std::get<1>(result));
+                            break;
+                    }
+
+                    ++cancel_pos;
                 }
 
                 tasks.complete();
 
-                if (someone_succeeded)
-                    return std::make_pair(Search::Satisfiable, shared_failed_variables);
-                else
-                    return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
+                if (someone_aborted)
+                    return std::make_pair(Search::Aborted, FailedVariables());
             }
+
+            return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
@@ -688,7 +720,8 @@ namespace
 
             Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
             std::atomic<unsigned long long> nodes{ 0 };
-            switch (search(assignments, domains, nodes, max_graphs, 0).first) {
+            std::atomic<int> cancel_children_after; cancel_children_after = std::numeric_limits<int>::max();
+            switch (search(assignments, domains, nodes, max_graphs, 0, 0, cancel_children_after).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
                     break;
