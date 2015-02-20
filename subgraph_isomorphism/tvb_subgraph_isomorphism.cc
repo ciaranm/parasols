@@ -44,6 +44,8 @@ namespace
         std::mutex mutex;
         std::condition_variable cv;
 
+        std::list<milliseconds> times;
+
         Tasks(unsigned n_threads)
         {
             finish = false;
@@ -51,6 +53,8 @@ namespace
 
             for (unsigned t = 0 ; t < n_threads ; ++t)
                 threads.emplace_back([this] {
+                        milliseconds total_work_time = milliseconds::zero();
+
                         while (true) {
                             std::unique_lock<std::mutex> guard(mutex);
                             if (finish.load())
@@ -62,7 +66,12 @@ namespace
                                 ++busy;
                                 guard.unlock();
 
+                                auto start_work_time = steady_clock::now(); // local start time
+
                                 f();
+
+                                auto work_time = duration_cast<milliseconds>(steady_clock::now() - start_work_time);
+                                total_work_time += work_time;
 
                                 guard.lock();
                                 --busy;
@@ -71,10 +80,13 @@ namespace
                             else
                                 cv.wait(guard);
                         }
+
+                        std::unique_lock<std::mutex> guard(mutex);
+                        times.push_back(total_work_time);
                     });
         }
 
-        ~Tasks()
+        auto kill_workers() -> void
         {
             {
                 std::unique_lock<std::mutex> guard(mutex);
@@ -84,16 +96,23 @@ namespace
 
             for (auto & t : threads)
                 t.join();
+
+            threads.clear();
         }
 
-        void add(std::function<void ()> && f)
+        ~Tasks()
+        {
+            kill_workers();
+        }
+
+        auto add(std::function<void ()> && f) -> void
         {
             std::unique_lock<std::mutex> guard(mutex);
             pending.push_back(std::move(f));
             cv.notify_all();
         }
 
-        void complete()
+        auto complete() -> void
         {
             std::unique_lock<std::mutex> guard(mutex);
             while ((! pending.empty()) || (busy > 0))
@@ -730,6 +749,10 @@ namespace
             }
 
             result.nodes = nodes;
+
+            tasks.kill_workers();
+            for (auto & t : tasks.times)
+                result.times.push_back(t);
 
             return result;
         }
