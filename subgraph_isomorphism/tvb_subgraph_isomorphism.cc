@@ -352,7 +352,6 @@ namespace
                 using SubproblemResult = std::tuple<AssignAndSearch, FailedVariables, Assignments>;
 
                 std::list<std::packaged_task<SubproblemResult ()> > subproblem_tasks;
-                std::list<std::future<SubproblemResult> > subproblem_futures;
 
                 std::atomic<int> cancel_children_after; cancel_children_after = std::numeric_limits<int>::max();
                 int cancel_n = 0;
@@ -400,15 +399,12 @@ namespace
                 }
 
                 for (auto & s : subproblem_tasks)
-                    subproblem_futures.push_back(s.get_future());
-
-                for (auto & s : subproblem_tasks)
                     tasks.add([&s] { s(); });
 
                 int cancel_pos = 0;
                 bool someone_aborted = false;
-                for (auto & s : subproblem_futures) {
-                    auto result = s.get();
+                for (auto & s : subproblem_tasks) {
+                    auto result = s.get_future().get();
 
                     switch (std::get<0>(result)) {
                         case AssignAndSearch::Satisfiable:
