@@ -34,6 +34,7 @@ auto main(int argc, char * argv[]) -> int
             ("format",             po::value<std::string>(), "Specify the format of the input")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
             ("enumerate",                             "Enumerate solutions")
+            ("delete-loops",                          "Discard loops in the input")
             ;
 
         po::options_description all_options{ "All options" };
@@ -99,6 +100,9 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("enumerate"))
             params.enumerate = true;
 
+        if (options_vars.count("delete-loops"))
+            params.delete_loops = true;
+
         /* Turn a format name into a runnable function. */
         auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
         if (options_vars.count("format"))
@@ -155,10 +159,12 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("verify") && ! result.isomorphism.empty()) {
             for (int i = 0 ; i < graphs.first.size() ; ++i) {
                 for (int j = 0 ; j < graphs.first.size() ; ++j) {
-                    if (graphs.first.adjacent(i, j)) {
-                        if (! graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
-                            std::cerr << "Oops! not an isomorphism" << std::endl;
-                            return EXIT_FAILURE;
+                    if (i != j || ! params.delete_loops) {
+                        if (graphs.first.adjacent(i, j)) {
+                            if (! graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
+                                std::cerr << "Oops! not an isomorphism" << std::endl;
+                                return EXIT_FAILURE;
+                            }
                         }
                     }
                 }

@@ -23,6 +23,8 @@ namespace parasols
         unsigned n_threads = 1;
 
         bool enumerate = false;
+
+        bool delete_loops = false;
     };
 }
 
