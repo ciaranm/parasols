@@ -203,6 +203,7 @@ namespace
         };
 
         using FailedVariables = typename std::conditional<backjump_, RealFailedVariables, DummyFailedVariables>::type;
+        using SubproblemResult = std::tuple<AssignAndSearch, FailedVariables, Assignments>;
 
         struct Subproblem
         {
@@ -313,7 +314,8 @@ namespace
                 const int g_end,
                 const int depth,
                 const int cancel_after_pos,
-                std::atomic<int> & cancel_after_val) -> std::pair<Search, FailedVariables>
+                std::atomic<int> & cancel_after_val
+                ) -> std::pair<Search, FailedVariables>
         {
             if (params.abort->load())
                 return std::make_pair(Search::Aborted, FailedVariables());
@@ -372,8 +374,6 @@ namespace
                 }
             }
             else {
-                using SubproblemResult = std::tuple<AssignAndSearch, FailedVariables, Assignments>;
-
                 std::list<std::packaged_task<SubproblemResult ()> > subproblem_tasks;
 
                 std::atomic<int> cancel_children_after; cancel_children_after = std::numeric_limits<int>::max();
@@ -381,42 +381,9 @@ namespace
                 for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                     remaining.unset(f_v);
 
-                    subproblem_tasks.emplace_back([&, f_v, cancel_n, local_assignments = assignments, this] () mutable -> SubproblemResult {
-                        /* try assigning f_v to v */
-                        local_assignments.at(branch_v) = f_v;
-
-                        /* set up new domains */
-                        Domains new_domains;
-                        new_domains.reserve(domains.size() - 1);
-                        for (auto & d : domains)
-                            if (d.v != branch_v)
-                                new_domains.push_back(d);
-
-                        /* assign and propagate */
-                        FailedVariables assign_failed_variables;
-                        if (! assign(new_domains, branch_v, f_v, g_end, assign_failed_variables))
-                            return std::make_tuple(AssignAndSearch::AssignFailed, assign_failed_variables, Assignments());
-
-                        auto search_result = search(local_assignments, new_domains, nodes, g_end, depth + 1, cancel_n, cancel_children_after);
-                        switch (search_result.first) {
-                            case Search::Satisfiable:
-                                store_unless_already_less(cancel_children_after, 0);
-                                return std::make_tuple(AssignAndSearch::Satisfiable, FailedVariables(), std::move(local_assignments));
-
-                            case Search::Aborted:
-                                return std::make_tuple(AssignAndSearch::Aborted, FailedVariables(), Assignments());
-
-                            case Search::Unsatisfiable:
-                                break;
-                        }
-
-                        if (search_result.second.independent_of(domains, new_domains)) {
-                            store_unless_already_less(cancel_children_after, cancel_n);
-                            return std::make_tuple(AssignAndSearch::Backjump, search_result.second, Assignments());
-                        }
-
-                        return std::make_tuple(AssignAndSearch::TryNext, search_result.second, Assignments());
-                    });
+                    subproblem_tasks.emplace_back(
+                            std::bind(&TSGI::parallel_subsearch, this, branch_v, f_v, cancel_n, assignments, std::ref(cancel_children_after),
+                                std::cref(domains), std::ref(nodes), g_end, depth));
 
                     ++cancel_n;
                 }
@@ -464,6 +431,54 @@ namespace
             }
 
             return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
+        }
+
+        auto parallel_subsearch(
+                unsigned branch_v,
+                int f_v,
+                int cancel_n,
+                Assignments local_assignments,
+                std::atomic<int> & cancel_children_after,
+                const Domains & domains,
+                std::atomic<unsigned long long> & nodes,
+                const int g_end,
+                const int depth
+                ) -> SubproblemResult
+        {
+            /* try assigning f_v to v */
+            local_assignments.at(branch_v) = f_v;
+
+            /* set up new domains */
+            Domains new_domains;
+            new_domains.reserve(domains.size() - 1);
+            for (auto & d : domains)
+                if (d.v != branch_v)
+                    new_domains.push_back(d);
+
+            /* assign and propagate */
+            FailedVariables assign_failed_variables;
+            if (! assign(new_domains, branch_v, f_v, g_end, assign_failed_variables))
+                return std::make_tuple(AssignAndSearch::AssignFailed, assign_failed_variables, Assignments());
+
+            auto search_result = search(local_assignments, new_domains, nodes, g_end, depth + 1, cancel_n, cancel_children_after);
+            switch (search_result.first) {
+                case Search::Satisfiable:
+                    store_unless_already_less(cancel_children_after, 0);
+                    return std::make_tuple(AssignAndSearch::Satisfiable, FailedVariables(), std::move(local_assignments));
+
+                case Search::Aborted:
+                    return std::make_tuple(AssignAndSearch::Aborted, FailedVariables(), Assignments());
+
+                case Search::Unsatisfiable:
+                    break;
+            }
+
+            if (search_result.second.independent_of(domains, new_domains)) {
+                store_unless_already_less(cancel_children_after, cancel_n);
+                return std::make_tuple(AssignAndSearch::Backjump, search_result.second, Assignments());
+            }
+
+            return std::make_tuple(AssignAndSearch::TryNext, search_result.second, Assignments());
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
