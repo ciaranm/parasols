@@ -23,6 +23,7 @@ namespace parasols
         std::make_pair( std::string{ "tvbdpd" },              tvb_dpd_subgraph_isomorphism ),
         std::make_pair( std::string{ "tvbbjdpd" },            tvbbj_dpd_subgraph_isomorphism ),
         std::make_pair( std::string{ "ttvbbjdpd" },           ttvbbj_dpd_subgraph_isomorphism ),
+        std::make_pair( std::string{ "tt2vbbjdpd" },          tt2vbbj_dpd_subgraph_isomorphism ),
     };
 }
 

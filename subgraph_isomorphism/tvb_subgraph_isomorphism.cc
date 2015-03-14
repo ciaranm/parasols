@@ -213,6 +213,7 @@ namespace
 
         const SubgraphIsomorphismParams & params;
         const bool parallel_for_loops;
+        const int split_depth;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -227,9 +228,10 @@ namespace
 
         Tasks tasks;
 
-        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool tt) :
+        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool tt, int sd) :
             params(a),
             parallel_for_loops(tt),
+            split_depth(sd),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -342,7 +344,7 @@ namespace
             FailedVariables shared_failed_variables;
             shared_failed_variables.add(branch_domain->v);
 
-            if (depth > 0) {
+            if (depth != split_depth) {
                 for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                     remaining.unset(f_v);
 
@@ -789,7 +791,7 @@ auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & g
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 0);
 }
 
 auto parasols::tvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
@@ -797,7 +799,7 @@ auto parasols::tvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & gr
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
 }
 
 auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
@@ -805,6 +807,14 @@ auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & grap
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
+}
+
+auto parasols::tt2vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
+    return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true, 2);
 }
 
