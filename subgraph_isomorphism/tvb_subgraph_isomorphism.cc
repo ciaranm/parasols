@@ -384,7 +384,7 @@ namespace
                     remaining.unset(f_v);
 
                     subproblem_tasks.emplace_back(
-                            std::bind(&TSGI::parallel_subsearch, this, branch_v, f_v, cancel_n, assignments, std::ref(cancel_children_after),
+                            std::bind(uninlineable_parallel_search_haxx, this, branch_v, f_v, cancel_n, assignments, std::ref(cancel_children_after),
                                 std::cref(domains), std::ref(nodes), g_end, depth));
 
                     ++cancel_n;
@@ -481,6 +481,22 @@ namespace
             }
 
             return std::make_tuple(AssignAndSearch::TryNext, search_result.second, Assignments());
+        }
+
+        static SubproblemResult uninlineable_parallel_search_haxx(
+                TSGI * sgi,
+                unsigned branch_v,
+                int f_v,
+                int cancel_n,
+                Assignments local_assignments,
+                std::atomic<int> & cancel_children_after,
+                const Domains & domains,
+                std::atomic<unsigned long long> & nodes,
+                const int g_end,
+                const int depth
+                )  __attribute__((noinline))
+        {
+            return sgi->parallel_subsearch(branch_v, f_v, cancel_n, local_assignments, cancel_children_after, domains, nodes, g_end, depth);
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
