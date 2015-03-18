@@ -396,7 +396,7 @@ namespace
                 int cancel_pos = 0;
                 bool someone_aborted = false;
                 for (auto & s : subproblem_tasks) {
-                    auto result = s.get_future().get();
+                    auto result = std::move(s.get_future().get());
 
                     switch (std::get<0>(result)) {
                         case AssignAndSearch::Satisfiable:
@@ -494,9 +494,9 @@ namespace
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
                 const int depth
-                )  __attribute__((noinline))
+                )
         {
-            return sgi->parallel_subsearch(branch_v, f_v, cancel_n, local_assignments, cancel_children_after, domains, nodes, g_end, depth);
+            return std::move(sgi->parallel_subsearch(branch_v, f_v, cancel_n, local_assignments, cancel_children_after, domains, nodes, g_end, depth));
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
