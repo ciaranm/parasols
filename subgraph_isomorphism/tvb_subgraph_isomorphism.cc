@@ -40,7 +40,8 @@ namespace
         std::vector<std::thread> threads;
         std::atomic<bool> finish;
         std::atomic<int> busy;
-        std::list<std::function<void ()> > pending;
+        std::list<std::pair<std::function<void ()>, long long> > pending;
+        long long task_number;
         std::mutex mutex;
         std::condition_variable cv;
 
@@ -50,6 +51,7 @@ namespace
         {
             finish = false;
             busy = 0;
+            task_number = 0;
 
             for (unsigned t = 0 ; t < n_threads ; ++t)
                 threads.emplace_back([this] {
@@ -61,7 +63,7 @@ namespace
                                 break;
 
                             if (! pending.empty()) {
-                                auto f = std::move(*pending.begin());
+                                auto f = std::move(pending.begin()->first);
                                 pending.pop_front();
                                 ++busy;
                                 guard.unlock();
@@ -86,6 +88,22 @@ namespace
                     });
         }
 
+        auto run_first_if_equals(long long v) -> void
+        {
+            std::unique_lock<std::mutex> guard(mutex);
+
+            if ((! pending.empty()) && pending.begin()->second == v) {
+                auto f = std::move(pending.begin()->first);
+                pending.pop_front();
+                guard.unlock();
+
+                f();
+
+                guard.lock();
+                cv.notify_all();
+            }
+        }
+
         auto kill_workers() -> void
         {
             {
@@ -105,11 +123,13 @@ namespace
             kill_workers();
         }
 
-        auto add(std::function<void ()> && f) -> void
+        auto add(std::function<void ()> && f) -> long long
         {
             std::unique_lock<std::mutex> guard(mutex);
-            pending.push_back(std::move(f));
+            long long our_task_number = task_number++;
+            pending.push_back(std::make_pair(std::move(f), our_task_number));
             cv.notify_all();
+            return our_task_number;
         }
 
         auto complete() -> void
@@ -236,7 +256,7 @@ namespace
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
             target_size(target.size()),
-            tasks(params.n_threads)
+            tasks(params.n_threads - 1)
         {
             // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
@@ -344,7 +364,7 @@ namespace
             FailedVariables shared_failed_variables;
             shared_failed_variables.add(branch_domain->v);
 
-            if (depth != split_depth) {
+            if (depth > split_depth) {
                 for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                     remaining.unset(f_v);
 
@@ -376,27 +396,35 @@ namespace
                 }
             }
             else {
-                std::list<std::packaged_task<SubproblemResult ()> > subproblem_tasks;
+                std::vector<std::pair<std::packaged_task<SubproblemResult ()>, long long> > subproblem_tasks;
+                subproblem_tasks.reserve(remaining.popcount());
 
                 std::atomic<int> cancel_children_after; cancel_children_after = std::numeric_limits<int>::max();
                 int cancel_n = 0;
                 for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                     remaining.unset(f_v);
 
-                    subproblem_tasks.emplace_back(
+                    subproblem_tasks.emplace_back(std::packaged_task<SubproblemResult ()>(
                             std::bind(uninlineable_parallel_search_haxx, this, branch_v, f_v, cancel_n, assignments, std::ref(cancel_children_after),
-                                std::cref(domains), std::ref(nodes), g_end, depth));
+                                std::cref(domains), std::ref(nodes), g_end, depth)), -1);
 
                     ++cancel_n;
                 }
 
-                for (auto & s : subproblem_tasks)
-                    tasks.add([&s] { s(); });
+                for (unsigned t = 1 ; t < subproblem_tasks.size() ; ++t) {
+                    auto & s = subproblem_tasks.at(t).first;
+                    subproblem_tasks.at(t).second = tasks.add([&s] { s(); });
+                }
 
                 int cancel_pos = 0;
                 bool someone_aborted = false;
                 for (auto & s : subproblem_tasks) {
-                    auto result = std::move(s.get_future().get());
+                    if (&s == &*subproblem_tasks.begin())
+                        s.first();
+                    else
+                        tasks.run_first_if_equals(s.second);
+
+                    auto result = std::move(s.first.get_future().get());
 
                     switch (std::get<0>(result)) {
                         case AssignAndSearch::Satisfiable:
@@ -824,13 +852,5 @@ auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & grap
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
             AllGraphSizes(), graphs.second, graphs.first, params, false, 0);
-}
-
-auto parasols::tt2vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    if (graphs.first.size() > graphs.second.size())
-        return SubgraphIsomorphismResult{ };
-    return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true, 2);
 }
 
