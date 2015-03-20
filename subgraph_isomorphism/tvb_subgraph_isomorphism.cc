@@ -212,7 +212,6 @@ namespace
         };
 
         const SubgraphIsomorphismParams & params;
-        const bool parallel_for_loops;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -227,9 +226,8 @@ namespace
 
         Tasks tasks;
 
-        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool tt) :
+        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
             params(a),
-            parallel_for_loops(tt),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -533,134 +531,78 @@ namespace
                     targets_ndss.at(g).resize(target_size);
                 }
 
-                if (parallel_for_loops) {
-                    std::atomic<unsigned> posi1, posi2;
-                    posi1 = 0, posi2 = 0;
+                std::atomic<unsigned> posi1, posi2;
+                posi1 = 0, posi2 = 0;
 
-                    for (unsigned t = 0 ; t < params.n_threads ; ++t) {
-                        tasks.add([&] {
-                            for (unsigned i ; ((i = posi1++)) < pattern_size ; ) {
-                                for (int g = 0 ; g < g_end ; ++g) {
-                                    for (unsigned j = 0 ; j < pattern_size ; ++j) {
-                                        if (pattern_graphs.at(g).adjacent(i, j))
-                                            patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
-                                    }
-                                    std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
-                                }
-                            }
-
-                            for (unsigned i ; ((i = posi2++)) < target_size ; ) {
-                                for (int g = 0 ; g < g_end ; ++g) {
-                                    for (unsigned j = 0 ; j < target_size ; ++j) {
-                                        if (target_graphs.at(g).adjacent(i, j))
-                                            targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
-                                    }
-                                    std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
-                                }
-                            }
-                        });
-                    }
-
-                    tasks.complete();
-
-                    std::atomic<unsigned> posi;
-                    posi = 0;
-
-                    for (unsigned t = 0 ; t < params.n_threads ; ++t) {
-                        tasks.add([&] {
-                            for (unsigned i ; ((i = posi++)) < pattern_size ; ) {
-                                domains.at(i).v = i;
-                                domains.at(i).values.unset_all();
-
-                                for (unsigned j = 0 ; j < target_size ; ++j) {
-                                    bool ok = true;
-
-                                    for (int g = 0 ; g < g_end ; ++g) {
-                                        if (! allowed_target_vertices.test(j)) {
-                                            ok = false;
-                                        }
-                                        else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
-                                            ok = false;
-                                        }
-                                        else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
-                                            ok = false;
-                                        }
-                                        else {
-                                            for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
-                                                if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
-                                                    ok = false;
-                                            }
-                                        }
-
-                                        if (! ok)
-                                            break;
-                                    }
-
-                                    if (ok)
-                                        domains.at(i).values.set(j);
-                                }
-
-                                domains.at(i).popcount = domains.at(i).values.popcount();
-                            }
-                        });
-                    }
-
-                    tasks.complete();
-                }
-                else {
-                    for (int g = 0 ; g < g_end ; ++g) {
-                        for (unsigned i = 0 ; i < pattern_size ; ++i) {
-                            for (unsigned j = 0 ; j < pattern_size ; ++j) {
-                                if (pattern_graphs.at(g).adjacent(i, j))
-                                    patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
-                            }
-                            std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
-                        }
-
-                        for (unsigned i = 0 ; i < target_size ; ++i) {
-                            for (unsigned j = 0 ; j < target_size ; ++j) {
-                                if (target_graphs.at(g).adjacent(i, j))
-                                    targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
-                            }
-                            std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
-                        }
-                    }
-
-                    for (unsigned i = 0 ; i < pattern_size ; ++i) {
-                        domains.at(i).v = i;
-                        domains.at(i).values.unset_all();
-
-                        for (unsigned j = 0 ; j < target_size ; ++j) {
-                            bool ok = true;
-
+                for (unsigned t = 0 ; t < params.n_threads ; ++t) {
+                    tasks.add([&] {
+                        for (unsigned i ; ((i = posi1++)) < pattern_size ; ) {
                             for (int g = 0 ; g < g_end ; ++g) {
-                                if (! allowed_target_vertices.test(j)) {
-                                    ok = false;
+                                for (unsigned j = 0 ; j < pattern_size ; ++j) {
+                                    if (pattern_graphs.at(g).adjacent(i, j))
+                                        patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
                                 }
-                                else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
-                                    ok = false;
-                                }
-                                else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
-                                    ok = false;
-                                }
-                                else {
-                                    for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
-                                        if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
-                                            ok = false;
-                                    }
-                                }
-
-                                if (! ok)
-                                    break;
+                                std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
                             }
-
-                            if (ok)
-                                domains.at(i).values.set(j);
                         }
 
-                        domains.at(i).popcount = domains.at(i).values.popcount();
-                    }
+                        for (unsigned i ; ((i = posi2++)) < target_size ; ) {
+                            for (int g = 0 ; g < g_end ; ++g) {
+                                for (unsigned j = 0 ; j < target_size ; ++j) {
+                                    if (target_graphs.at(g).adjacent(i, j))
+                                        targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
+                                }
+                                std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
+                            }
+                        }
+                    });
                 }
+
+                tasks.complete();
+
+                std::atomic<unsigned> posi;
+                posi = 0;
+
+                for (unsigned t = 0 ; t < params.n_threads ; ++t) {
+                    tasks.add([&] {
+                        for (unsigned i ; ((i = posi++)) < pattern_size ; ) {
+                            domains.at(i).v = i;
+                            domains.at(i).values.unset_all();
+
+                            for (unsigned j = 0 ; j < target_size ; ++j) {
+                                bool ok = true;
+
+                                for (int g = 0 ; g < g_end ; ++g) {
+                                    if (! allowed_target_vertices.test(j)) {
+                                        ok = false;
+                                    }
+                                    else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
+                                        ok = false;
+                                    }
+                                    else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
+                                        ok = false;
+                                    }
+                                    else {
+                                        for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
+                                            if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
+                                                ok = false;
+                                        }
+                                    }
+
+                                    if (! ok)
+                                        break;
+                                }
+
+                                if (ok)
+                                    domains.at(i).values.set(j);
+                            }
+
+                            domains.at(i).popcount = domains.at(i).values.popcount();
+                        }
+                    });
+                }
+
+                tasks.complete();
 
                 FixedBitSet<n_words_> domains_union;
                 for (auto & d : domains)
@@ -752,10 +694,7 @@ namespace
                 return result;
             }
 
-            if (parallel_for_loops)
-                parallel_build_supplemental_graphs(params.n_threads);
-            else
-                build_supplemental_graphs();
+            parallel_build_supplemental_graphs(params.n_threads);
 
             Domains domains(pattern_size);
 
@@ -805,22 +744,14 @@ auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & g
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, true);
+            AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
-auto parasols::tvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    if (graphs.first.size() > graphs.second.size())
-        return SubgraphIsomorphismResult{ };
-    return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
-}
-
-auto parasols::tvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::ttvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params, false);
+            AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
