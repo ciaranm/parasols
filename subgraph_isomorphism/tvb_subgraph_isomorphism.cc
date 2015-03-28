@@ -329,6 +329,10 @@ namespace
                 branch[branch_end++] = f_v;
             }
 
+            std::pair<Search, FailedVariables> this_thread_result;
+            bool this_thread_keep_going = true;
+            FailedVariables this_thread_failed_variables;
+
             for (int b = 0 ; b < branch_end ; ++b) {
                 int f_v = branch[b];
 
@@ -348,18 +352,36 @@ namespace
 
                 auto search_result = search(assignments, new_domains, nodes, g_end, depth + 1);
                 switch (search_result.first) {
-                    case Search::Satisfiable:    return std::make_pair(Search::Satisfiable, FailedVariables());
-                    case Search::Aborted:        return std::make_pair(Search::Aborted, FailedVariables());
-                    case Search::Unsatisfiable:  break;
+                    case Search::Satisfiable:
+                        this_thread_result = std::make_pair(Search::Satisfiable, FailedVariables());
+                        this_thread_keep_going = false;
+                        break;
+
+                    case Search::Aborted:
+                        this_thread_result = std::make_pair(Search::Aborted, FailedVariables());
+                        this_thread_keep_going = false;
+                        break;
+
+                    case Search::Unsatisfiable:
+                        if (search_result.second.independent_of(domains, new_domains)) {
+                            this_thread_result = search_result;
+                            this_thread_keep_going = false;
+                        }
+                        else
+                            this_thread_failed_variables.add(search_result.second);
+                        break;
                 }
 
-                if (search_result.second.independent_of(domains, new_domains))
-                    return search_result;
-
-                shared_failed_variables.add(search_result.second);
+                if (! this_thread_keep_going)
+                    break;
             }
 
-            return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
+            shared_failed_variables.add(this_thread_failed_variables);
+
+            if (this_thread_keep_going)
+                return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
+            else
+                return this_thread_result;
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
