@@ -322,8 +322,15 @@ namespace
             FailedVariables shared_failed_variables;
             shared_failed_variables.add(branch_domain->v);
 
+            std::array<int, n_words_ * bits_per_word> branch;
+            int branch_end = 0;
             for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
                 remaining.unset(f_v);
+                branch[branch_end++] = f_v;
+            }
+
+            for (int b = 0 ; b < branch_end ; ++b) {
+                int f_v = branch[b];
 
                 /* try assigning f_v to v */
                 assignments.at(branch_v) = f_v;
