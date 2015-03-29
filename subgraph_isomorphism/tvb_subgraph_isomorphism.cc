@@ -366,9 +366,7 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = depth > 3 ?
-                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
-                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+                    auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
 
                     switch (search_result.first) {
                         case Search::Satisfiable:
@@ -398,7 +396,18 @@ namespace
                 }
             };
 
-            this_thread_function();
+            if (0 == depth) {
+                for (unsigned t = 0 ; t < params.n_threads ; ++t)
+                    tasks.add([&] {
+                            this_thread_function();
+                            });
+            }
+            else
+                this_thread_function();
+
+            if (0 == depth) {
+                tasks.complete();
+            }
 
             for (int b = 0 ; b < branch_end ; ++b) {
                 std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
