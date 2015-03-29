@@ -113,19 +113,22 @@ namespace
         std::condition_variable cv;
         std::array<const std::function<void ()> *, 3> funcs;
         std::array<int, 3> pending;
-        bool abort;
+        bool finish;
 
         std::vector<std::thread> threads;
 
+        std::list<milliseconds> times;
+
         HelpPoints(int n_threads) :
-            abort(false)
+            finish(false)
         {
             std::fill(funcs.begin(), funcs.end(), nullptr);
             std::fill(pending.begin(), pending.end(), 0);
 
             for (int t = 0 ; t < n_threads ; ++t)
                 threads.emplace_back([this] {
-                        while (! abort) {
+                        milliseconds total_work_time = milliseconds::zero();
+                        while (! finish) {
                             std::unique_lock<std::mutex> guard(mutex);
                             bool did_something = false;
                             for (int i = 0 ; i < 3 ; ++i) {
@@ -134,9 +137,15 @@ namespace
                                     ++pending.at(i);
                                     guard.unlock();
 
+                                    auto start_work_time = steady_clock::now(); // local start time
+
                                     (*f)();
 
+                                    auto work_time = duration_cast<milliseconds>(steady_clock::now() - start_work_time);
+                                    total_work_time += work_time;
+
                                     guard.lock();
+                                    funcs.at(i) = nullptr;
                                     --pending.at(i);
                                     cv.notify_all();
 
@@ -148,19 +157,29 @@ namespace
                             if (! did_something)
                                 cv.wait(guard);
                         }
+
+                        std::unique_lock<std::mutex> guard(mutex);
+                        times.push_back(total_work_time);
                         });
         }
 
-        ~HelpPoints()
+        auto kill_workers() -> void
         {
             {
                 std::unique_lock<std::mutex> guard(mutex);
-                abort = true;
+                finish = true;
                 cv.notify_all();
             }
 
             for (auto & t : threads)
                 t.join();
+
+            threads.clear();
+        }
+
+        ~HelpPoints()
+        {
+            kill_workers();
         }
     };
 
@@ -820,6 +839,10 @@ namespace
 
             tasks.kill_workers();
             for (auto & t : tasks.times)
+                result.times.push_back(t);
+
+            help_points.kill_workers();
+            for (auto & t : help_points.times)
                 result.times.push_back(t);
 
             return result;
