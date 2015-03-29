@@ -22,6 +22,8 @@ using std::chrono::steady_clock;
 
 namespace
 {
+    const constexpr int split_levels = 4;
+
     struct Tasks
     {
         std::vector<std::thread> threads;
@@ -111,8 +113,8 @@ namespace
     {
         std::mutex mutex;
         std::condition_variable cv;
-        std::array<const std::function<void ()> *, 3> funcs;
-        std::array<int, 3> pending;
+        std::array<const std::function<void ()> *, split_levels> funcs;
+        std::array<int, split_levels> pending;
         bool finish;
 
         std::vector<std::thread> threads;
@@ -131,7 +133,7 @@ namespace
                         while (! finish) {
                             std::unique_lock<std::mutex> guard(mutex);
                             bool did_something = false;
-                            for (int i = 0 ; i < 3 ; ++i) {
+                            for (int i = 0 ; i < split_levels ; ++i) {
                                 if (funcs.at(i)) {
                                     auto f = funcs.at(i);
                                     ++pending.at(i);
@@ -462,7 +464,7 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = depth >= 2 ?
+                    auto search_result = (depth + 1) >= split_levels ?
                         search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
                         search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
 
