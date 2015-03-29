@@ -332,12 +332,15 @@ namespace
             std::pair<Search, FailedVariables> this_thread_result;
             bool this_thread_keep_going = true;
             FailedVariables this_thread_failed_variables;
+            auto this_thread_assignments = assignments;
 
-            for (int b = 0 ; b < branch_end ; ++b) {
+            std::atomic<int> shared_b{ 0 };
+
+            for (int b = shared_b++ ; b < branch_end ; b = shared_b++) {
                 int f_v = branch[b];
 
                 /* try assigning f_v to v */
-                assignments.at(branch_v) = f_v;
+                this_thread_assignments.at(branch_v) = f_v;
 
                 /* set up new domains */
                 Domains new_domains;
@@ -350,7 +353,7 @@ namespace
                 if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                     continue;
 
-                auto search_result = search(assignments, new_domains, nodes, g_end, depth + 1);
+                auto search_result = search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
                 switch (search_result.first) {
                     case Search::Satisfiable:
                         this_thread_result = std::make_pair(Search::Satisfiable, FailedVariables());
@@ -377,6 +380,7 @@ namespace
             }
 
             shared_failed_variables.add(this_thread_failed_variables);
+            assignments = this_thread_assignments;
 
             if (this_thread_keep_going)
                 return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
