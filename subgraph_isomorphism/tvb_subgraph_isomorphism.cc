@@ -138,7 +138,7 @@ namespace
         };
 
         using Domains = std::vector<Domain>;
-        using Assignments = std::vector<unsigned>;
+        using Assignments = std::array<unsigned, n_words_ * bits_per_word>;
 
         struct DummyFailedVariables
         {
@@ -600,7 +600,7 @@ namespace
 
             prepare_for_search(domains);
 
-            Assignments assignments(pattern_size, std::numeric_limits<unsigned>::max());
+            Assignments assignments;
             std::atomic<unsigned long long> nodes{ 0 };
             switch (search(assignments, domains, nodes, max_graphs, 0).first) {
                 case Search::Satisfiable:
