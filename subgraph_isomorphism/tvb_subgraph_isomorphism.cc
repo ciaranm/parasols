@@ -289,6 +289,8 @@ namespace
 
         SubgraphIsomorphismResult result;
 
+        std::atomic<bool> someone_found_a_solution{ false };
+
         Tasks tasks;
         HelpPoints help_points;
 
@@ -398,7 +400,7 @@ namespace
                 const int depth
                 ) -> std::pair<Search, FailedVariables>
         {
-            if (params.abort->load())
+            if (params.abort->load() || someone_found_a_solution.load())
                 return std::make_pair(Search::Aborted, FailedVariables());
 
             ++nodes;
@@ -411,8 +413,10 @@ namespace
                         (d.popcount == branch_domain->popcount && pattern_degree_tiebreak.at(d.v) > pattern_degree_tiebreak.at(branch_domain->v)))
                     branch_domain = &d;
 
-            if (! branch_domain)
+            if (! branch_domain) {
+                someone_found_a_solution.store(true);
                 return std::make_pair(Search::Satisfiable, FailedVariables());
+            }
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
@@ -498,6 +502,16 @@ namespace
 
             get_help_with(depth, this_thread_function);
 
+            if (someone_found_a_solution.load()) {
+                // one of our children might have succeeded, cancelling stuff
+                // to its left. fish around.
+                for (int b = 0 ; b < branch_end ; ++b)
+                    if (Search::Satisfiable == std::get<0>(all_threads_data.at(b)).first) {
+                        assignments = std::get<3>(all_threads_data.at(b));
+                        return std::get<0>(all_threads_data.at(b));
+                    }
+            }
+
             for (int b = 0 ; b < branch_end ; ++b) {
                 std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
                 bool & this_thread_keep_going = std::get<1>(all_threads_data.at(b));
@@ -507,13 +521,11 @@ namespace
                 shared_failed_variables.add(this_thread_failed_variables);
                 assignments = this_thread_assignments;
 
-                if (this_thread_keep_going)
-                    return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
-                else
+                if (! this_thread_keep_going)
                     return this_thread_result;
             }
 
-            throw 0;
+            return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
         }
 
         auto search_nopar(
@@ -524,7 +536,7 @@ namespace
                 const int depth
                 ) -> std::pair<Search, FailedVariables>
         {
-            if (params.abort->load())
+            if (params.abort->load() || someone_found_a_solution.load())
                 return std::make_pair(Search::Aborted, FailedVariables());
 
             ++nodes;
@@ -537,8 +549,10 @@ namespace
                         (d.popcount == branch_domain->popcount && pattern_degree_tiebreak.at(d.v) > pattern_degree_tiebreak.at(branch_domain->v)))
                     branch_domain = &d;
 
-            if (! branch_domain)
+            if (! branch_domain) {
+                someone_found_a_solution.store(true);
                 return std::make_pair(Search::Satisfiable, FailedVariables());
+            }
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
