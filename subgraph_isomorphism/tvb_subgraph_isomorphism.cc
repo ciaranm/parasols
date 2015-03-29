@@ -107,6 +107,63 @@ namespace
         }
     };
 
+    struct HelpPoints
+    {
+        std::mutex mutex;
+        std::condition_variable cv;
+        std::array<const std::function<void ()> *, 3> funcs;
+        std::array<int, 3> pending;
+        bool abort;
+
+        std::vector<std::thread> threads;
+
+        HelpPoints(int n_threads) :
+            abort(false)
+        {
+            std::fill(funcs.begin(), funcs.end(), nullptr);
+            std::fill(pending.begin(), pending.end(), 0);
+
+            for (int t = 0 ; t < n_threads ; ++t)
+                threads.emplace_back([this] {
+                        while (! abort) {
+                            std::unique_lock<std::mutex> guard(mutex);
+                            bool did_something = false;
+                            for (int i = 0 ; i < 3 ; ++i) {
+                                if (funcs.at(i)) {
+                                    auto f = funcs.at(i);
+                                    ++pending.at(i);
+                                    guard.unlock();
+
+                                    (*f)();
+
+                                    guard.lock();
+                                    --pending.at(i);
+                                    cv.notify_all();
+
+                                    did_something = true;
+                                    break;
+                                }
+                            }
+
+                            if (! did_something)
+                                cv.wait(guard);
+                        }
+                        });
+        }
+
+        ~HelpPoints()
+        {
+            {
+                std::unique_lock<std::mutex> guard(mutex);
+                abort = true;
+                cv.notify_all();
+            }
+
+            for (auto & t : threads)
+                t.join();
+        }
+    };
+
     enum class Search
     {
         Aborted,
@@ -212,6 +269,7 @@ namespace
         SubgraphIsomorphismResult result;
 
         Tasks tasks;
+        HelpPoints help_points;
 
         TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
             params(a),
@@ -219,7 +277,8 @@ namespace
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
             target_size(target.size()),
-            tasks(params.n_threads)
+            tasks(params.n_threads),
+            help_points(params.n_threads - 1)
         {
             // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
@@ -290,6 +349,24 @@ namespace
             }
 
             return true;
+        }
+
+        auto get_help_with(unsigned depth, const std::function<void ()> & func) -> void
+        {
+            {
+                std::unique_lock<std::mutex> guard(help_points.mutex);
+                help_points.funcs.at(depth) = &func;
+                help_points.cv.notify_all();
+            }
+
+            func();
+
+            {
+                std::unique_lock<std::mutex> guard(help_points.mutex);
+                help_points.funcs.at(depth) = nullptr;
+                while (0 != help_points.pending.at(depth))
+                    help_points.cv.wait(guard);
+            }
         }
 
         auto search(
@@ -366,7 +443,9 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+                    auto search_result = depth >= 2 ?
+                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
+                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
 
                     switch (search_result.first) {
                         case Search::Satisfiable:
@@ -396,18 +475,7 @@ namespace
                 }
             };
 
-            if (0 == depth) {
-                for (unsigned t = 0 ; t < params.n_threads ; ++t)
-                    tasks.add([&] {
-                            this_thread_function();
-                            });
-            }
-            else
-                this_thread_function();
-
-            if (0 == depth) {
-                tasks.complete();
-            }
+            get_help_with(depth, this_thread_function);
 
             for (int b = 0 ; b < branch_end ; ++b) {
                 std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
