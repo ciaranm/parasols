@@ -337,18 +337,19 @@ namespace
                 FailedVariables,
                 Assignments>;
 
-            ThisThreadData this_thread_data;
+            std::array<ThisThreadData, n_words_ * bits_per_word> all_threads_data;
 
             auto this_thread_function = [&] {
-                std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(this_thread_data);
-                bool & this_thread_keep_going = std::get<1>(this_thread_data);
-                FailedVariables & this_thread_failed_variables = std::get<2>(this_thread_data);
-                Assignments & this_thread_assignments = std::get<3>(this_thread_data);
-
-                this_thread_assignments = assignments;
-                this_thread_keep_going = true;
-
                 for (int b = shared_b++ ; b < branch_end ; b = shared_b++) {
+                    std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
+                    bool & this_thread_keep_going = std::get<1>(all_threads_data.at(b));
+                    FailedVariables & this_thread_failed_variables = std::get<2>(all_threads_data.at(b));
+                    Assignments & this_thread_assignments = std::get<3>(all_threads_data.at(b));
+
+                    this_thread_failed_variables = FailedVariables();
+                    this_thread_assignments = assignments;
+                    this_thread_keep_going = true;
+
                     int f_v = branch[b];
 
                     /* try assigning f_v to v */
@@ -365,7 +366,10 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+                    auto search_result = depth > 3 ?
+                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
+                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+
                     switch (search_result.first) {
                         case Search::Satisfiable:
                             this_thread_result = std::make_pair(Search::Satisfiable, FailedVariables());
@@ -387,18 +391,20 @@ namespace
                             break;
                     }
 
-                    if (! this_thread_keep_going)
+                    if (! this_thread_keep_going) {
+                        shared_b.store(branch_end + 1);
                         break;
+                    }
                 }
             };
 
             this_thread_function();
 
-            {
-                std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(this_thread_data);
-                bool & this_thread_keep_going = std::get<1>(this_thread_data);
-                FailedVariables & this_thread_failed_variables = std::get<2>(this_thread_data);
-                Assignments & this_thread_assignments = std::get<3>(this_thread_data);
+            for (int b = 0 ; b < branch_end ; ++b) {
+                std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
+                bool & this_thread_keep_going = std::get<1>(all_threads_data.at(b));
+                FailedVariables & this_thread_failed_variables = std::get<2>(all_threads_data.at(b));
+                Assignments & this_thread_assignments = std::get<3>(all_threads_data.at(b));
 
                 shared_failed_variables.add(this_thread_failed_variables);
                 assignments = this_thread_assignments;
@@ -408,6 +414,103 @@ namespace
                 else
                     return this_thread_result;
             }
+
+            throw 0;
+        }
+
+        auto search_nopar(
+                Assignments & assignments,
+                Domains & domains,
+                std::atomic<unsigned long long> & nodes,
+                const int g_end,
+                const int depth
+                ) -> std::pair<Search, FailedVariables>
+        {
+            if (params.abort->load())
+                return std::make_pair(Search::Aborted, FailedVariables());
+
+            ++nodes;
+
+            Domain * branch_domain = nullptr;
+
+            for (auto & d : domains)
+                if ((! branch_domain) ||
+                        d.popcount < branch_domain->popcount ||
+                        (d.popcount == branch_domain->popcount && pattern_degree_tiebreak.at(d.v) > pattern_degree_tiebreak.at(branch_domain->v)))
+                    branch_domain = &d;
+
+            if (! branch_domain)
+                return std::make_pair(Search::Satisfiable, FailedVariables());
+
+            auto remaining = branch_domain->values;
+            auto branch_v = branch_domain->v;
+
+            FailedVariables shared_failed_variables;
+            shared_failed_variables.add(branch_domain->v);
+
+            std::array<int, n_words_ * bits_per_word> branch;
+            int branch_end = 0;
+            for (int f_v = remaining.first_set_bit() ; f_v != -1 ; f_v = remaining.first_set_bit()) {
+                remaining.unset(f_v);
+                branch[branch_end++] = f_v;
+            }
+
+            std::pair<Search, FailedVariables> this_thread_result;
+            bool this_thread_keep_going = true;
+            FailedVariables this_thread_failed_variables;
+            Assignments this_thread_assignments = assignments;
+
+            for (int b = 0 ; b < branch_end ; ++b) {
+                int f_v = branch[b];
+
+                /* try assigning f_v to v */
+                this_thread_assignments.at(branch_v) = f_v;
+
+                /* set up new domains */
+                Domains new_domains;
+                new_domains.reserve(domains.size() - 1);
+                for (auto & d : domains)
+                    if (d.v != branch_v)
+                        new_domains.push_back(d);
+
+                /* assign and propagate */
+                if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
+                    continue;
+
+                auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+
+                switch (search_result.first) {
+                    case Search::Satisfiable:
+                        this_thread_result = std::make_pair(Search::Satisfiable, FailedVariables());
+                        this_thread_keep_going = false;
+                        break;
+
+                    case Search::Aborted:
+                        this_thread_result = std::make_pair(Search::Aborted, FailedVariables());
+                        this_thread_keep_going = false;
+                        break;
+
+                    case Search::Unsatisfiable:
+                        if (search_result.second.independent_of(domains, new_domains)) {
+                            this_thread_result = search_result;
+                            this_thread_keep_going = false;
+                        }
+                        else
+                            this_thread_failed_variables.add(search_result.second);
+                        break;
+                }
+
+                if (! this_thread_keep_going)
+                    break;
+            }
+
+            shared_failed_variables.add(this_thread_failed_variables);
+            assignments = this_thread_assignments;
+
+            if (this_thread_keep_going)
+                return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
+            else
+                return this_thread_result;
         }
 
         auto initialise_domains(Domains & domains, int g_end) -> bool
