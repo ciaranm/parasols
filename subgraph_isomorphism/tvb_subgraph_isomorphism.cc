@@ -470,7 +470,7 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = (depth + 1) >= split_levels ?
+                    auto search_result = ((depth + 1) >= split_levels || std::this_thread::get_id() != primary_thread_id) ?
                         search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
                         search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
 
