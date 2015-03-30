@@ -22,7 +22,7 @@ using std::chrono::steady_clock;
 
 namespace
 {
-    const constexpr int split_levels = 5;
+    const constexpr int split_levels = 10;
 
     struct Tasks
     {
