@@ -486,6 +486,7 @@ namespace
                             break;
 
                         case Search::Unsatisfiable:
+                            // can we backjump?
                             if (search_result.second.independent_of(domains, new_domains)) {
                                 this_thread_result = search_result;
                                 this_thread_keep_going = false;
