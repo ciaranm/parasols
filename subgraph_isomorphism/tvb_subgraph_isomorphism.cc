@@ -24,6 +24,19 @@ namespace
 {
     const constexpr int split_levels = 5;
 
+    auto atomic_min(std::atomic<int> & a, int v) -> void
+    {
+        while (true) {
+            int cur_v = a.load(std::memory_order_seq_cst);
+            if (v < cur_v) {
+                if (a.compare_exchange_strong(cur_v, v, std::memory_order_seq_cst))
+                    return;
+            }
+            else
+                return;
+        }
+    }
+
     struct Tasks
     {
         std::vector<std::thread> threads;
@@ -406,10 +419,11 @@ namespace
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
                 const int depth,
-                int t
+                int t,
+                const std::function<bool()> & kill_function
                 ) -> std::pair<Search, FailedVariables>
         {
-            if (params.abort->load() || someone_found_a_solution.load())
+            if (params.abort->load() || someone_found_a_solution.load() || kill_function())
                 return std::make_pair(Search::Aborted, FailedVariables());
 
             ++nodes;
@@ -440,7 +454,7 @@ namespace
                 branch[branch_end++] = f_v;
             }
 
-            std::atomic<int> shared_b{ 0 };
+            std::atomic<int> shared_b{ 0 }, kill_after{ branch_end + 1 };
 
             using ThisThreadData = std::tuple<
                 std::pair<Search, FailedVariables>,
@@ -478,8 +492,12 @@ namespace
                         continue;
 
                     auto search_result = (depth + 1) >= split_levels ?
-                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
-                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1, sub_t);
+                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1, [&] () -> bool {
+                                return (kill_function() || b >= kill_after.load());
+                                }) :
+                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1, sub_t, [&] () -> bool {
+                                return (kill_function() || b >= kill_after.load());
+                                });
 
                     switch (search_result.first) {
                         case Search::Satisfiable:
@@ -508,6 +526,9 @@ namespace
                         // don't start any jobs to our right, since we won't
                         // use the result.
                         shared_b.store(branch_end + 1);
+
+                        // try to kill any threads to our right
+                        atomic_min(kill_after, b);
 
                         break;
                     }
@@ -548,10 +569,11 @@ namespace
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
-                const int depth
+                const int depth,
+                const std::function<bool()> & kill_function
                 ) -> std::pair<Search, FailedVariables>
         {
-            if (params.abort->load() || someone_found_a_solution.load())
+            if (params.abort->load() || someone_found_a_solution.load() || kill_function())
                 return std::make_pair(Search::Aborted, FailedVariables());
 
             ++nodes;
@@ -604,7 +626,7 @@ namespace
                 if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                     continue;
 
-                auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+                auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1, kill_function);
 
                 switch (search_result.first) {
                     case Search::Satisfiable:
@@ -854,7 +876,7 @@ namespace
 
             Assignments assignments;
             std::atomic<unsigned long long> nodes{ 0 };
-            switch (search(assignments, domains, nodes, max_graphs, 0, 0).first) {
+            switch (search(assignments, domains, nodes, max_graphs, 0, 0, [] () -> bool { return false; }).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
                     break;
