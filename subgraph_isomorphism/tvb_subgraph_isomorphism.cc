@@ -290,6 +290,7 @@ namespace
         SubgraphIsomorphismResult result;
 
         std::atomic<bool> someone_found_a_solution{ false };
+        std::thread::id primary_thread_id;
 
         Tasks tasks;
         HelpPoints help_points;
@@ -300,6 +301,7 @@ namespace
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
             target_size(target.size()),
+            primary_thread_id(std::this_thread::get_id()),
             tasks(params.n_threads),
             help_points(params.n_threads - 1)
         {
@@ -494,13 +496,20 @@ namespace
                     }
 
                     if (! this_thread_keep_going) {
+                        // all jobs to our left have already been started.
+                        // don't start any jobs to our right, since we won't
+                        // use the result.
                         shared_b.store(branch_end + 1);
+
                         break;
                     }
                 }
             };
 
-            get_help_with(depth, this_thread_function);
+            if (std::this_thread::get_id() == primary_thread_id)
+                get_help_with(depth, this_thread_function);
+            else
+                this_thread_function();
 
             if (someone_found_a_solution.load()) {
                 // one of our children might have succeeded, cancelling stuff
