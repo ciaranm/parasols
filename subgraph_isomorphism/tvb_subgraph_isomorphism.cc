@@ -22,7 +22,7 @@ using std::chrono::steady_clock;
 
 namespace
 {
-    const constexpr int split_levels = 10;
+    const constexpr int split_levels = 5;
 
     struct Tasks
     {
@@ -94,6 +94,8 @@ namespace
             kill_workers();
         }
 
+        Tasks(const Tasks &) = delete;
+
         auto add(std::function<void ()> && f) -> void
         {
             std::unique_lock<std::mutex> guard(mutex);
@@ -113,8 +115,8 @@ namespace
     {
         std::mutex mutex;
         std::condition_variable cv;
-        std::array<const std::function<void ()> *, split_levels> funcs;
-        std::array<int, split_levels> pending;
+        std::vector<const std::function<void (int)> *> funcs;
+        std::vector<int> pending;
         bool finish;
 
         std::vector<std::thread> threads;
@@ -122,18 +124,20 @@ namespace
         std::list<milliseconds> times;
 
         HelpPoints(int n_threads) :
+            funcs(split_levels * (1 + n_threads)),
+            pending(split_levels * (1 + n_threads)),
             finish(false)
         {
             std::fill(funcs.begin(), funcs.end(), nullptr);
             std::fill(pending.begin(), pending.end(), 0);
 
             for (int t = 0 ; t < n_threads ; ++t)
-                threads.emplace_back([this] {
+                threads.emplace_back([this, n_threads, t] {
                         milliseconds total_work_time = milliseconds::zero();
                         while (! finish) {
                             std::unique_lock<std::mutex> guard(mutex);
                             bool did_something = false;
-                            for (int i = 0 ; i < split_levels ; ++i) {
+                            for (int i = 0 ; i < split_levels * (1 + n_threads) ; ++i) {
                                 if (funcs.at(i)) {
                                     auto f = funcs.at(i);
                                     ++pending.at(i);
@@ -141,7 +145,7 @@ namespace
 
                                     auto start_work_time = steady_clock::now(); // local start time
 
-                                    (*f)();
+                                    (*f)(t + 1);
 
                                     auto work_time = duration_cast<milliseconds>(steady_clock::now() - start_work_time);
                                     total_work_time += work_time;
@@ -183,6 +187,8 @@ namespace
         {
             kill_workers();
         }
+
+        HelpPoints(const HelpPoints &) = delete;
     };
 
     enum class Search
@@ -290,7 +296,6 @@ namespace
         SubgraphIsomorphismResult result;
 
         std::atomic<bool> someone_found_a_solution{ false };
-        std::thread::id primary_thread_id;
 
         Tasks tasks;
         HelpPoints help_points;
@@ -301,7 +306,6 @@ namespace
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
             target_size(target.size()),
-            primary_thread_id(std::this_thread::get_id()),
             tasks(params.n_threads),
             help_points(params.n_threads - 1)
         {
@@ -376,20 +380,22 @@ namespace
             return true;
         }
 
-        auto get_help_with(unsigned depth, const std::function<void ()> & func) -> void
+        auto get_help_with(unsigned depth, int t, const std::function<void (int)> & func) -> void
         {
+            int where = depth * params.n_threads + t;
+
             {
                 std::unique_lock<std::mutex> guard(help_points.mutex);
-                help_points.funcs.at(depth) = &func;
+                help_points.funcs.at(where) = &func;
                 help_points.cv.notify_all();
             }
 
-            func();
+            func(t);
 
             {
                 std::unique_lock<std::mutex> guard(help_points.mutex);
-                help_points.funcs.at(depth) = nullptr;
-                while (0 != help_points.pending.at(depth))
+                help_points.funcs.at(where) = nullptr;
+                while (0 != help_points.pending.at(where))
                     help_points.cv.wait(guard);
             }
         }
@@ -399,7 +405,8 @@ namespace
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
-                const int depth
+                const int depth,
+                int t
                 ) -> std::pair<Search, FailedVariables>
         {
             if (params.abort->load() || someone_found_a_solution.load())
@@ -443,7 +450,7 @@ namespace
 
             std::array<ThisThreadData, n_words_ * bits_per_word> all_threads_data;
 
-            auto this_thread_function = [&] {
+            auto this_thread_function = [&] (int sub_t) {
                 for (int b = shared_b++ ; b < branch_end ; b = shared_b++) {
                     std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
                     bool & this_thread_keep_going = std::get<1>(all_threads_data.at(b));
@@ -470,9 +477,9 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                         continue;
 
-                    auto search_result = ((depth + 1) >= split_levels || std::this_thread::get_id() != primary_thread_id) ?
+                    auto search_result = (depth + 1) >= split_levels ?
                         search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1) :
-                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1);
+                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1, sub_t);
 
                     switch (search_result.first) {
                         case Search::Satisfiable:
@@ -507,10 +514,7 @@ namespace
                 }
             };
 
-            if (std::this_thread::get_id() == primary_thread_id)
-                get_help_with(depth, this_thread_function);
-            else
-                this_thread_function();
+            get_help_with(depth, t, this_thread_function);
 
             if (someone_found_a_solution.load()) {
                 // one of our children might have succeeded, cancelling stuff
@@ -529,10 +533,11 @@ namespace
                 Assignments & this_thread_assignments = std::get<3>(all_threads_data.at(b));
 
                 shared_failed_variables.add(this_thread_failed_variables);
-                assignments = this_thread_assignments;
 
-                if (! this_thread_keep_going)
+                if (! this_thread_keep_going) {
+                    assignments = this_thread_assignments;
                     return this_thread_result;
+                }
             }
 
             return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
@@ -849,7 +854,7 @@ namespace
 
             Assignments assignments;
             std::atomic<unsigned long long> nodes{ 0 };
-            switch (search(assignments, domains, nodes, max_graphs, 0).first) {
+            switch (search(assignments, domains, nodes, max_graphs, 0, 0).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
                     break;
@@ -861,8 +866,6 @@ namespace
                     break;
             }
 
-            result.nodes = nodes;
-
             tasks.kill_workers();
             for (auto & t : tasks.times)
                 result.times.push_back(t);
@@ -870,6 +873,8 @@ namespace
             help_points.kill_workers();
             for (auto & t : help_points.times)
                 result.times.push_back(t);
+
+            result.nodes = nodes.load();
 
             return result;
         }
