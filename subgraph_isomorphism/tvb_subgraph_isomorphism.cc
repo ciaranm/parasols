@@ -22,7 +22,7 @@ using std::chrono::steady_clock;
 
 namespace
 {
-    const constexpr int split_levels = 5;
+    const constexpr int split_levels = 10;
 
     auto atomic_min(std::atomic<int> & a, int v) -> void
     {
@@ -165,8 +165,8 @@ namespace
 
                                     guard.lock();
                                     funcs.at(i) = nullptr;
-                                    --pending.at(i);
-                                    cv.notify_all();
+                                    if (0 == --pending.at(i))
+                                        cv.notify_all();
 
                                     did_something = true;
                                     break;
@@ -488,7 +488,7 @@ namespace
                             new_domains.push_back(d);
 
                     /* assign and propagate */
-                    if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
+                    if (! assign(new_domains, branch_v, f_v, g_end, this_thread_failed_variables))
                         continue;
 
                     auto search_result = (depth + 1) >= split_levels ?
@@ -501,19 +501,19 @@ namespace
 
                     switch (search_result.first) {
                         case Search::Satisfiable:
-                            this_thread_result = std::make_pair(Search::Satisfiable, FailedVariables());
+                            this_thread_result.first = Search::Satisfiable;
                             this_thread_keep_going = false;
                             break;
 
                         case Search::Aborted:
-                            this_thread_result = std::make_pair(Search::Aborted, FailedVariables());
+                            this_thread_result.first = Search::Aborted;
                             this_thread_keep_going = false;
                             break;
 
                         case Search::Unsatisfiable:
                             // can we backjump?
                             if (search_result.second.independent_of(domains, new_domains)) {
-                                this_thread_result = search_result;
+                                this_thread_result = std::move(search_result);
                                 this_thread_keep_going = false;
                             }
                             else
