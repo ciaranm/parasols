@@ -22,7 +22,7 @@ using std::chrono::steady_clock;
 
 namespace
 {
-    const constexpr int split_levels = 10;
+    const constexpr int split_levels = 5;
 
     auto atomic_min(std::atomic<int> & a, int v) -> void
     {
