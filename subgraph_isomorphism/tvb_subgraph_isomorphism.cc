@@ -296,6 +296,7 @@ namespace
         };
 
         const SubgraphIsomorphismParams & params;
+        const bool unsafe_backjumping;
 
         static constexpr int max_graphs = 1 + (l_ - 1) * k_;
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
@@ -313,8 +314,9 @@ namespace
         Tasks tasks;
         HelpPoints help_points;
 
-        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
+        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool u) :
             params(a),
+            unsafe_backjumping(u),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -527,8 +529,14 @@ namespace
                         // use the result.
                         shared_b.store(branch_end + 1);
 
-                        // try to kill any threads to our right
-                        atomic_min(kill_after, b);
+                        if (unsafe_backjumping) {
+                            // kill eeeeeverybody
+                            atomic_min(kill_after, 0);
+                        }
+                        else {
+                            // try to kill any threads to our right
+                            atomic_min(kill_after, b);
+                        }
 
                         break;
                     }
@@ -543,6 +551,9 @@ namespace
                 for (int b = 0 ; b < branch_end ; ++b)
                     if (Search::Satisfiable == std::get<0>(all_threads_data.at(b)).first) {
                         assignments = std::get<3>(all_threads_data.at(b));
+                        return std::get<0>(all_threads_data.at(b));
+                    }
+                    else if (unsafe_backjumping && Search::Unsatisfiable == std::get<0>(all_threads_data.at(b)).first) {
                         return std::get<0>(all_threads_data.at(b));
                     }
             }
@@ -914,7 +925,15 @@ auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & g
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
+}
+
+auto parasols::ttvbbju_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
+    return select_graph_size<Apply<TSGI, true, 3, 3>::template Type, SubgraphIsomorphismResult>(
+            AllGraphSizes(), graphs.second, graphs.first, params, true);
 }
 
 auto parasols::ttvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
@@ -922,6 +941,6 @@ auto parasols::ttvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & gra
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     return select_graph_size<Apply<TSGI, false, 3, 3>::template Type, SubgraphIsomorphismResult>(
-            AllGraphSizes(), graphs.second, graphs.first, params);
+            AllGraphSizes(), graphs.second, graphs.first, params, false);
 }
 
