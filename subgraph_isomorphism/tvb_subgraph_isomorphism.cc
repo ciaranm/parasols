@@ -444,7 +444,7 @@ namespace
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
-                unsigned depth,
+                unsigned effective_depth,
                 const Position & position,
                 const std::function<bool()> & kill_function
                 ) -> std::pair<Search, FailedVariables>
@@ -517,13 +517,14 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, this_thread_failed_variables))
                         continue;
 
+                    unsigned new_effective_depth = (0 == branch_end ? effective_depth : effective_depth + 1);
                     Position child_position = position;
-                    child_position.values.at(depth) = (b + 1);
-                    auto search_result = (depth + 1) >= split_levels ?
+                    child_position.values.at(effective_depth) = (b + 1);
+                    auto search_result = (new_effective_depth) >= split_levels ?
                         search_nopar(this_thread_assignments, new_domains, nodes, g_end, [&] () -> bool {
                                 return (kill_function() || b >= kill_after.load());
                                 }) :
-                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1, child_position, [&] () -> bool {
+                        search(this_thread_assignments, new_domains, nodes, g_end, new_effective_depth, child_position, [&] () -> bool {
                                 return (kill_function() || b >= kill_after.load());
                                 });
 
@@ -569,7 +570,10 @@ namespace
                 }
             };
 
-            get_help_with(position, this_thread_function);
+            if (0 == branch_end)
+                this_thread_function();
+            else
+                get_help_with(position, this_thread_function);
 
             if (someone_found_a_solution.load()) {
                 // one of our children might have succeeded, cancelling stuff
