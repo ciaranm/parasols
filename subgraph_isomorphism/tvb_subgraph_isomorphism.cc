@@ -126,17 +126,38 @@ namespace
         }
     };
 
+    struct Position
+    {
+        std::array<unsigned, split_levels + 1> values;
+
+        Position()
+        {
+            std::fill(values.begin(), values.end(), 0);
+        }
+
+        bool operator< (const Position & other) const
+        {
+            for (unsigned p = 0 ; p < split_levels + 1 ; ++p)
+                if (values.at(p) < other.values.at(p))
+                    return true;
+                else if (values.at(p) > other.values.at(p))
+                    return false;
+
+            return false;
+        }
+    };
+
     struct HelpPoints
     {
         struct Task
         {
-            const std::function<void (int)> * func;
+            const std::function<void ()> * func;
             int pending;
         };
 
         std::mutex mutex;
         std::condition_variable cv;
-        std::map<unsigned long long, Task> tasks;
+        std::map<Position, Task> tasks;
         bool finish;
 
         std::vector<std::thread> threads;
@@ -160,7 +181,7 @@ namespace
 
                                     auto start_work_time = steady_clock::now(); // local start time
 
-                                    (*f)(t + 1);
+                                    (*f)();
 
                                     auto work_time = duration_cast<milliseconds>(steady_clock::now() - start_work_time);
                                     total_work_time += work_time;
@@ -397,20 +418,18 @@ namespace
             return true;
         }
 
-        auto get_help_with(unsigned depth, int t, const std::function<void (int)> & func) -> void
+        auto get_help_with(const Position & position, const std::function<void ()> & func) -> void
         {
-            int where = depth * params.n_threads + t;
-
-            std::map<unsigned long long, HelpPoints::Task>::iterator task;
+            std::map<Position, HelpPoints::Task>::iterator task;
             {
                 std::unique_lock<std::mutex> guard(help_points.mutex);
-                auto r = help_points.tasks.emplace(where, HelpPoints::Task{ &func, 0 });
+                auto r = help_points.tasks.emplace(position, HelpPoints::Task{ &func, 0 });
                 assert(r.second);
                 task = r.first;
                 help_points.cv.notify_all();
             }
 
-            func(t);
+            func();
 
             {
                 std::unique_lock<std::mutex> guard(help_points.mutex);
@@ -425,8 +444,8 @@ namespace
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
-                const int depth,
-                int t,
+                unsigned depth,
+                const Position & position,
                 const std::function<bool()> & kill_function
                 ) -> std::pair<Search, FailedVariables>
         {
@@ -471,7 +490,7 @@ namespace
 
             std::array<ThisThreadData, n_words_ * bits_per_word> all_threads_data;
 
-            auto this_thread_function = [&] (int sub_t) {
+            auto this_thread_function = [&] () {
                 for (int b = shared_b++ ; b < branch_end ; b = shared_b++) {
                     std::pair<Search, FailedVariables> & this_thread_result = std::get<0>(all_threads_data.at(b));
                     bool & this_thread_keep_going = std::get<1>(all_threads_data.at(b));
@@ -498,11 +517,13 @@ namespace
                     if (! assign(new_domains, branch_v, f_v, g_end, this_thread_failed_variables))
                         continue;
 
+                    Position child_position = position;
+                    child_position.values.at(depth) = (b + 1);
                     auto search_result = (depth + 1) >= split_levels ?
-                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1, [&] () -> bool {
+                        search_nopar(this_thread_assignments, new_domains, nodes, g_end, [&] () -> bool {
                                 return (kill_function() || b >= kill_after.load());
                                 }) :
-                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1, sub_t, [&] () -> bool {
+                        search(this_thread_assignments, new_domains, nodes, g_end, depth + 1, child_position, [&] () -> bool {
                                 return (kill_function() || b >= kill_after.load());
                                 });
 
@@ -548,7 +569,7 @@ namespace
                 }
             };
 
-            get_help_with(depth, t, this_thread_function);
+            get_help_with(position, this_thread_function);
 
             if (someone_found_a_solution.load()) {
                 // one of our children might have succeeded, cancelling stuff
@@ -585,7 +606,6 @@ namespace
                 Domains & domains,
                 std::atomic<unsigned long long> & nodes,
                 const int g_end,
-                const int depth,
                 const std::function<bool()> & kill_function
                 ) -> std::pair<Search, FailedVariables>
         {
@@ -642,7 +662,7 @@ namespace
                 if (! assign(new_domains, branch_v, f_v, g_end, shared_failed_variables))
                     continue;
 
-                auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, depth + 1, kill_function);
+                auto search_result = search_nopar(this_thread_assignments, new_domains, nodes, g_end, kill_function);
 
                 switch (search_result.first) {
                     case Search::Satisfiable:
@@ -892,7 +912,8 @@ namespace
 
             Assignments assignments;
             std::atomic<unsigned long long> nodes{ 0 };
-            switch (search(assignments, domains, nodes, max_graphs, 0, 0, [] () -> bool { return false; }).first) {
+            Position position;
+            switch (search(assignments, domains, nodes, max_graphs, 0, position, [] () -> bool { return false; }).first) {
                 case Search::Satisfiable:
                     save_result(assignments, result);
                     break;
