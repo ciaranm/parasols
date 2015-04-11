@@ -13,6 +13,8 @@
 #include <limits>
 #include <random>
 #include <future>
+#include <map>
+#include <cassert>
 
 using namespace parasols;
 
@@ -126,10 +128,15 @@ namespace
 
     struct HelpPoints
     {
+        struct Task
+        {
+            const std::function<void (int)> * func;
+            int pending;
+        };
+
         std::mutex mutex;
         std::condition_variable cv;
-        std::vector<const std::function<void (int)> *> funcs;
-        std::vector<int> pending;
+        std::map<unsigned long long, Task> tasks;
         bool finish;
 
         std::vector<std::thread> threads;
@@ -137,23 +144,18 @@ namespace
         std::list<milliseconds> times;
 
         HelpPoints(int n_threads) :
-            funcs(split_levels * (1 + n_threads)),
-            pending(split_levels * (1 + n_threads)),
             finish(false)
         {
-            std::fill(funcs.begin(), funcs.end(), nullptr);
-            std::fill(pending.begin(), pending.end(), 0);
-
             for (int t = 0 ; t < n_threads ; ++t)
                 threads.emplace_back([this, n_threads, t] {
                         milliseconds total_work_time = milliseconds::zero();
                         while (! finish) {
                             std::unique_lock<std::mutex> guard(mutex);
                             bool did_something = false;
-                            for (int i = 0 ; i < split_levels * (1 + n_threads) ; ++i) {
-                                if (funcs.at(i)) {
-                                    auto f = funcs.at(i);
-                                    ++pending.at(i);
+                            for (auto task = tasks.begin() ; task != tasks.end() ; ++task) {
+                                if (task->second.func) {
+                                    auto f = task->second.func;
+                                    ++task->second.pending;
                                     guard.unlock();
 
                                     auto start_work_time = steady_clock::now(); // local start time
@@ -164,8 +166,8 @@ namespace
                                     total_work_time += work_time;
 
                                     guard.lock();
-                                    funcs.at(i) = nullptr;
-                                    if (0 == --pending.at(i))
+                                    task->second.func = nullptr;
+                                    if (0 == --task->second.pending)
                                         cv.notify_all();
 
                                     did_something = true;
@@ -399,9 +401,12 @@ namespace
         {
             int where = depth * params.n_threads + t;
 
+            std::map<unsigned long long, HelpPoints::Task>::iterator task;
             {
                 std::unique_lock<std::mutex> guard(help_points.mutex);
-                help_points.funcs.at(where) = &func;
+                auto r = help_points.tasks.emplace(where, HelpPoints::Task{ &func, 0 });
+                assert(r.second);
+                task = r.first;
                 help_points.cv.notify_all();
             }
 
@@ -409,9 +414,9 @@ namespace
 
             {
                 std::unique_lock<std::mutex> guard(help_points.mutex);
-                help_points.funcs.at(where) = nullptr;
-                while (0 != help_points.pending.at(where))
+                while (0 != task->second.pending)
                     help_points.cv.wait(guard);
+                help_points.tasks.erase(task);
             }
         }
 
