@@ -139,6 +139,29 @@ The output is:
     witness_b
     runtimes
 
+solve_subgraph_isomorphism
+--------------------------
+
+This solves the subgraph isomorphism problem. Currently only non-induced
+isomorphisms are supported.
+
+To run, do 'solve_subgraph_isomorphism algorithm pattern target'. By default,
+the graphs are in the DIMACS format; use '--format lad' to use Solnon's LAD
+format. The algorithms include:
+
+    naive:       Very dumb.
+    vbbjdpd:     Bitsets, backjumping, supplemental graphs, dom+deg.
+    ttvbbjdpd:   As vbbjdpd, threaded.
+
+The output is:
+
+    result nodes
+    (p1 -> t1) (p2 -> t2) ...
+    runtimes
+
+The first runtime value is the total time (excluding I/O). The remaining times
+give details on what threads are doing.
+
 Helper Programs
 ===============
 
