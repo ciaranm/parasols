@@ -245,10 +245,10 @@ namespace
 
     template <unsigned n_words_, bool backjump_, int k_, int l_>
     struct TSGI :
-        SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_>
+        SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_, false>
     {
-        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_>::build_supplemental_graphs;
-        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_>::parallel_build_supplemental_graphs;
+        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_, false>::build_supplemental_graphs;
+        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_>, n_words_, k_, l_, false>::parallel_build_supplemental_graphs;
 
         struct Domain
         {

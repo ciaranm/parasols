@@ -25,6 +25,8 @@ namespace parasols
         bool enumerate = false;
 
         bool delete_loops = false;
+
+        bool induced = false;
     };
 }
 

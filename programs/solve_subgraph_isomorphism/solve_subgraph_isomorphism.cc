@@ -35,6 +35,7 @@ auto main(int argc, char * argv[]) -> int
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
             ("enumerate",                             "Enumerate solutions")
             ("delete-loops",                          "Discard loops in the input")
+            ("induced",                               "Find induced isomorphisms")
             ;
 
         po::options_description all_options{ "All options" };
@@ -103,6 +104,8 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("delete-loops"))
             params.delete_loops = true;
 
+        params.induced = options_vars.count("induced");
+
         /* Turn a format name into a runnable function. */
         auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
         if (options_vars.count("format"))
@@ -163,6 +166,12 @@ auto main(int argc, char * argv[]) -> int
                         if (graphs.first.adjacent(i, j)) {
                             if (! graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
                                 std::cerr << "Oops! not an isomorphism" << std::endl;
+                                return EXIT_FAILURE;
+                            }
+                        }
+                        else if (params.induced) {
+                            if (graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
+                                std::cerr << "Oops! not an induced isomorphism" << std::endl;
                                 return EXIT_FAILURE;
                             }
                         }
