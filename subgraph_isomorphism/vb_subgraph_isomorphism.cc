@@ -122,7 +122,7 @@ namespace
         {
             // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
-                if ((! params.enumerate) && (0 == pattern.degree(v))) {
+                if ((! induced_) && (! params.enumerate) && (0 == pattern.degree(v))) {
                     isolated_vertices.push_back(v);
                     --pattern_size;
                 }
