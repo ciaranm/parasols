@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <random>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/max_cardinality_matching.hpp>
@@ -141,9 +140,6 @@ namespace
 
             // determine ordering for target graph vertices
             std::iota(target_order.begin(), target_order.end(), 0);
-
-            std::mt19937 g;
-            std::shuffle(target_order.begin(), target_order.end(), g);
             degree_sort(target, target_order, false);
 
             // recode target to a bit graph
