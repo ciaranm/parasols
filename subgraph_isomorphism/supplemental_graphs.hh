@@ -9,7 +9,7 @@
 
 namespace parasols
 {
-    template <class Parent_, unsigned n_words_, int k_, int l_, bool induced_>
+    template <class Parent_, unsigned n_words_, int k_, int l_, bool induced_, bool compose_induced_>
     struct SupplementalGraphsMixin
     {
         auto build_supplemental_graphs() -> void
@@ -46,7 +46,7 @@ namespace parasols
                     }
                 }
 
-                if (induced_) {
+                if (induced_ && compose_induced_) {
                     for (unsigned v = 0 ; v < pattern_size ; ++v) {
                         auto nv = pattern_graphs.at(0).neighbourhood(v);
                         unsigned nvp = nv.popcount();
@@ -128,7 +128,7 @@ namespace parasols
                     }
                 }
 
-                if (induced_) {
+                if (induced_ && compose_induced_) {
                     for (unsigned v = 0 ; v < target_size ; ++v) {
                         auto nv = target_graphs.at(0).neighbourhood(v);
                         nv.complement_up_to(target_size);
@@ -228,7 +228,7 @@ namespace parasols
                             }
                         }
 
-                        if (induced_) {
+                        if (induced_ && compose_induced_) {
                             for (unsigned v ; ((v = posi2p++)) < pattern_size ; ) {
                                 auto nv = pattern_graphs.at(0).neighbourhood(v);
                                 unsigned nvp = nv.popcount();
@@ -302,7 +302,7 @@ namespace parasols
                             }
                         }
 
-                        if (induced_) {
+                        if (induced_ && compose_induced_) {
                             for (unsigned v ; ((v = posi2t++)) < target_size ; ) {
                                 auto nv = target_graphs.at(0).neighbourhood(v);
                                 nv.complement_up_to(target_size);
