@@ -24,8 +24,8 @@ namespace parasols
                 pattern_graphs.at(g).resize(pattern_size);
 
             if (induced_) {
-                pattern_graphs.at(7) = pattern_graphs.at(0);
-                pattern_graphs.at(7).complement();
+                pattern_graphs.at(1 + ((l_ - 1) * k_)) = pattern_graphs.at(0);
+                pattern_graphs.at(1 + ((l_ - 1) * k_)).complement();
             }
 
             if (l_ >= 2) {
@@ -106,8 +106,8 @@ namespace parasols
                 target_graphs.at(g).resize(target_size);
 
             if (induced_) {
-                target_graphs.at(7) = target_graphs.at(0);
-                target_graphs.at(7).complement();
+                target_graphs.at(1 + ((l_ - 1) * k_)) = target_graphs.at(0);
+                target_graphs.at(1 + ((l_ - 1) * k_)).complement();
             }
 
             if (l_ >= 2) {
@@ -193,16 +193,16 @@ namespace parasols
                 pattern_graphs.at(g).resize(pattern_size);
 
             if (induced_) {
-                pattern_graphs.at(7) = pattern_graphs.at(0);
-                pattern_graphs.at(7).complement();
+                pattern_graphs.at(1 + ((l_ - 1) * k_)) = pattern_graphs.at(0);
+                pattern_graphs.at(1 + ((l_ - 1) * k_)).complement();
             }
 
             for (int g = 1 ; g < max_graphs ; ++g)
                 target_graphs.at(g).resize(target_size);
 
             if (induced_) {
-                target_graphs.at(7) = target_graphs.at(0);
-                target_graphs.at(7).complement();
+                target_graphs.at(1 + ((l_ - 1) * k_)) = target_graphs.at(0);
+                target_graphs.at(1 + ((l_ - 1) * k_)).complement();
             }
 
             std::atomic<unsigned> pos2p, pos3p, pos2t, pos3t, posi2p, posi2t;
