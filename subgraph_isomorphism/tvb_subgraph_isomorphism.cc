@@ -242,12 +242,12 @@ namespace
         TryNext
     };
 
-    template <unsigned n_words_, bool backjump_, int k_, int l_, bool induced_>
+    template <unsigned n_words_, bool backjump_, int k_, int l_, bool induced_, bool compose_induced_>
     struct TSGI :
-        SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_, induced_>, n_words_, k_, l_, induced_, true>
+        SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>
     {
-        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_, induced_>, n_words_, k_, l_, induced_, true>::build_supplemental_graphs;
-        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_, induced_>, n_words_, k_, l_, induced_, true>::parallel_build_supplemental_graphs;
+        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>::build_supplemental_graphs;
+        using SupplementalGraphsMixin<TSGI<n_words_, backjump_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>::parallel_build_supplemental_graphs;
 
         struct Domain
         {
@@ -318,9 +318,8 @@ namespace
         };
 
         const SubgraphIsomorphismParams & params;
-        const bool unsafe_backjumping;
 
-        static constexpr int max_graphs = 1 + ((l_ - 1) * k_) + (induced_ ? 1 + (l_ >= 2 ? 2 : l_) * k_ : 0);
+        static constexpr int max_graphs = 1 + ((l_ - 1) * k_) + (induced_ ? 1 + (compose_induced_ ? (l_ >= 2 ? 2 : l_) * k_ : 0) : 0);
         std::array<FixedBitGraph<n_words_>, max_graphs> target_graphs;
         std::array<FixedBitGraph<n_words_>, max_graphs> pattern_graphs;
 
@@ -336,9 +335,8 @@ namespace
         Tasks tasks;
         HelpPoints help_points;
 
-        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool u) :
+        TSGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a) :
             params(a),
-            unsafe_backjumping(u),
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
@@ -552,14 +550,8 @@ namespace
                         // use the result.
                         shared_b.store(branch_end + 1);
 
-                        if (unsafe_backjumping) {
-                            // kill eeeeeverybody
-                            atomic_min(kill_after, 0);
-                        }
-                        else {
-                            // try to kill any threads to our right
-                            atomic_min(kill_after, b);
-                        }
+                        // try to kill any threads to our right
+                        atomic_min(kill_after, b);
 
                         break;
                     }
@@ -577,9 +569,6 @@ namespace
                 for (int b = 0 ; b < branch_end ; ++b)
                     if (Search::Satisfiable == std::get<0>(all_threads_data.at(b)).first) {
                         assignments = std::get<3>(all_threads_data.at(b));
-                        return std::get<0>(all_threads_data.at(b));
-                    }
-                    else if (unsafe_backjumping && Search::Unsatisfiable == std::get<0>(all_threads_data.at(b)).first) {
                         return std::get<0>(all_threads_data.at(b));
                     }
             }
@@ -939,10 +928,10 @@ namespace
         }
     };
 
-    template <template <unsigned, bool, int, int, bool> class SGI_, bool b_, int n_, int m_, bool induced_>
+    template <template <unsigned, bool, int, int, bool, bool> class SGI_, bool b_, int n_, int m_, bool induced_, bool compose_induced_>
     struct Apply
     {
-        template <unsigned size_, typename> using Type = SGI_<size_, b_, n_, m_, induced_>;
+        template <unsigned size_, typename> using Type = SGI_<size_, b_, n_, m_, induced_, compose_induced_>;
     };
 }
 
@@ -951,34 +940,22 @@ auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & g
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<TSGI, true, 3, 3, true>::template Type, SubgraphIsomorphismResult>(
-                AllGraphSizes(), graphs.second, graphs.first, params, false);
+        return select_graph_size<Apply<TSGI, true, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
+                AllGraphSizes(), graphs.second, graphs.first, params);
     else
-        return select_graph_size<Apply<TSGI, true, 3, 3, false>::template Type, SubgraphIsomorphismResult>(
-                AllGraphSizes(), graphs.second, graphs.first, params, false);
+        return select_graph_size<Apply<TSGI, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+                AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
-auto parasols::ttvbbju_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::ttvbbjnocompose_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<TSGI, true, 3, 3, true>::template Type, SubgraphIsomorphismResult>(
-                AllGraphSizes(), graphs.second, graphs.first, params, true);
+        return select_graph_size<Apply<TSGI, true, 3, 3, true, false>::template Type, SubgraphIsomorphismResult>(
+                AllGraphSizes(), graphs.second, graphs.first, params);
     else
-        return select_graph_size<Apply<TSGI, true, 3, 3, false>::template Type, SubgraphIsomorphismResult>(
-                AllGraphSizes(), graphs.second, graphs.first, params, true);
-}
-
-auto parasols::ttvb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
-{
-    if (graphs.first.size() > graphs.second.size())
-        return SubgraphIsomorphismResult{ };
-    if (params.induced)
-        return select_graph_size<Apply<TSGI, false, 3, 3, true>::template Type, SubgraphIsomorphismResult>(
-                AllGraphSizes(), graphs.second, graphs.first, params, false);
-    else
-        return select_graph_size<Apply<TSGI, false, 3, 3, false>::template Type, SubgraphIsomorphismResult>(
-                AllGraphSizes(), graphs.second, graphs.first, params, false);
+        return select_graph_size<Apply<TSGI, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+                AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
