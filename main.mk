@@ -33,6 +33,6 @@ boost_ldlibs := -lboost_regex -lboost_thread -lboost_system -lboost_program_opti
 
 boost_mpi_ldlibs := -lboost_mpi -lboost_serialization
 
-override CXXFLAGS += -O3 -march=native -std=c++14 -I./ -W -Wall -g -ggdb3 -pthread
+override CXXFLAGS += -O3 -march=native -std=c++14 -I./ -W -Wall -pthread
 override LDFLAGS += -pthread
 

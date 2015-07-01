@@ -25,6 +25,8 @@ namespace parasols
 
         std::make_pair( std::string{ "ttgbbj" },           ttgbbj_subgraph_isomorphism ),
         std::make_pair( std::string{ "ttgbbjnocompose" },  ttgbbjnocompose_subgraph_isomorphism ),
+
+        std::make_pair( std::string{ "ttdgbbj" },          ttdgbbj_subgraph_isomorphism ),
     };
 }
 
