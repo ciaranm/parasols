@@ -26,11 +26,11 @@ namespace
         Satisfiable
     };
 
-    template <unsigned n_words_, bool backjump_, int k_, int l_, bool induced_, bool compose_induced_>
+    template <unsigned n_words_, bool backjump_, bool double_filter_, int k_, int l_, bool induced_, bool compose_induced_>
     struct SGI :
-        SupplementalGraphsMixin<SGI<n_words_, backjump_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>
+        SupplementalGraphsMixin<SGI<n_words_, backjump_, double_filter_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>
     {
-        using SupplementalGraphsMixin<SGI<n_words_, backjump_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>::build_supplemental_graphs;
+        using SupplementalGraphsMixin<SGI<n_words_, backjump_, double_filter_, k_, l_, induced_, compose_induced_>, n_words_, k_, l_, induced_, compose_induced_>::build_supplemental_graphs;
 
         struct Domain
         {
@@ -254,7 +254,7 @@ namespace
             return std::make_pair(Search::Unsatisfiable, shared_failed_variables);
         }
 
-        auto initialise_domains(Domains & domains, int g_end) -> bool
+        auto initialise_domains(Domains & domains) -> bool
         {
             unsigned remaining_target_vertices = target_size;
             FixedBitSet<n_words_> allowed_target_vertices;
@@ -264,13 +264,13 @@ namespace
                 std::array<std::vector<int>, max_graphs> patterns_degrees;
                 std::array<std::vector<int>, max_graphs> targets_degrees;
 
-                for (int g = 0 ; g < g_end ; ++g) {
+                for (int g = 0 ; g < max_graphs ; ++g) {
                     patterns_degrees.at(g).resize(pattern_size);
                     targets_degrees.at(g).resize(target_size);
                 }
 
                 /* pattern and target degree sequences */
-                for (int g = 0 ; g < g_end ; ++g) {
+                for (int g = 0 ; g < max_graphs ; ++g) {
                     for (unsigned i = 0 ; i < pattern_size ; ++i)
                         patterns_degrees.at(g).at(i) = pattern_graphs.at(g).degree(i);
 
@@ -282,31 +282,33 @@ namespace
                 }
 
                 /* pattern and target neighbourhood degree sequences */
-                std::array<std::vector<std::vector<int> >, max_graphs> patterns_ndss;
-                std::array<std::vector<std::vector<int> >, max_graphs> targets_ndss;
+                std::array<std::array<std::vector<std::vector<int> >, max_graphs>, double_filter_ ? max_graphs : 1> patterns_ndss;
+                std::array<std::array<std::vector<std::vector<int> >, max_graphs>, double_filter_ ? max_graphs : 1> targets_ndss;
 
-                for (int g = 0 ; g < g_end ; ++g) {
-                    patterns_ndss.at(g).resize(pattern_size);
-                    targets_ndss.at(g).resize(target_size);
-                }
-
-                for (int g = 0 ; g < g_end ; ++g) {
-                    for (unsigned i = 0 ; i < pattern_size ; ++i) {
-                        for (unsigned j = 0 ; j < pattern_size ; ++j) {
-                            if (pattern_graphs.at(g).adjacent(i, j))
-                                patterns_ndss.at(g).at(i).push_back(patterns_degrees.at(g).at(j));
-                        }
-                        std::sort(patterns_ndss.at(g).at(i).begin(), patterns_ndss.at(g).at(i).end(), std::greater<int>());
+                for (int g1 = 0 ; g1 < (double_filter_ ? max_graphs : 1) ; ++g1)
+                    for (int g2 = 0 ; g2 < max_graphs ; ++g2) {
+                        patterns_ndss.at(g1).at(g2).resize(pattern_size);
+                        targets_ndss.at(g1).at(g2).resize(target_size);
                     }
 
-                    for (unsigned i = 0 ; i < target_size ; ++i) {
-                        for (unsigned j = 0 ; j < target_size ; ++j) {
-                            if (target_graphs.at(g).adjacent(i, j))
-                                targets_ndss.at(g).at(i).push_back(targets_degrees.at(g).at(j));
+                for (int g1 = 0 ; g1 < (double_filter_ ? max_graphs : 1) ; ++g1)
+                    for (int g2 = 0 ; g2 < max_graphs ; ++g2) {
+                        for (unsigned i = 0 ; i < pattern_size ; ++i) {
+                            for (unsigned j = 0 ; j < pattern_size ; ++j) {
+                                if (pattern_graphs.at(g1).adjacent(i, j))
+                                    patterns_ndss.at(g1).at(g2).at(i).push_back(patterns_degrees.at(g2).at(j));
+                            }
+                            std::sort(patterns_ndss.at(g1).at(g2).at(i).begin(), patterns_ndss.at(g1).at(g2).at(i).end(), std::greater<int>());
                         }
-                        std::sort(targets_ndss.at(g).at(i).begin(), targets_ndss.at(g).at(i).end(), std::greater<int>());
+
+                        for (unsigned i = 0 ; i < target_size ; ++i) {
+                            for (unsigned j = 0 ; j < target_size ; ++j) {
+                                if (target_graphs.at(g1).adjacent(i, j))
+                                    targets_ndss.at(g1).at(g2).at(i).push_back(targets_degrees.at(g2).at(j));
+                            }
+                            std::sort(targets_ndss.at(g1).at(g2).at(i).begin(), targets_ndss.at(g1).at(g2).at(i).end(), std::greater<int>());
+                        }
                     }
-                }
 
                 for (unsigned i = 0 ; i < pattern_size ; ++i) {
                     domains.at(i).v = i;
@@ -315,26 +317,26 @@ namespace
                     for (unsigned j = 0 ; j < target_size ; ++j) {
                         bool ok = true;
 
-                        for (int g = 0 ; g < g_end ; ++g) {
-                            if (! allowed_target_vertices.test(j)) {
+                        /* filter disallowed and loops */
+                        for (int g = 0 ; g < max_graphs && ok ; ++g) {
+                            if (! allowed_target_vertices.test(j))
                                 ok = false;
-                            }
-                            else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j)) {
+                            else if (pattern_graphs.at(g).adjacent(i, i) && ! target_graphs.at(g).adjacent(j, j))
                                 ok = false;
-                            }
-                            else if (targets_ndss.at(g).at(j).size() < patterns_ndss.at(g).at(i).size()) {
-                                ok = false;
-                            }
-                            else {
-                                for (unsigned x = 0 ; ok && x < patterns_ndss.at(g).at(i).size() ; ++x) {
-                                    if (targets_ndss.at(g).at(j).at(x) < patterns_ndss.at(g).at(i).at(x))
-                                        ok = false;
-                                }
-                            }
-
-                            if (! ok)
-                                break;
                         }
+
+                        /* filter on NDS size */
+                        for (int g1 = 0 ; (g1 < (double_filter_ ? max_graphs : 1)) && ok ; ++g1)
+                            for (int g2 = 0 ; g2 < max_graphs && ok ; ++g2)
+                                if (targets_ndss.at(g1).at(g2).at(j).size() < patterns_ndss.at(g1).at(g2).at(i).size())
+                                    ok = false;
+
+                        /* filter on NDS inclusion */
+                        for (int g1 = 0 ; (g1 < (double_filter_ ? max_graphs : 1)) && ok ; ++g1)
+                            for (int g2 = 0 ; g2 < max_graphs && ok ; ++g2)
+                                for (unsigned x = 0 ; ok && x < patterns_ndss.at(g1).at(g2).at(i).size() ; ++x)
+                                    if (targets_ndss.at(g1).at(g2).at(j).at(x) < patterns_ndss.at(g1).at(g2).at(i).at(x))
+                                        ok = false;
 
                         if (ok)
                             domains.at(i).values.set(j);
@@ -528,7 +530,7 @@ namespace
 
             Domains domains(pattern_size);
 
-            if (! initialise_domains(domains, max_graphs))
+            if (! initialise_domains(domains))
                 return result;
 
             FailedVariables dummy_failed_variables;
@@ -557,10 +559,10 @@ namespace
         }
     };
 
-    template <template <unsigned, bool, int, int, bool, bool> class SGI_, bool b_, int n_, int m_, bool induced_, bool compose_induced_>
+    template <template <unsigned, bool, bool, int, int, bool, bool> class SGI_, bool b_, bool d_, int n_, int m_, bool induced_, bool compose_induced_>
     struct Apply
     {
-        template <unsigned size_, typename> using Type = SGI_<size_, b_, n_, m_, induced_, compose_induced_>;
+        template <unsigned size_, typename> using Type = SGI_<size_, b_, d_, n_, m_, induced_, compose_induced_>;
     };
 }
 
@@ -569,10 +571,10 @@ auto parasols::vb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graph
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<SGI, false, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, false, false, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
     else
-        return select_graph_size<Apply<SGI, false, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, false, false, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
@@ -581,10 +583,10 @@ auto parasols::vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & gra
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<SGI, true, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
     else
-        return select_graph_size<Apply<SGI, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
@@ -593,10 +595,10 @@ auto parasols::vbbj_dpd_nocompose_subgraph_isomorphism(const std::pair<Graph, Gr
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<SGI, true, 3, 3, true, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, true, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
     else
-        return select_graph_size<Apply<SGI, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
@@ -605,10 +607,10 @@ auto parasols::vbbj_dpd_nosup_subgraph_isomorphism(const std::pair<Graph, Graph>
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<SGI, true, 1, 1, true, true>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 1, 1, true, true>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
     else
-        return select_graph_size<Apply<SGI, true, 1, 1, false, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 1, 1, false, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
@@ -617,10 +619,10 @@ auto parasols::vbbj_dpd_nocad_subgraph_isomorphism(const std::pair<Graph, Graph>
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<SGI, true, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, false, true);
     else
-        return select_graph_size<Apply<SGI, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, false, false, true);
 }
 
@@ -629,10 +631,22 @@ auto parasols::vbbj_dpd_fad_subgraph_isomorphism(const std::pair<Graph, Graph> &
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
     if (params.induced)
-        return select_graph_size<Apply<SGI, true, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, true, true, true);
     else
-        return select_graph_size<Apply<SGI, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+        return select_graph_size<Apply<SGI, true, false, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
                 AllGraphSizes(), graphs.second, graphs.first, params, true, true, true);
+}
+
+auto parasols::dvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+{
+    if (graphs.first.size() > graphs.second.size())
+        return SubgraphIsomorphismResult{ };
+    if (params.induced)
+        return select_graph_size<Apply<SGI, true, true, 3, 3, true, true>::template Type, SubgraphIsomorphismResult>(
+                AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
+    else
+        return select_graph_size<Apply<SGI, true, true, 3, 3, false, false>::template Type, SubgraphIsomorphismResult>(
+                AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 

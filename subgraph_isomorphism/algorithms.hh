@@ -21,6 +21,8 @@ namespace parasols
         std::make_pair( std::string{ "vbbjdpdnocompose" },    vbbj_dpd_nocompose_subgraph_isomorphism ),
         std::make_pair( std::string{ "vbbjdpdfad" },          vbbj_dpd_fad_subgraph_isomorphism ),
 
+        std::make_pair( std::string{ "dvbbjdpd" },            dvbbj_dpd_subgraph_isomorphism ),
+
         std::make_pair( std::string{ "ttvbbjdpd" },           ttvbbj_dpd_subgraph_isomorphism ),
         std::make_pair( std::string{ "ttvbbjdpdnocompose" },  ttvbbjnocompose_dpd_subgraph_isomorphism ),
     };
