@@ -1,6 +1,6 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <subgraph_isomorphism/tvb_subgraph_isomorphism.hh>
+#include <subgraph_isomorphism/tgb_subgraph_isomorphism.hh>
 #include <subgraph_isomorphism/supplemental_graphs.hh>
 
 #include <graph/bit_graph.hh>
@@ -931,7 +931,7 @@ namespace
     };
 }
 
-auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::ttgbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -943,7 +943,7 @@ auto parasols::ttvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & g
                 AllGraphSizes(), graphs.second, graphs.first, params);
 }
 
-auto parasols::ttvbbjnocompose_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::ttgbbjnocompose_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };

@@ -1,6 +1,6 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
-#include <subgraph_isomorphism/vb_subgraph_isomorphism.hh>
+#include <subgraph_isomorphism/gb_subgraph_isomorphism.hh>
 #include <subgraph_isomorphism/supplemental_graphs.hh>
 
 #include <graph/bit_graph.hh>
@@ -566,7 +566,7 @@ namespace
     };
 }
 
-auto parasols::vb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::gb_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -578,7 +578,7 @@ auto parasols::vb_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graph
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
-auto parasols::vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::gbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -590,7 +590,7 @@ auto parasols::vbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & gra
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
-auto parasols::vbbj_dpd_nocompose_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::gbbj_nocompose_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -602,7 +602,7 @@ auto parasols::vbbj_dpd_nocompose_subgraph_isomorphism(const std::pair<Graph, Gr
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
-auto parasols::vbbj_dpd_nosup_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::gbbj_nosup_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -614,7 +614,7 @@ auto parasols::vbbj_dpd_nosup_subgraph_isomorphism(const std::pair<Graph, Graph>
                 AllGraphSizes(), graphs.second, graphs.first, params, false, true, true);
 }
 
-auto parasols::vbbj_dpd_nocad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::gbbj_nocad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -626,7 +626,7 @@ auto parasols::vbbj_dpd_nocad_subgraph_isomorphism(const std::pair<Graph, Graph>
                 AllGraphSizes(), graphs.second, graphs.first, params, false, false, true);
 }
 
-auto parasols::vbbj_dpd_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::gbbj_fad_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
@@ -638,7 +638,7 @@ auto parasols::vbbj_dpd_fad_subgraph_isomorphism(const std::pair<Graph, Graph> &
                 AllGraphSizes(), graphs.second, graphs.first, params, true, true, true);
 }
 
-auto parasols::dvbbj_dpd_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
+auto parasols::dgbbj_subgraph_isomorphism(const std::pair<Graph, Graph> & graphs, const SubgraphIsomorphismParams & params) -> SubgraphIsomorphismResult
 {
     if (graphs.first.size() > graphs.second.size())
         return SubgraphIsomorphismResult{ };
