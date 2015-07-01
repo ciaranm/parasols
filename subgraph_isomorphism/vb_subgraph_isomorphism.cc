@@ -128,10 +128,8 @@ namespace
             pattern_graphs.at(0).resize(pattern_size);
             for (unsigned i = 0 ; i < pattern_size ; ++i)
                 for (unsigned j = 0 ; j < pattern_size ; ++j)
-                    if (pattern.adjacent(pattern_order.at(i), pattern_order.at(j))) {
-                        if ((! params.delete_loops) || (i != j))
-                            pattern_graphs.at(0).add_edge(i, j);
-                    }
+                    if (pattern.adjacent(pattern_order.at(i), pattern_order.at(j)))
+                        pattern_graphs.at(0).add_edge(i, j);
 
             // determine ordering for target graph vertices
             std::iota(target_order.begin(), target_order.end(), 0);
@@ -141,10 +139,8 @@ namespace
             target_graphs.at(0).resize(target_size);
             for (unsigned i = 0 ; i < target_size ; ++i)
                 for (unsigned j = 0 ; j < target_size ; ++j)
-                    if (target.adjacent(target_order.at(i), target_order.at(j))) {
-                        if ((! params.delete_loops) || (i != j))
-                            target_graphs.at(0).add_edge(i, j);
-                    }
+                    if (target.adjacent(target_order.at(i), target_order.at(j)))
+                        target_graphs.at(0).add_edge(i, j);
 
             for (unsigned j = 0 ; j < pattern_size ; ++j)
                 pattern_degree_tiebreak.at(j) = pattern_graphs.at(0).degree(j);

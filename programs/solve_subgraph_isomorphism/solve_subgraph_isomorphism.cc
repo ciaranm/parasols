@@ -33,7 +33,6 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("format",             po::value<std::string>(), "Specify the format of the input")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
-            ("delete-loops",                          "Discard loops in the input")
             ("induced",                               "Find induced isomorphisms")
             ;
 
@@ -97,9 +96,6 @@ auto main(int argc, char * argv[]) -> int
         else
             params.n_threads = std::thread::hardware_concurrency();
 
-        if (options_vars.count("delete-loops"))
-            params.delete_loops = true;
-
         params.induced = options_vars.count("induced");
 
         /* Turn a format name into a runnable function. */
@@ -155,18 +151,16 @@ auto main(int argc, char * argv[]) -> int
         if (options_vars.count("verify") && ! result.isomorphism.empty()) {
             for (int i = 0 ; i < graphs.first.size() ; ++i) {
                 for (int j = 0 ; j < graphs.first.size() ; ++j) {
-                    if (i != j || ! params.delete_loops) {
-                        if (graphs.first.adjacent(i, j)) {
-                            if (! graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
-                                std::cerr << "Oops! not an isomorphism" << std::endl;
-                                return EXIT_FAILURE;
-                            }
+                    if (graphs.first.adjacent(i, j)) {
+                        if (! graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
+                            std::cerr << "Oops! not an isomorphism" << std::endl;
+                            return EXIT_FAILURE;
                         }
-                        else if (params.induced) {
-                            if (graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
-                                std::cerr << "Oops! not an induced isomorphism" << std::endl;
-                                return EXIT_FAILURE;
-                            }
+                    }
+                    else if (params.induced) {
+                        if (graphs.second.adjacent(result.isomorphism.find(i)->second, result.isomorphism.find(j)->second)) {
+                            std::cerr << "Oops! not an induced isomorphism" << std::endl;
+                            return EXIT_FAILURE;
                         }
                     }
                 }
