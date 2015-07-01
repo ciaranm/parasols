@@ -22,8 +22,6 @@ namespace parasols
         /// Number of threads to use, where appropriate.
         unsigned n_threads = 1;
 
-        bool enumerate = false;
-
         bool delete_loops = false;
 
         bool induced = false;

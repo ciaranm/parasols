@@ -105,10 +105,6 @@ namespace
 
         unsigned pattern_size, full_pattern_size, target_size;
 
-        unsigned n_solutions;
-
-        FailedVariables all_variables_failed;
-
         SGI(const Graph & target, const Graph & pattern, const SubgraphIsomorphismParams & a, bool fa, bool ca, bool dpd) :
             params(a),
             use_full_all_different(fa),
@@ -117,12 +113,11 @@ namespace
             target_order(target.size()),
             pattern_size(pattern.size()),
             full_pattern_size(pattern.size()),
-            target_size(target.size()),
-            n_solutions(0)
+            target_size(target.size())
         {
             // strip out isolated vertices in the pattern
             for (unsigned v = 0 ; v < full_pattern_size ; ++v)
-                if ((! induced_) && (! params.enumerate) && (0 == pattern.degree(v))) {
+                if ((! induced_) && (0 == pattern.degree(v))) {
                     isolated_vertices.push_back(v);
                     --pattern_size;
                 }
@@ -153,10 +148,6 @@ namespace
 
             for (unsigned j = 0 ; j < pattern_size ; ++j)
                 pattern_degree_tiebreak.at(j) = pattern_graphs.at(0).degree(j);
-
-            // used if we enumerate
-            for (unsigned i = 0 ; i < pattern_size ; ++i)
-                all_variables_failed.add(i);
         }
 
         auto assign(Domains & new_domains, unsigned branch_v, unsigned f_v, int g_end, FailedVariables & failed_variables) -> bool
@@ -225,13 +216,8 @@ namespace
                         branch_domain = &d;
             }
 
-            if (! branch_domain) {
-                ++n_solutions;
-                if (params.enumerate)
-                    return std::make_pair(Search::Unsatisfiable, all_variables_failed);
-                else
-                    return std::make_pair(Search::Satisfiable, FailedVariables());
-            }
+            if (! branch_domain)
+                return std::make_pair(Search::Satisfiable, FailedVariables());
 
             auto remaining = branch_domain->values;
             auto branch_v = branch_domain->v;
@@ -570,8 +556,6 @@ namespace
                 case Search::Aborted:
                     break;
             }
-
-            result.result_count = n_solutions;
 
             return result;
         }

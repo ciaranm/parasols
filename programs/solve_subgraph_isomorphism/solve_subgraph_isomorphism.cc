@@ -33,7 +33,6 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("format",             po::value<std::string>(), "Specify the format of the input")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
-            ("enumerate",                             "Enumerate solutions")
             ("delete-loops",                          "Discard loops in the input")
             ("induced",                               "Find induced isomorphisms")
             ;
@@ -98,9 +97,6 @@ auto main(int argc, char * argv[]) -> int
         else
             params.n_threads = std::thread::hardware_concurrency();
 
-        if (options_vars.count("enumerate"))
-            params.enumerate = true;
-
         if (options_vars.count("delete-loops"))
             params.delete_loops = true;
 
@@ -140,9 +136,6 @@ auto main(int argc, char * argv[]) -> int
 
         /* Display the results. */
         std::cout << std::boolalpha << ! result.isomorphism.empty() << " " << result.nodes;
-
-        if (options_vars.count("enumerate"))
-            std::cout << " " << result.result_count;
 
         if (aborted)
             std::cout << " aborted";
