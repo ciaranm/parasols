@@ -33,6 +33,7 @@ auto main(int argc, char * argv[]) -> int
             ("timeout",            po::value<int>(),  "Abort after this many seconds")
             ("format",             po::value<std::string>(), "Specify the format of the input")
             ("verify",                                "Verify that we have found a valid result (for sanity checking changes)")
+            ("print-incumbents",                     "Print new incumbents as they are found")
             ;
 
         po::options_description all_options{ "All options" };
@@ -93,6 +94,9 @@ auto main(int argc, char * argv[]) -> int
         else
             params.n_threads = std::thread::hardware_concurrency();
 
+        if (options_vars.count("print-incumbents"))
+            params.print_incumbents = true;
+
         /* Turn a format name into a runnable function. */
         auto format = graph_file_formats.begin(), format_end = graph_file_formats.end();
         if (options_vars.count("format"))
@@ -142,6 +146,12 @@ auto main(int argc, char * argv[]) -> int
         std::cout << std::endl;
 
         if (options_vars.count("verify"))
+            for (int i = 0 ; i < graph.size() ; ++i) {
+                if (! result.colouring.count(i))
+                    std::cerr << "Oops! missed a vertex" << std::endl;
+                return EXIT_FAILURE;
+            }
+
             for (int i = 0 ; i < graph.size() ; ++i) {
                 for (int j = 0 ; j < graph.size() ; ++j) {
                     if (graph.adjacent(i, j) && *result.colouring.find(i) == *result.colouring.find(j)) {
