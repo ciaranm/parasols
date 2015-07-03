@@ -21,10 +21,12 @@ SUBMAKEFILES := \
 	programs/solve_max_common_subgraph/subdir.mk \
 	programs/solve_max_labelled_clique/subdir.mk \
 	programs/solve_subgraph_isomorphism/subdir.mk \
+	programs/solve_vertex_colouring/subdir.mk \
 	programs/test_max_clique/subdir.mk \
 	solver/subdir.mk \
 	subgraph_isomorphism/subdir.mk \
-	threads/subdir.mk
+	threads/subdir.mk \
+	vertex_colouring/subdir.mk
 
 BUILD_DIR := $(shell echo intermediate/`hostname`)
 TARGET_DIR := $(shell echo build/`hostname`)
