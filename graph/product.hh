@@ -10,6 +10,8 @@ namespace parasols
 {
     auto modular_product(const Graph & g1, const Graph & g2) -> Graph;
 
+    auto noninduced_modular_product(const Graph & g1, const Graph & g2) -> Graph;
+
     auto subgraph_modular_product(const Graph & g1, const Graph & g2) -> Graph;
 
     auto unproduct(const Graph & g1, const Graph & g2, int v) -> std::pair<int, int>;

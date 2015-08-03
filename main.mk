@@ -22,6 +22,7 @@ SUBMAKEFILES := \
 	programs/solve_max_labelled_clique/subdir.mk \
 	programs/solve_subgraph_isomorphism/subdir.mk \
 	programs/solve_vertex_colouring/subdir.mk \
+	programs/subgraph_isomorphism_association_density_graph/subdir.mk \
 	programs/test_max_clique/subdir.mk \
 	solver/subdir.mk \
 	subgraph_isomorphism/subdir.mk \
@@ -35,6 +36,6 @@ boost_ldlibs := -lboost_regex -lboost_thread -lboost_system -lboost_program_opti
 
 boost_mpi_ldlibs := -lboost_mpi -lboost_serialization
 
-override CXXFLAGS += -O3 -march=native -std=c++14 -I./ -W -Wall -pthread
+override CXXFLAGS += -O3 -march=native -std=c++14 -I./ -W -Wall -pthread -g
 override LDFLAGS += -pthread
 

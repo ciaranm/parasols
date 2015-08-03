@@ -27,6 +27,7 @@ auto main(int argc, char * argv[]) -> int
         all_options.add_options()
             ("graph1", "First input graph (DIMACS format, unless --format is specified).")
             ("graph2", "Second input graph (DIMACS format, unless --format is specified).")
+            ("noninduced", "Allow non-edges in graph1 to be mapped to edges in graph2")
             ;
 
         all_options.add(display_options);
@@ -78,7 +79,9 @@ auto main(int argc, char * argv[]) -> int
         auto graph1 = std::get<1>(*format)(options_vars["graph1"].as<std::string>(), GraphOptions::AllowLoops);
         auto graph2 = std::get<1>(*format)(options_vars["graph2"].as<std::string>(), GraphOptions::AllowLoops);
 
-        auto product = modular_product(graph1, graph2);
+        auto product = options_vars.count("noninduced") ?
+           noninduced_modular_product(graph1, graph2) :
+           modular_product(graph1, graph2);
 
         std::cout << "p edge " << product.size() << " 0" << std::endl;
         for (int e = 0 ; e < product.size() ; ++e) {
