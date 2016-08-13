@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <exception>
+#include <vector>
+#include <algorithm>
 #include <cstdlib>
 #include <set>
 
@@ -73,15 +75,38 @@ auto main(int argc, char * argv[]) -> int
             std::cout << n << " 0" << std::endl;
             output_function = [] (int e, int f) { std::cout << e - 1 << " " << f - 1 << std::endl; };
         }
+        else if (options_vars["format"].as<std::string>() == "lad") {
+            std::cout << n << std::endl;
+        }
         else {
             std::cout << "Unknown format (try 'dimacs' or 'pairs0')" << std::endl;
             return EXIT_FAILURE;
         }
 
-        for (int e = 1 ; e <= n ; ++e) {
-            for (int f = e + 1 ; f <= n ; ++f) {
-                if (dist(rand) <= p)
-                    output_function(e, f);
+        if (options_vars["format"].as<std::string>() == "lad") {
+            std::vector<std::vector<int> > adj = std::vector<std::vector<int> >(n, std::vector<int>(n, 0));
+
+            for (int e = 0 ; e < n ; ++e)
+                for (int f = e + 1 ; f < n ; ++f)
+                    if (dist(rand) <= p)
+                        adj[e][f] = adj[f][e] = 1;
+
+            for (int e = 0 ; e < n ; ++e) {
+                int k = std::count(adj[e].begin(), adj[e].end(), 1);
+                std::cout << k;
+                for (int f = 0 ; f < n ; ++f) {
+                    if (adj[e][f])
+                        std::cout << " " << f;
+                }
+                std::cout << std::endl;
+            }
+        }
+        else {
+            for (int e = 1 ; e <= n ; ++e) {
+                for (int f = e + 1 ; f <= n ; ++f) {
+                    if (dist(rand) <= p)
+                        output_function(e, f);
+                }
             }
         }
 
