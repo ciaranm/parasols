@@ -7,6 +7,7 @@
 #include <graph/bit_graph.hh>
 
 #include <algorithm>
+#include <numeric>
 
 using namespace parasols;
 

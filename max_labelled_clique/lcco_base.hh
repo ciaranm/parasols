@@ -10,6 +10,8 @@
 
 #include <max_labelled_clique/max_labelled_clique_params.hh>
 
+#include <numeric>
+
 namespace parasols
 {
     using LabelSet = FixedBitSet<2>;

@@ -12,6 +12,8 @@
 #include <max_clique/print_incumbent.hh>
 #include <max_clique/cco_inference.hh>
 
+#include <numeric>
+
 namespace parasols
 {
     enum class CCOMerge

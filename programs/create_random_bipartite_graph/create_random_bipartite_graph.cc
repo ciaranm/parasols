@@ -6,6 +6,7 @@
 #include <exception>
 #include <cstdlib>
 #include <set>
+#include <random>
 
 namespace po = boost::program_options;
 

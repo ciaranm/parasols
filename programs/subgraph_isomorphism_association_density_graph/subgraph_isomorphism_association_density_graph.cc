@@ -12,6 +12,7 @@
 #include <exception>
 #include <cstdlib>
 #include <set>
+#include <random>
 
 using namespace parasols;
 namespace po = boost::program_options;

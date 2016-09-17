@@ -14,6 +14,7 @@
 #include <future>
 #include <map>
 #include <cassert>
+#include <numeric>
 
 using namespace parasols;
 

@@ -4,6 +4,7 @@
 #include <max_clique/print_incumbent.hh>
 #include <graph/bit_graph.hh>
 #include <graph/template_voodoo.hh>
+#include <numeric>
 
 using namespace parasols;
 

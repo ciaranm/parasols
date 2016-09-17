@@ -6,6 +6,7 @@
 #include <boost/range/adaptors.hpp>
 
 #include <algorithm>
+#include <numeric>
 
 using namespace parasols;
 

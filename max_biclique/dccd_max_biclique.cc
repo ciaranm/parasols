@@ -10,6 +10,7 @@
 #include <threads/queue.hh>
 
 #include <algorithm>
+#include <numeric>
 #include <list>
 #include <functional>
 #include <vector>

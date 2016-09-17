@@ -8,6 +8,8 @@
 #include <max_biclique/max_biclique_params.hh>
 #include <max_biclique/max_biclique_result.hh>
 
+#include <numeric>
+
 namespace parasols
 {
     template <CCOPermutations perm_, BicliqueSymmetryRemoval sym_, unsigned size_, typename VertexType_, typename ActualType_>

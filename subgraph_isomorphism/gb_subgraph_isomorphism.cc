@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <numeric>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/max_cardinality_matching.hpp>
