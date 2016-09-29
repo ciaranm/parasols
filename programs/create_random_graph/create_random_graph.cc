@@ -84,7 +84,7 @@ auto main(int argc, char * argv[]) -> int
             return EXIT_FAILURE;
         }
 
-        if (options_vars["format"].as<std::string>() == "lad") {
+        if (options_vars.count("format") && options_vars["format"].as<std::string>() == "lad") {
             std::vector<std::vector<int> > adj = std::vector<std::vector<int> >(n, std::vector<int>(n, 0));
 
             for (int e = 0 ; e < n ; ++e)
