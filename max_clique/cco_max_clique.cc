@@ -100,7 +100,7 @@ namespace
                         for (auto & v : c)
                             result.members.insert(order[v]);
 
-                        print_incumbent(params, c.size(), position);
+                        print_incumbent(params, c.size(), position, result.members);
                     }
                     break;
 
@@ -114,7 +114,7 @@ namespace
                         if (merged.size() > result.size) {
                             result.members = merged;
                             result.size = result.members.size();
-                            print_incumbent(params, result.size, position);
+                            print_incumbent(params, result.size, position, result.members);
                         }
                     }
                     break;
@@ -129,7 +129,7 @@ namespace
                             result.members = new_members;
                             result.size = result.members.size();
                             previouses.push_back(result.members);
-                            print_incumbent(params, result.size, position);
+                            print_incumbent(params, result.size, position, result.members);
                         }
                         else
                             for (auto & p : previouses) {
@@ -139,7 +139,7 @@ namespace
                                     result.members = merged;
                                     result.size = result.members.size();
                                     previouses.push_back(result.members);
-                                    print_incumbent(params, result.size, position);
+                                    print_incumbent(params, result.size, position, result.members);
                                 }
                             }
 

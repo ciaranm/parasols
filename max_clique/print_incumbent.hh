@@ -37,6 +37,13 @@ namespace parasols
      */
     auto print_position(const MaxCliqueParams & params, const std::string &,
             const std::vector<int> & positions) -> void;
+
+    /**
+     * Do some generic string output for a position, if params.print_incumbents is true.
+     */
+    auto print_incumbent(const MaxCliqueParams & params, unsigned size,
+            const std::vector<int> & positions,
+            const std::set<int> & vertices) -> void;
 }
 
 #endif

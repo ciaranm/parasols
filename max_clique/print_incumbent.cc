@@ -81,3 +81,24 @@ auto parasols::print_position(
     }
 }
 
+auto parasols::print_incumbent(const MaxCliqueParams & params,
+        unsigned size,
+        const std::vector<int> & positions,
+        const std::set<int> & vertices) -> void
+{
+    if (params.print_incumbents) {
+        std::stringstream w;
+        for (auto & p : positions)
+            w << " " << p;
+
+        std::stringstream v;
+        for (auto & p : vertices)
+            v << " " << p;
+
+        std::cout
+            << lock_output()
+            << "-- " << duration_cast<milliseconds>(steady_clock::now() - params.start_time).count()
+            << " found " << size << " with vertices" << v.str() << " at" << w.str() << std::endl;
+    }
+}
+
