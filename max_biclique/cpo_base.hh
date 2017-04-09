@@ -56,9 +56,9 @@ namespace parasols
         {
             static_cast<ActualType_ *>(this)->increment_nodes(std::forward<MoreArgs_>(more_args_)...);
 
-            int skip = 0;
+            int skip = 0, stop = std::numeric_limits<int>::max();
             bool keep_going = true;
-            static_cast<ActualType_ *>(this)->get_skip(ca.size(), cb.size(), std::forward<MoreArgs_>(more_args_)..., skip, keep_going);
+            static_cast<ActualType_ *>(this)->get_skip_and_stop(ca.size() + cb.size(), std::forward<MoreArgs_>(more_args_)..., skip, stop, keep_going);
 
             // for each v in p... (v comes later)
             for (int n = pa.popcount() - 1 ; n >= 0 ; --n) {
@@ -109,23 +109,25 @@ namespace parasols
                     // now consider not taking v
                     ca.pop_back();
 
+                    keep_going = keep_going && (--stop > 0);
+
                     if (! keep_going)
                         break;
+                }
 
-                    switch (sym_) {
-                        case BicliqueSymmetryRemoval::None:
-                            break;
+                switch (sym_) {
+                    case BicliqueSymmetryRemoval::None:
+                        break;
 
-                        case BicliqueSymmetryRemoval::Skip:
-                            if (cb.empty())
-                                sym_skip.set(v);
-                            break;
+                    case BicliqueSymmetryRemoval::Skip:
+                        if (cb.empty())
+                            sym_skip.set(v);
+                        break;
 
-                        case BicliqueSymmetryRemoval::Remove:
-                            if (cb.empty())
-                                pb.unset(v);
-                            break;
-                    }
+                    case BicliqueSymmetryRemoval::Remove:
+                        if (cb.empty())
+                            pb.unset(v);
+                        break;
                 }
             }
         }

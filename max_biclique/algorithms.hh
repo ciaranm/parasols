@@ -7,6 +7,7 @@
 #include <max_biclique/ccd_max_biclique.hh>
 #include <max_biclique/dccd_max_biclique.hh>
 #include <max_biclique/cpo_max_biclique.hh>
+#include <max_biclique/tcpo_max_biclique.hh>
 
 #include <utility>
 
@@ -26,7 +27,13 @@ namespace parasols
         std::make_pair( std::string{ "cponr" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove> ),
         std::make_pair( std::string{ "cpons" },       cpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Skip> ),
         std::make_pair( std::string{ "cpodn" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::None> ),
-        std::make_pair( std::string{ "cpodr" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove> )
+        std::make_pair( std::string{ "cpodr" },       cpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove> ),
+
+        std::make_pair( std::string{ "tcponn" },      tcpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "tcponr" },      tcpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Remove> ),
+        std::make_pair( std::string{ "tcpons" },      tcpo_max_biclique<CCOPermutations::None, BicliqueSymmetryRemoval::Skip> ),
+        std::make_pair( std::string{ "tcpodn" },      tcpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::None> ),
+        std::make_pair( std::string{ "tcpodr" },      tcpo_max_biclique<CCOPermutations::Defer1, BicliqueSymmetryRemoval::Remove> )
     };
 }
 

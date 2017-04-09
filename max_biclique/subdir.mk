@@ -10,5 +10,6 @@ SOURCES := \
 	print_incumbent.cc \
 	cpo_base.cc \
 	cpo_max_biclique.cc \
+	tcpo_max_biclique.cc \
 	algorithms.cc
 
