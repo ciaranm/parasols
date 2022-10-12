@@ -6,6 +6,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <cstdlib>
 
 namespace parasols
 {
